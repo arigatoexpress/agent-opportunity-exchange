@@ -213,6 +213,58 @@ describe("Agent Opportunity Exchange API", () => {
     }
   });
 
+  test("returns degraded SEC context when FRED temporarily times out", async () => {
+    const originalTimeout = process.env.AOE_MARKET_FETCH_TIMEOUT_MS;
+    process.env.AOE_MARKET_FETCH_TIMEOUT_MS = "250";
+    vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/company_tickers.json")) {
+        return jsonResponse({
+          "0": { cik_str: 320193, ticker: "AAPL", title: "Apple Inc." },
+        });
+      }
+      if (url === "https://data.sec.gov/submissions/CIK0000320193.json") {
+        return jsonResponse({
+          name: "Apple Inc.",
+          filings: {
+            recent: {
+              accessionNumber: ["0000320193-26-000013"],
+              filingDate: ["2026-05-01"],
+              reportDate: ["2026-03-28"],
+              form: ["10-Q"],
+              primaryDocument: ["aapl-20260328.htm"],
+            },
+          },
+        });
+      }
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new Error("aborted by test signal")));
+      });
+    });
+
+    try {
+      const res = await app.request("/v1/streams/market-context/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          ticker: "AAPL",
+          seriesIds: ["FEDFUNDS"],
+          filingLimit: 1,
+          seriesLimit: 1,
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.partial).toBe(true);
+      expect(body.sourceStatus.fred_alfred.status).toBe("degraded");
+      expect(body.report.company.name).toBe("Apple Inc.");
+      expect(body.report.filings).toHaveLength(1);
+      expect(body.report.macro).toEqual([]);
+    } finally {
+      process.env.AOE_MARKET_FETCH_TIMEOUT_MS = originalTimeout;
+      vi.unstubAllGlobals();
+    }
+  });
+
   test("artifacts expose previews without full content", async () => {
     const artifact = artifacts[0];
     const res = await app.request(`/v1/artifacts/${artifact.artifactId}/preview`);

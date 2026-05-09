@@ -7,6 +7,7 @@ export interface MarketContextRequest {
   filingForms?: string[];
   filingLimit?: number;
   seriesLimit?: number;
+  timeoutMs?: number;
 }
 
 export interface MarketContextReport {
@@ -33,6 +34,8 @@ export interface MarketContextReport {
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 export async function fetchMarketContextReport(request: MarketContextRequest, fetcher: FetchLike = fetch): Promise<MarketContextReport> {
+  const timeoutMs = normalizeTimeoutMs(request.timeoutMs ?? process.env.AOE_MARKET_FETCH_TIMEOUT_MS);
+  const boundedFetcher = withSourceTimeout(fetcher, timeoutMs);
   const normalized = {
     ticker: request.ticker.toUpperCase(),
     seriesIds: [...new Set(request.seriesIds.map((seriesId) => seriesId.toUpperCase()))].slice(0, 12),
@@ -48,14 +51,14 @@ export async function fetchMarketContextReport(request: MarketContextRequest, fe
         forms: normalized.filingForms,
         limit: normalized.filingLimit,
       },
-      fetcher,
+      boundedFetcher,
     ),
     fetchFredSeriesReport(
       {
         seriesIds: normalized.seriesIds,
         limit: normalized.seriesLimit,
       },
-      fetcher,
+      boundedFetcher,
     ),
   ]);
 
@@ -80,6 +83,38 @@ export async function fetchMarketContextReport(request: MarketContextRequest, fe
       "SEC filing metadata should be verified at the SEC source before business decisions.",
     ],
   };
+}
+
+export function withSourceTimeout(fetcher: FetchLike, timeoutMs: number): FetchLike {
+  return async (url, init = {}) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetcher(url, {
+        ...init,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error(`${sourceLabel(url)} request timed out after ${timeoutMs}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+}
+
+function normalizeTimeoutMs(value: number | string | undefined): number {
+  const parsed = typeof value === "number" ? value : Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed)) return 5_000;
+  return Math.max(250, Math.min(parsed, 20_000));
+}
+
+function sourceLabel(url: string): "SEC" | "FRED" | "Upstream" {
+  if (url.includes("sec.gov")) return "SEC";
+  if (url.includes("fred.stlouisfed.org")) return "FRED";
+  return "Upstream";
 }
 
 function buildHighlights(sec: SecFilingsReport, fred: FredSeriesReport): MarketContextReport["highlights"] {

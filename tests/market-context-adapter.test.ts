@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { fetchMarketContextReport } from "../src/adapters/market-context.js";
+import { fetchMarketContextReport, withSourceTimeout } from "../src/adapters/market-context.js";
 
 describe("market context stream adapter", () => {
   test("combines SEC filings and FRED macro observations into one stream payload", async () => {
@@ -46,6 +46,18 @@ describe("market context stream adapter", () => {
     expect(report.macro.map((series) => series.seriesId)).toEqual(["FEDFUNDS", "UNRATE"]);
     expect(report.highlights.map((highlight) => highlight.sourceId)).toContain("sec_edgar");
     expect(report.caveats.join(" ")).toContain("not investment advice");
+  });
+
+  test("labels slow SEC upstream calls as bounded timeouts", async () => {
+    const bounded = withSourceTimeout(
+      async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new Error("aborted by test signal")));
+        }),
+      5,
+    );
+
+    await expect(bounded("https://data.sec.gov/submissions/CIK0000012345.json")).rejects.toThrow("SEC request timed out after 5ms");
   });
 });
 

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
-import { fetchMarketContextReport } from "./adapters/market-context.js";
+import { fetchMarketContextReport, withSourceTimeout } from "./adapters/market-context.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
@@ -418,6 +418,7 @@ export function createApp() {
         filingForms: parsed.data.filingForms,
         filingLimit: parsed.data.filingLimit,
         seriesLimit: parsed.data.seriesLimit,
+        timeoutMs: marketFetchTimeoutMs(),
       });
       return c.json({
         mode: "read_only_public_preview",
@@ -432,7 +433,23 @@ export function createApp() {
       if (message.startsWith("SEC ")) {
         const seriesIds = parsed.data.seriesIds ?? ["FEDFUNDS", "UNRATE", "CPIAUCSL"];
         const seriesLimit = parsed.data.seriesLimit ?? 3;
-        const macro = await fetchFredSeriesReport({ seriesIds, limit: seriesLimit });
+        const macro = await fetchFredSeriesReport({ seriesIds, limit: seriesLimit }, withSourceTimeout(fetch, marketFetchTimeoutMs())).catch((fallbackError) => {
+          const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : "Unknown FRED fallback error";
+          return { error: `SEC degraded and FRED fallback failed: ${fallbackMessage}` };
+        });
+        if ("error" in macro) {
+          return c.json(
+            {
+              error: "source_adapter_failed",
+              message: macro.error,
+              sourceStatus: {
+                sec_edgar: { status: "degraded", message },
+                fred_alfred: { status: "degraded", message: macro.error },
+              },
+            },
+            502,
+          );
+        }
         return c.json({
           mode: "read_only_public_preview",
           x402Stream: true,
@@ -473,6 +490,80 @@ export function createApp() {
             caveats: [
               "SEC EDGAR is temporarily degraded for this preview; retry or provide a CIK later.",
               "This degraded preview is source-cited macro context only, not investment advice.",
+              "No portfolio personalization, buy/sell/hold recommendation, price target, or trade execution is provided.",
+            ],
+          },
+        });
+      }
+      if (message.startsWith("FRED ")) {
+        const filingForms = (parsed.data.filingForms ?? ["10-K", "10-Q", "8-K"]).map((form) => form.toUpperCase());
+        const filingLimit = parsed.data.filingLimit ?? 5;
+        const sec = await fetchSecRecentFilings(
+          {
+            ticker: parsed.data.ticker,
+            forms: filingForms,
+            limit: filingLimit,
+          },
+          withSourceTimeout(fetch, marketFetchTimeoutMs()),
+        ).catch((fallbackError) => {
+          const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : "Unknown SEC fallback error";
+          return { error: `FRED degraded and SEC fallback failed: ${fallbackMessage}` };
+        });
+        if ("error" in sec) {
+          return c.json(
+            {
+              error: "source_adapter_failed",
+              message: sec.error,
+              sourceStatus: {
+                sec_edgar: { status: "degraded", message: sec.error },
+                fred_alfred: { status: "degraded", message },
+              },
+            },
+            502,
+          );
+        }
+        return c.json({
+          mode: "read_only_public_preview",
+          x402Stream: true,
+          x402ProductId: "market_regime_evidence_pack",
+          streamId: "sec_macro_context",
+          previewPriceUsd: "1.0000",
+          partial: true,
+          sourceStatus: {
+            sec_edgar: { status: "ok" },
+            fred_alfred: { status: "degraded", message },
+          },
+          report: {
+            schemaVersion: "sapphirealpha.market_context.v1",
+            generatedAt: new Date().toISOString(),
+            x402Stream: true,
+            streamId: "sec_macro_context",
+            query: {
+              ticker: parsed.data.ticker.toUpperCase(),
+              seriesIds: (parsed.data.seriesIds ?? ["FEDFUNDS", "UNRATE", "CPIAUCSL"]).map((seriesId) => seriesId.toUpperCase()),
+              filingForms,
+              filingLimit,
+              seriesLimit: parsed.data.seriesLimit ?? 3,
+            },
+            sources: [
+              { sourceId: "sec_edgar", retrievalMode: sec.source.retrievalMode, status: "ok" },
+              { sourceId: "fred_alfred", retrievalMode: "read_only_public_csv", status: "degraded" },
+            ],
+            company: sec.company,
+            filings: sec.filings,
+            macro: [],
+            highlights: sec.filings[0]
+              ? [
+                  {
+                    label: "latest_filing",
+                    value: `${sec.filings[0].form} filed ${sec.filings[0].filingDate}`,
+                    sourceId: "sec_edgar",
+                  },
+                ]
+              : [],
+            caveats: [
+              "FRED is temporarily degraded for this preview; retry later for macro observations.",
+              "This degraded preview is source-cited SEC filing context only, not investment advice.",
               "No portfolio personalization, buy/sell/hold recommendation, price target, or trade execution is provided.",
             ],
           },
@@ -521,4 +612,10 @@ export function createApp() {
   });
 
   return app;
+}
+
+function marketFetchTimeoutMs(): number {
+  const parsed = Number.parseInt(process.env.AOE_MARKET_FETCH_TIMEOUT_MS ?? "", 10);
+  if (!Number.isFinite(parsed)) return 5_000;
+  return Math.max(250, Math.min(parsed, 20_000));
 }
