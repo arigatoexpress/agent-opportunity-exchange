@@ -22,6 +22,32 @@ describe("cyber source adapter", () => {
           });
         }
 
+        if (url.includes("services.nvd.nist.gov")) {
+          const cve = new URL(url).searchParams.get("cveId");
+          return jsonResponse({
+            vulnerabilities: [
+              {
+                cve: {
+                  id: cve,
+                  published: "2026-01-01T00:00:00.000",
+                  lastModified: "2026-01-03T00:00:00.000",
+                  descriptions: [{ lang: "en", value: `${cve} is a synthetic test vulnerability used for defensive prioritization.` }],
+                  metrics: {
+                    cvssMetricV31: [
+                      {
+                        cvssData: {
+                          baseScore: cve === "CVE-2024-0003" ? 4.3 : 9.8,
+                          baseSeverity: cve === "CVE-2024-0003" ? "MEDIUM" : "CRITICAL",
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          });
+        }
+
         return jsonResponse({
           data: [
             { cve: "CVE-2024-0001", epss: "0.330000", percentile: "0.950000", date: "2026-05-08" },
@@ -37,6 +63,8 @@ describe("cyber source adapter", () => {
     expect(report.findings[0].kev.knownExploited).toBe(true);
     expect(report.findings[1].tier).toBe("fix_this_week");
     expect(report.findings[2].tier).toBe("monitor");
+    expect(report.findings[0].nvd?.baseSeverity).toBe("CRITICAL");
+    expect(report.sources.map((source) => source.sourceId)).toContain("nvd_cve");
     expect(report.findings[0].outputPolicy.join(" ")).toMatch(/No exploit payloads/i);
     expect(report.findings[0].outputPolicy.join(" ")).not.toMatch(/run this exploit|payload:/i);
   });

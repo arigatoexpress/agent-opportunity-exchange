@@ -60,7 +60,7 @@ curl -s \
   -d '{"cves":["CVE-2021-44228","CVE-2023-34362"]}'
 ```
 
-It calls public CISA KEV and FIRST EPSS APIs. It does not scan targets and does not return exploit instructions.
+It calls public CISA KEV, FIRST EPSS, and NVD APIs. It does not scan targets and does not return exploit instructions.
 
 ## Product Boundary
 

@@ -17,6 +17,15 @@ export interface EpssEntry {
   date?: string;
 }
 
+export interface NvdSummary {
+  cve: string;
+  published?: string;
+  lastModified?: string;
+  baseScore: number | null;
+  baseSeverity: string | null;
+  description: string | null;
+}
+
 export interface VulnPriorityFinding {
   cve: string;
   tier: "fix_today" | "fix_this_week" | "monitor" | "needs_review";
@@ -35,6 +44,7 @@ export interface VulnPriorityFinding {
     percentile: number | null;
     date?: string;
   };
+  nvd: NvdSummary | null;
   outputPolicy: string[];
 }
 
@@ -54,6 +64,7 @@ type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 const KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
 const EPSS_URL = "https://api.first.org/data/v1/epss";
+const NVD_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0";
 
 export async function fetchKevCatalog(fetcher: FetchLike = fetch): Promise<Map<string, KevEntry>> {
   const response = await fetcher(KEV_URL, {
@@ -92,17 +103,65 @@ export async function fetchEpssScores(cves: string[], fetcher: FetchLike = fetch
   return new Map(entries.map((entry) => [entry.cve.toUpperCase(), entry]));
 }
 
+export async function fetchNvdSummaries(cves: string[], fetcher: FetchLike = fetch): Promise<Map<string, NvdSummary>> {
+  const records = await Promise.all(
+    cves.map(async (cve) => {
+      const url = new URL(NVD_URL);
+      url.searchParams.set("cveId", cve.toUpperCase());
+      const response = await fetcher(url.toString(), {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "agent-opportunity-exchange/0.1 read-only source adapter",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`NVD request failed for ${cve}: ${response.status}`);
+      }
+
+      const body = (await response.json()) as NvdApiResponse;
+      const record = body.vulnerabilities?.[0]?.cve;
+      if (!record) {
+        return {
+          cve: cve.toUpperCase(),
+          published: undefined,
+          lastModified: undefined,
+          baseScore: null,
+          baseSeverity: null,
+          description: null,
+        };
+      }
+
+      const metric =
+        record.metrics?.cvssMetricV31?.[0]?.cvssData ??
+        record.metrics?.cvssMetricV30?.[0]?.cvssData ??
+        record.metrics?.cvssMetricV2?.[0]?.cvssData;
+      const description = record.descriptions?.find((entry) => entry.lang === "en")?.value ?? null;
+      return {
+        cve: record.id.toUpperCase(),
+        published: record.published,
+        lastModified: record.lastModified,
+        baseScore: typeof metric?.baseScore === "number" ? metric.baseScore : null,
+        baseSeverity: metric?.baseSeverity ?? null,
+        description: description ? truncate(description, 240) : null,
+      };
+    }),
+  );
+
+  return new Map(records.map((entry) => [entry.cve, entry]));
+}
+
 export async function buildVulnPriorityReport(cves: string[], fetcher: FetchLike = fetch): Promise<VulnPriorityReport> {
   const normalized = [...new Set(cves.map((cve) => cve.toUpperCase()))].sort();
-  const [kev, epss] = await Promise.all([fetchKevCatalog(fetcher), fetchEpssScores(normalized, fetcher)]);
+  const [kev, epss, nvd] = await Promise.all([fetchKevCatalog(fetcher), fetchEpssScores(normalized, fetcher), fetchNvdSummaries(normalized, fetcher)]);
 
   const findings = normalized
     .map((cve): VulnPriorityFinding => {
       const kevEntry = kev.get(cve);
       const epssEntry = epss.get(cve);
+      const nvdEntry = nvd.get(cve) ?? null;
       const epssScore = epssEntry ? Number.parseFloat(epssEntry.epss) : null;
       const percentile = epssEntry ? Number.parseFloat(epssEntry.percentile) : null;
-      const tier = rankTier(Boolean(kevEntry), epssScore, percentile);
+      const tier = rankTier(Boolean(kevEntry), epssScore, percentile, nvdEntry?.baseSeverity ?? null);
       return {
         cve,
         tier,
@@ -121,6 +180,7 @@ export async function buildVulnPriorityReport(cves: string[], fetcher: FetchLike
           percentile: Number.isFinite(percentile) ? percentile : null,
           date: epssEntry?.date,
         },
+        nvd: nvdEntry,
         outputPolicy: [
           "Defensive prioritization only.",
           "No exploit payloads, proof-of-concept instructions, credentials, or unauthorized scanning.",
@@ -136,19 +196,21 @@ export async function buildVulnPriorityReport(cves: string[], fetcher: FetchLike
     sources: [
       { sourceId: "cisa_kev", url: KEV_URL, retrievalMode: "read_only_public_api" },
       { sourceId: "first_epss", url: EPSS_URL, retrievalMode: "read_only_public_api" },
+      { sourceId: "nvd_cve", url: NVD_URL, retrievalMode: "read_only_public_api" },
     ],
     findings,
     caveats: [
-      "This report ranks public exploit evidence and exploit probability; it does not prove exploitability in a specific environment.",
+      "This report ranks public exploit evidence, exploit probability, and NVD severity; it does not prove exploitability in a specific environment.",
       "Asset exposure, compensating controls, and vendor-specific remediation should be checked before final prioritization.",
       "No active scan was performed by this adapter.",
     ],
   };
 }
 
-function rankTier(knownExploited: boolean, epssScore: number | null, percentile: number | null): VulnPriorityFinding["tier"] {
+function rankTier(knownExploited: boolean, epssScore: number | null, percentile: number | null, baseSeverity: string | null): VulnPriorityFinding["tier"] {
   if (knownExploited) return "fix_today";
   if ((epssScore ?? 0) >= 0.2 || (percentile ?? 0) >= 0.9) return "fix_this_week";
+  if (baseSeverity === "CRITICAL") return "fix_this_week";
   if (epssScore === null && percentile === null) return "needs_review";
   return "monitor";
 }
@@ -180,5 +242,28 @@ function compareFindings(left: VulnPriorityFinding, right: VulnPriorityFinding):
   };
   const tierDelta = tierOrder[left.tier] - tierOrder[right.tier];
   if (tierDelta !== 0) return tierDelta;
+  const scoreDelta = (right.nvd?.baseScore ?? -1) - (left.nvd?.baseScore ?? -1);
+  if (scoreDelta !== 0) return scoreDelta;
   return (right.epss.score ?? -1) - (left.epss.score ?? -1);
+}
+
+function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 3).trim()}...`;
+}
+
+interface NvdApiResponse {
+  vulnerabilities?: Array<{
+    cve: {
+      id: string;
+      published?: string;
+      lastModified?: string;
+      descriptions?: Array<{ lang: string; value: string }>;
+      metrics?: {
+        cvssMetricV31?: Array<{ cvssData: { baseScore?: number; baseSeverity?: string } }>;
+        cvssMetricV30?: Array<{ cvssData: { baseScore?: number; baseSeverity?: string } }>;
+        cvssMetricV2?: Array<{ cvssData: { baseScore?: number; baseSeverity?: string } }>;
+      };
+    };
+  }>;
 }
