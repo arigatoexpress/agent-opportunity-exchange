@@ -3,7 +3,7 @@ import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
-import { fetchWildfireAlerts } from "./adapters/wildfire.js";
+import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
@@ -25,6 +25,11 @@ const wildfireAlertsSchema = z
       .optional(),
   })
   .refine((value) => value.area || value.point, { message: "Provide area or point." });
+
+const wfigsPerimetersSchema = z.object({
+  state: z.string().regex(/^[A-Z]{2}$/i).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+});
 
 const secFilingsSchema = z
   .object({
@@ -223,6 +228,37 @@ export function createApp() {
 
     try {
       const report = await fetchWildfireAlerts(parsed.data);
+      return c.json({
+        mode: "read_only_public_preview",
+        paidProductId: "wildfire_regional_intel_pack",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/adapters/wildfire/wfigs-perimeters/preview", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const parsed = wfigsPerimetersSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_wfigs_perimeters_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await fetchWfigsCurrentPerimeters(parsed.data);
       return c.json({
         mode: "read_only_public_preview",
         paidProductId: "wildfire_regional_intel_pack",

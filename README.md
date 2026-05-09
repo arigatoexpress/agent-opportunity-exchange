@@ -35,6 +35,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `POST /v1/access/preflight`
 - `POST /v1/adapters/cyber/vuln-priority/preview`
 - `POST /v1/adapters/wildfire/alerts/preview`
+- `POST /v1/adapters/wildfire/wfigs-perimeters/preview`
 - `POST /v1/adapters/markets/sec-filings/preview`
 - `POST /v1/adapters/markets/fred-series/preview`
 - `GET /v1/artifacts/:id/content`
@@ -86,6 +87,15 @@ curl -s \
 ```
 
 It does not send alerts, dispatch resources, authorize flights, or replace local emergency channels.
+
+NIFC/WFIGS current perimeter previews use the public ArcGIS service:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/adapters/wildfire/wfigs-perimeters/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"state":"CO","limit":5}'
+```
 
 The first market-intelligence adapter previews public SEC EDGAR filings:
 

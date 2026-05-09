@@ -35,6 +35,17 @@ export function buildReadiness() {
       notes: ["Not incident command.", "No alert sends.", "No drone authorization."],
     },
     {
+      adapterId: "wildfire_wfigs_perimeters",
+      productId: "wildfire_regional_intel_pack",
+      sourceIds: ["nifc_wfigs"],
+      status: "live_read_only",
+      endpoint: "/v1/adapters/wildfire/wfigs-perimeters/preview",
+      inputMode: "Optional state code plus result limit",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["Public NIFC/WFIGS ArcGIS service.", "Perimeters are not available for every incident.", "Not evacuation authority."],
+    },
+    {
       adapterId: "markets_sec_filings",
       productId: "market_regime_evidence_pack",
       sourceIds: ["sec_edgar"],

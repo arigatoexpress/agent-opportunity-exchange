@@ -21,6 +21,7 @@
 - Add CSV/JSON asset-inventory intake for defensive cyber reports.
 - Add SEC EDGAR recent-filings preview for market intelligence.
 - Add FRED no-key graph CSV preview for macro evidence.
+- Add NIFC/WFIGS current-perimeters preview for wildfire intelligence.
 
 ## 30 Days
 
