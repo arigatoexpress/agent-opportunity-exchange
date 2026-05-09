@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
+import { fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
@@ -9,6 +10,18 @@ import { preflightSchema, runPreflight } from "./policy.js";
 const cvePrioritySchema = z.object({
   cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(100),
 });
+
+const wildfireAlertsSchema = z
+  .object({
+    area: z.string().regex(/^[A-Z]{2}$/i).optional(),
+    point: z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lon: z.number().min(-180).max(180),
+      })
+      .optional(),
+  })
+  .refine((value) => value.area || value.point, { message: "Provide area or point." });
 
 export function createApp() {
   const app = new Hono();
@@ -163,6 +176,37 @@ export function createApp() {
       return c.json({
         mode: "read_only_public_preview",
         paidProductId: "cyber_exploited_vuln_priority",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/adapters/wildfire/alerts/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = wildfireAlertsSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_wildfire_alert_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await fetchWildfireAlerts(parsed.data);
+      return c.json({
+        mode: "read_only_public_preview",
+        paidProductId: "wildfire_regional_intel_pack",
         report,
       });
     } catch (error) {

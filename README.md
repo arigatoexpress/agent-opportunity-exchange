@@ -33,6 +33,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`
 - `POST /v1/adapters/cyber/vuln-priority/preview`
+- `POST /v1/adapters/wildfire/alerts/preview`
 - `GET /v1/artifacts/:id/content`
 
 Full artifact content returns `402 Payment Required` until the caller presents a simulated payment header:
@@ -70,6 +71,17 @@ The same adapter is available as a CLI:
 npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
 npm run cyber:priority -- --format html --output ./cyber-priority.html CVE-2021-44228
 ```
+
+The first wildfire/regional adapter previews public NWS alerts by state or point:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/adapters/wildfire/alerts/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"area":"CO"}'
+```
+
+It does not send alerts, dispatch resources, authorize flights, or replace local emergency channels.
 
 ## Product Boundary
 

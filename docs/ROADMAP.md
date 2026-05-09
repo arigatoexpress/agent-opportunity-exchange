@@ -17,12 +17,12 @@
 - Add a local append-only receipt ledger.
 - Add a CLI for defensive cyber priority reports.
 - Add an HTML report renderer for the first sellable artifact.
+- Add the first wildfire/regional read-only adapter for NWS alerts.
 
 ## 30 Days
 
 - Replace more seeded static artifacts with live source adapters for:
   - NASA FIRMS;
-  - NWS alerts;
   - SEC EDGAR;
   - FRED.
 - Add a simple artifact-generation CLI for the non-cyber products.
