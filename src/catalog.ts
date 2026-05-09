@@ -1,4 +1,4 @@
-import type { Artifact, Product, RightsEnvelope, SeparateWorkstream, SourceRecord } from "./types.js";
+import type { Artifact, Product, RightsEnvelope, SeparateWorkstream, SourceRecord, StreamDefinition } from "./types.js";
 
 const publicOfficialRights: RightsEnvelope = {
   licenseId: "public_official_derived_facts",
@@ -364,6 +364,38 @@ export const products: Product[] = [
     sourceIds: ["developer_docs_public", "github_releases"],
     buyerValue: "Flags API, SDK, auth, pricing, and docs changes before agents generate stale code.",
     disclaimers: ["Unofficial derived analysis.", "Verify source docs before production changes.", "No vendor certification implied."],
+  },
+];
+
+export const streams: StreamDefinition[] = [
+  {
+    streamId: "sec_macro_context",
+    productId: "market_regime_evidence_pack",
+    x402Stream: true,
+    title: "SEC + Macro Context",
+    route: "/v1/streams/market-context/preview",
+    method: "POST",
+    previewPriceUsd: "1.0000",
+    schemaVersion: "sapphirealpha.market_context.v1",
+    settlementMode: "simulated_or_testnet",
+    liveSettlementAllowed: false,
+    externalSideEffectsAllowed: false,
+    sourceIds: ["sec_edgar", "fred_alfred"],
+    tags: ["markets", "macro", "filings", "research-only", "agent-buyable"],
+    inputSchema: {
+      ticker: "required public company ticker, 1-12 chars",
+      seriesIds: "optional FRED series ids, default FEDFUNDS/UNRATE/CPIAUCSL",
+      filingForms: "optional SEC filing forms, default 10-K/10-Q/8-K",
+      filingLimit: "optional 1-25",
+      seriesLimit: "optional 1-24 observations per series",
+    },
+    outputSummary: "Recent SEC filing metadata plus FRED macro observations, highlights, source ids, links, and caveats.",
+    caveats: [
+      "Research context only.",
+      "Not investment advice.",
+      "No buy/sell/hold recommendation.",
+      "No trade execution.",
+    ],
   },
 ];
 

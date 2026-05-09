@@ -51,6 +51,25 @@ export interface Product {
   disclaimers: string[];
 }
 
+export interface StreamDefinition {
+  streamId: string;
+  productId: string;
+  x402Stream: true;
+  title: string;
+  route: string;
+  method: "GET" | "POST";
+  previewPriceUsd: string;
+  schemaVersion: string;
+  settlementMode: "simulated_or_testnet";
+  liveSettlementAllowed: false;
+  externalSideEffectsAllowed: false;
+  sourceIds: string[];
+  tags: string[];
+  inputSchema: Record<string, unknown>;
+  outputSummary: string;
+  caveats: string[];
+}
+
 export interface ArtifactPreview {
   headline: string;
   audience: string[];

@@ -5,7 +5,7 @@ import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { fetchMarketContextReport } from "./adapters/market-context.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
-import { artifacts, products, separateWorkstreams, sources, getArtifact, getProduct } from "./catalog.js";
+import { artifacts, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
 import { renderPublicFrontend } from "./frontend.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
@@ -83,9 +83,11 @@ export function createApp() {
       liveSettlementAllowed: false,
       x402Scope: "market_and_relevant_data_streams_only",
       separateWorkstreams: ["/v1/separate-workstreams"],
+      streams: "/v1/streams",
       featuredStream: "/v1/streams/market-context/preview",
       freeEndpoints: [
         "/v1/products",
+        "/v1/streams",
         "/v1/sources",
         "/v1/artifacts",
         "/v1/artifacts/:id/preview",
@@ -98,6 +100,8 @@ export function createApp() {
   );
 
   app.get("/v1/products", (c) => c.json({ products }));
+
+  app.get("/v1/streams", (c) => c.json({ streams }));
 
   app.get("/v1/sources", (c) => c.json({ sources }));
 

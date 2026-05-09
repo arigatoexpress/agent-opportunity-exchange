@@ -12,6 +12,7 @@ describe("public frontend", () => {
     expect(html).toContain("Market Data Streams");
     expect(html).toContain("SEC + Macro Context");
     expect(html).toContain("/v1/streams/market-context/preview");
+    expect(html).toContain("curl -s https://sapphirealpha.xyz/v1/streams/market-context/preview");
     expect(html).toContain("Separate Operational Lane");
   });
 

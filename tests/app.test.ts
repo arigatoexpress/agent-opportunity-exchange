@@ -44,6 +44,24 @@ describe("Agent Opportunity Exchange API", () => {
     expect(separateBody.workstreams[0].workstreamId).toBe("wildfire_drone_readiness_lane");
   });
 
+  test("exposes agent-readable x402 stream discovery", async () => {
+    const res = await app.request("/v1/streams");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.streams).toContainEqual(
+      expect.objectContaining({
+        streamId: "sec_macro_context",
+        productId: "market_regime_evidence_pack",
+        x402Stream: true,
+        route: "/v1/streams/market-context/preview",
+        schemaVersion: "sapphirealpha.market_context.v1",
+        liveSettlementAllowed: false,
+      }),
+    );
+    expect(JSON.stringify(body)).not.toContain("wildfire");
+    expect(JSON.stringify(body)).not.toContain("drone");
+  });
+
   test("exposes a focused SEC plus macro market context stream", async () => {
     vi.stubGlobal("fetch", async (url: string) => {
       if (url.endsWith("/company_tickers.json")) {
