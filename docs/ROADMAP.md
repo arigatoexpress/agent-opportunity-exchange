@@ -19,12 +19,12 @@
 - Add an HTML report renderer for the first sellable artifact.
 - Add the first wildfire/regional read-only adapter for NWS alerts.
 - Add CSV/JSON asset-inventory intake for defensive cyber reports.
+- Add SEC EDGAR recent-filings preview for market intelligence.
 
 ## 30 Days
 
 - Replace more seeded static artifacts with live source adapters for:
   - NASA FIRMS;
-  - SEC EDGAR;
   - FRED.
 - Add package/SBOM parsing on top of the current CVE-list cyber CLI.
 - Add a simple artifact-generation CLI for the non-cyber products.

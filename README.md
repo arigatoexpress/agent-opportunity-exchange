@@ -34,6 +34,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `POST /v1/access/preflight`
 - `POST /v1/adapters/cyber/vuln-priority/preview`
 - `POST /v1/adapters/wildfire/alerts/preview`
+- `POST /v1/adapters/markets/sec-filings/preview`
 - `GET /v1/artifacts/:id/content`
 
 Full artifact content returns `402 Payment Required` until the caller presents a simulated payment header:
@@ -83,6 +84,17 @@ curl -s \
 ```
 
 It does not send alerts, dispatch resources, authorize flights, or replace local emergency channels.
+
+The first market-intelligence adapter previews public SEC EDGAR filings:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/adapters/markets/sec-filings/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"ticker":"AAPL","forms":["10-K","10-Q","8-K"],"limit":5}'
+```
+
+It is document intelligence only: no portfolio personalization, no trade advice, and no execution.
 
 ## Product Boundary
 

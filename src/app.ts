@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
+import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
 import { appendReceipt } from "./ledger.js";
@@ -22,6 +23,15 @@ const wildfireAlertsSchema = z
       .optional(),
   })
   .refine((value) => value.area || value.point, { message: "Provide area or point." });
+
+const secFilingsSchema = z
+  .object({
+    ticker: z.string().regex(/^[A-Z0-9.-]{1,12}$/i).optional(),
+    cik: z.string().regex(/^\d{1,10}$/).optional(),
+    forms: z.array(z.string().regex(/^[A-Z0-9-]{1,12}$/i)).max(10).optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+  })
+  .refine((value) => value.ticker || value.cik, { message: "Provide ticker or cik." });
 
 export function createApp() {
   const app = new Hono();
@@ -207,6 +217,37 @@ export function createApp() {
       return c.json({
         mode: "read_only_public_preview",
         paidProductId: "wildfire_regional_intel_pack",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/adapters/markets/sec-filings/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = secFilingsSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_sec_filings_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await fetchSecRecentFilings(parsed.data);
+      return c.json({
+        mode: "read_only_public_preview",
+        paidProductId: "market_regime_evidence_pack",
         report,
       });
     } catch (error) {
