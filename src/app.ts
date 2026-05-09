@@ -415,10 +415,60 @@ export function createApp() {
         report,
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown source adapter error";
+      if (message.startsWith("SEC ")) {
+        const seriesIds = parsed.data.seriesIds ?? ["FEDFUNDS", "UNRATE", "CPIAUCSL"];
+        const seriesLimit = parsed.data.seriesLimit ?? 3;
+        const macro = await fetchFredSeriesReport({ seriesIds, limit: seriesLimit });
+        return c.json({
+          mode: "read_only_public_preview",
+          x402Stream: true,
+          x402ProductId: "market_regime_evidence_pack",
+          streamId: "sec_macro_context",
+          previewPriceUsd: "1.0000",
+          partial: true,
+          sourceStatus: {
+            sec_edgar: { status: "degraded", message },
+            fred_alfred: { status: "ok" },
+          },
+          report: {
+            schemaVersion: "sapphirealpha.market_context.v1",
+            generatedAt: new Date().toISOString(),
+            x402Stream: true,
+            streamId: "sec_macro_context",
+            query: {
+              ticker: parsed.data.ticker.toUpperCase(),
+              seriesIds: seriesIds.map((seriesId) => seriesId.toUpperCase()),
+              filingForms: (parsed.data.filingForms ?? ["10-K", "10-Q", "8-K"]).map((form) => form.toUpperCase()),
+              filingLimit: parsed.data.filingLimit ?? 5,
+              seriesLimit,
+            },
+            sources: [
+              { sourceId: "sec_edgar", retrievalMode: "read_only_public_api", status: "degraded" },
+              { sourceId: "fred_alfred", retrievalMode: macro.source.retrievalMode, status: "ok" },
+            ],
+            company: null,
+            filings: [],
+            macro: macro.series,
+            highlights: macro.series
+              .filter((series) => series.latest)
+              .map((series) => ({
+                label: `${series.seriesId.toLowerCase()}_latest`,
+                value: `${series.latest?.value ?? "missing"} on ${series.latest?.date ?? "unknown"}`,
+                sourceId: "fred_alfred",
+              })),
+            caveats: [
+              "SEC EDGAR is temporarily degraded for this preview; retry or provide a CIK later.",
+              "This degraded preview is source-cited macro context only, not investment advice.",
+              "No portfolio personalization, buy/sell/hold recommendation, price target, or trade execution is provided.",
+            ],
+          },
+        });
+      }
       return c.json(
         {
           error: "source_adapter_failed",
-          message: error instanceof Error ? error.message : "Unknown source adapter error",
+          message,
         },
         502,
       );

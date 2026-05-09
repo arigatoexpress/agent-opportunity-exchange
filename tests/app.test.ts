@@ -110,6 +110,45 @@ describe("Agent Opportunity Exchange API", () => {
     }
   });
 
+  test("returns degraded macro context when SEC temporarily rate limits", async () => {
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url.endsWith("/company_tickers.json")) {
+        return jsonResponse({
+          "0": { cik_str: 320193, ticker: "AAPL", title: "Apple Inc." },
+        });
+      }
+      if (url === "https://data.sec.gov/submissions/CIK0000320193.json") {
+        return new Response("rate limited", { status: 429 });
+      }
+      const seriesId = new URL(url).searchParams.get("id");
+      return new Response(`observation_date,${seriesId}
+2026-04-01,4.3
+`, { status: 200, headers: { "Content-Type": "text/csv" } });
+    });
+
+    try {
+      const res = await app.request("/v1/streams/market-context/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          ticker: "AAPL",
+          seriesIds: ["FEDFUNDS"],
+          filingLimit: 1,
+          seriesLimit: 1,
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.partial).toBe(true);
+      expect(body.sourceStatus.sec_edgar.status).toBe("degraded");
+      expect(body.report.company).toBeNull();
+      expect(body.report.filings).toEqual([]);
+      expect(body.report.macro[0].seriesId).toBe("FEDFUNDS");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   test("artifacts expose previews without full content", async () => {
     const artifact = artifacts[0];
     const res = await app.request(`/v1/artifacts/${artifact.artifactId}/preview`);
