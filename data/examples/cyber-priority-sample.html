@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exploited Vulnerability Priority Pack</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #52616f;
+      --line: #d8dee6;
+      --wash: #f6f8fb;
+      --fix: #b3261e;
+      --week: #8a5a00;
+      --monitor: #246b4b;
+    }
+    body {
+      margin: 0;
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #fff;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+    .summary {
+      color: var(--muted);
+      margin: 0 0 24px;
+    }
+    .meta, .notice {
+      background: var(--wash);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 18px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+    }
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--wash);
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+    }
+    .tier {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .fix_today {
+      color: #fff;
+      background: var(--fix);
+    }
+    .fix_this_week {
+      color: #fff;
+      background: var(--week);
+    }
+    .monitor {
+      color: #fff;
+      background: var(--monitor);
+    }
+    .needs_review {
+      color: var(--ink);
+      background: #dbe4ee;
+    }
+    a {
+      color: #1459a8;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Exploited Vulnerability Priority Pack</h1>
+    <p class="summary">Defensive prioritization from public CISA KEV, FIRST EPSS, and NVD data. No scan was performed and no exploit instructions are included.</p>
+
+    <section class="meta">
+      <strong>Generated:</strong> 2026-05-09T01:48:23.962Z<br>
+      <strong>Input CVEs:</strong> 2
+    </section>
+
+    <table>
+      <thead>
+        <tr>
+          <th>CVE</th>
+          <th>Tier</th>
+          <th>KEV</th>
+          <th>EPSS</th>
+          <th>NVD Severity</th>
+          <th>NVD Score</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><code>CVE-2021-44228</code></td>
+          <td><span class="tier fix_today">fix today</span></td>
+          <td>Yes</td>
+          <td>0.9446</td>
+          <td>CRITICAL</td>
+          <td>10.0</td>
+          <td>CISA KEV marks this CVE as known exploited; prioritize validation and remediation.</td>
+        </tr>
+
+        <tr>
+          <td><code>CVE-2023-34362</code></td>
+          <td><span class="tier fix_today">fix today</span></td>
+          <td>Yes</td>
+          <td>0.9425</td>
+          <td>CRITICAL</td>
+          <td>9.8</td>
+          <td>CISA KEV marks this CVE as known exploited; prioritize validation and remediation.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <section class="notice">
+      <h2>Caveats</h2>
+      <ul><li>This report ranks public exploit evidence, exploit probability, and NVD severity; it does not prove exploitability in a specific environment.</li>
+<li>Asset exposure, compensating controls, and vendor-specific remediation should be checked before final prioritization.</li>
+<li>No active scan was performed by this adapter.</li></ul>
+    </section>
+
+    <section class="notice">
+      <h2>Sources</h2>
+      <ul><li><code>cisa_kev</code> - <a href="https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json">https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json</a></li>
+<li><code>first_epss</code> - <a href="https://api.first.org/data/v1/epss">https://api.first.org/data/v1/epss</a></li>
+<li><code>nvd_cve</code> - <a href="https://services.nvd.nist.gov/rest/json/cves/2.0">https://services.nvd.nist.gov/rest/json/cves/2.0</a></li></ul>
+    </section>
+  </main>
+</body>
+</html>

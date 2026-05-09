@@ -1,10 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { buildVulnPriorityReport } from "../adapters/cyber.js";
+import { renderCyberPriorityHtml } from "../reporting/cyber-html.js";
 
 interface CliOptions {
   cves: string[];
   input?: string;
   output?: string;
+  format: "json" | "html";
 }
 
 const CVE_PATTERN = /^CVE-\d{4}-\d{4,}$/i;
@@ -24,16 +26,16 @@ async function main() {
   }
 
   const report = await buildVulnPriorityReport(normalized);
-  const json = `${JSON.stringify(report, null, 2)}\n`;
+  const output = options.format === "html" ? renderCyberPriorityHtml(report) : `${JSON.stringify(report, null, 2)}\n`;
   if (options.output) {
-    await writeFile(options.output, json, "utf8");
+    await writeFile(options.output, output, "utf8");
   } else {
-    process.stdout.write(json);
+    process.stdout.write(output);
   }
 }
 
 function parseArgs(args: string[]): CliOptions {
-  const options: CliOptions = { cves: [] };
+  const options: CliOptions = { cves: [], format: "json" };
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--input" || arg === "-i") {
@@ -42,6 +44,14 @@ function parseArgs(args: string[]): CliOptions {
     }
     if (arg === "--output" || arg === "-o") {
       options.output = args[++index];
+      continue;
+    }
+    if (arg === "--format" || arg === "-f") {
+      const format = args[++index];
+      if (format !== "json" && format !== "html") {
+        throw new Error("--format must be json or html");
+      }
+      options.format = format;
       continue;
     }
     if (arg === "--help" || arg === "-h") {
@@ -69,6 +79,7 @@ function printHelp() {
   console.log(`Usage:
   npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
   npm run cyber:priority -- --input ./cves.json --output ./report.json
+  npm run cyber:priority -- --format html --output ./report.html CVE-2021-44228
 
 This command performs read-only public API lookups against CISA KEV, FIRST EPSS,
 and NVD. It does not scan targets or return exploit instructions.`);

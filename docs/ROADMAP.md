@@ -16,6 +16,7 @@
   defensive vulnerability prioritization.
 - Add a local append-only receipt ledger.
 - Add a CLI for defensive cyber priority reports.
+- Add an HTML report renderer for the first sellable artifact.
 
 ## 30 Days
 
@@ -25,7 +26,7 @@
   - SEC EDGAR;
   - FRED.
 - Add a simple artifact-generation CLI for the non-cyber products.
-- Add the first buyer-facing HTML report template.
+- Add buyer-facing HTML report templates for wildfire and opportunity-intel.
 - Produce three demo packets:
   - exploited vulnerability priority pack;
   - regional wildfire readiness pack;
