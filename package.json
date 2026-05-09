@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
     "cyber:priority": "tsx src/cli/cyber-priority.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

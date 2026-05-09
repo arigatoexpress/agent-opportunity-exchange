@@ -5,6 +5,7 @@ import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
+import { renderPublicFrontend } from "./frontend.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
@@ -48,21 +49,9 @@ const fredSeriesSchema = z.object({
 export function createApp() {
   const app = new Hono();
 
-  app.get("/", (c) =>
-    c.json({
-      name: "Agent Opportunity Exchange",
-      thesis: "Rights-cleared paid intelligence artifacts for agents and operators.",
-      liveSettlementAllowed: false,
-      externalSideEffectsAllowed: false,
-      links: {
-        health: "/health",
-        wellKnown: "/.well-known/agent-opportunity-exchange.json",
-        products: "/v1/products",
-        sources: "/v1/sources",
-        artifacts: "/v1/artifacts",
-      },
-    }),
-  );
+  app.get("/favicon.ico", () => new Response(null, { status: 204 }));
+
+  app.get("/", (c) => c.html(renderPublicFrontend()));
 
   app.get("/health", (c) =>
     c.json({
@@ -123,6 +112,27 @@ export function createApp() {
   });
 
   app.get("/v1/readiness", (c) => c.json(buildReadiness()));
+
+  app.get("/api/silos/health", (c) => {
+    const readiness = buildReadiness();
+    return c.json({
+      mode: "public_silos_health_summary",
+      service_summary: {
+        healthy: readiness.counts.live_read_only,
+        reporting: readiness.adapters.length,
+        status_counts: readiness.counts,
+      },
+      silos: {
+        exchange: { status: "active", live_read_only_adapters: readiness.counts.live_read_only },
+        cyber: { status: "active" },
+        wildfire: { status: "active" },
+        markets: { status: "active" },
+        tho: { status: "separate", url: "https://tho.sapphirealpha.xyz/" },
+      },
+      admin_required_for: ["raw service hosts", "secret values", "production controls"],
+      ts: new Date().toISOString(),
+    });
+  });
 
   app.get("/v1/artifacts/:id", (c) => {
     const artifact = getArtifact(c.req.param("id"));

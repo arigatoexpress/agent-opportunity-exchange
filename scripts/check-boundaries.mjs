@@ -10,9 +10,8 @@ const forbiddenRuntimeClaims = [
 ];
 
 const self = new URL(import.meta.url).pathname;
-const files = walk(root).filter((file) => {
-  return !file.includes("/node_modules/") && !file.includes("/.git/") && file !== self;
-});
+const ignoredDirs = new Set([".git", ".playwright-cli", "coverage", "dist", "node_modules"]);
+const files = walk(root).filter((file) => file !== self);
 
 const violations = [];
 for (const file of files) {
@@ -33,6 +32,7 @@ console.log(`Boundary check passed for ${files.length} files.`);
 
 function walk(dir) {
   return readdirSync(dir).flatMap((entry) => {
+    if (ignoredDirs.has(entry)) return [];
     const path = join(dir, entry);
     const stat = statSync(path);
     if (stat.isDirectory()) return walk(path);

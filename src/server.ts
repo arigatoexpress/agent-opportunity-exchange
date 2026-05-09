@@ -1,8 +1,8 @@
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 
-const port = Number.parseInt(process.env.AOE_PORT ?? "4402", 10);
-const hostname = process.env.AOE_HOST ?? "127.0.0.1";
+const port = Number.parseInt(process.env.PORT ?? process.env.AOE_PORT ?? "4402", 10);
+const hostname = process.env.AOE_HOST ?? "0.0.0.0";
 
 serve(
   {

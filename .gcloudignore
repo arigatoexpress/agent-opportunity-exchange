@@ -1,0 +1,12 @@
+.git
+.gitignore
+.dockerignore
+.playwright-cli
+.env
+.env.*
+coverage
+dist
+node_modules
+data/receipts
+data/examples
+*.log
