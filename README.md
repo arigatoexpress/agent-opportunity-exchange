@@ -69,6 +69,7 @@ The same adapter is available as a CLI:
 
 ```bash
 npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
+npm run cyber:priority -- --input ./asset-inventory.csv --output ./cyber-priority.json
 npm run cyber:priority -- --format html --output ./cyber-priority.html CVE-2021-44228
 ```
 

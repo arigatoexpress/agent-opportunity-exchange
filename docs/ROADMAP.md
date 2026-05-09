@@ -18,6 +18,7 @@
 - Add a CLI for defensive cyber priority reports.
 - Add an HTML report renderer for the first sellable artifact.
 - Add the first wildfire/regional read-only adapter for NWS alerts.
+- Add CSV/JSON asset-inventory intake for defensive cyber reports.
 
 ## 30 Days
 
@@ -25,6 +26,7 @@
   - NASA FIRMS;
   - SEC EDGAR;
   - FRED.
+- Add package/SBOM parsing on top of the current CVE-list cyber CLI.
 - Add a simple artifact-generation CLI for the non-cyber products.
 - Add buyer-facing HTML report templates for wildfire and opportunity-intel.
 - Produce three demo packets:

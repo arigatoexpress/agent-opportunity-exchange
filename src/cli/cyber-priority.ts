@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { buildVulnPriorityReport } from "../adapters/cyber.js";
+import { parseCveInput } from "../inputs/cve-input.js";
 import { renderCyberPriorityHtml } from "../reporting/cyber-html.js";
 
 interface CliOptions {
@@ -65,20 +66,14 @@ function parseArgs(args: string[]): CliOptions {
 
 async function readCves(path: string): Promise<string[]> {
   const text = await readFile(path, "utf8");
-  const body = JSON.parse(text) as unknown;
-  if (Array.isArray(body)) {
-    return body.map(String);
-  }
-  if (body && typeof body === "object" && Array.isArray((body as { cves?: unknown }).cves)) {
-    return (body as { cves: unknown[] }).cves.map(String);
-  }
-  throw new Error("Input JSON must be an array of CVEs or an object with a cves array.");
+  return parseCveInput(text, path);
 }
 
 function printHelp() {
   console.log(`Usage:
   npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
   npm run cyber:priority -- --input ./cves.json --output ./report.json
+  npm run cyber:priority -- --input ./asset-inventory.csv --output ./report.json
   npm run cyber:priority -- --format html --output ./report.html CVE-2021-44228
 
 This command performs read-only public API lookups against CISA KEV, FIRST EPSS,
