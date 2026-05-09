@@ -12,12 +12,12 @@
   - preflight controls;
   - x402-style 402 challenge;
   - simulated receipt.
+- Add the first live read-only adapter for CISA KEV and FIRST EPSS defensive
+  vulnerability prioritization.
 
 ## 30 Days
 
-- Replace seeded static artifacts with live source adapters for:
-  - CISA KEV;
-  - FIRST EPSS;
+- Replace more seeded static artifacts with live source adapters for:
   - NVD CVE;
   - NASA FIRMS;
   - NWS alerts;

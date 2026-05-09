@@ -1,7 +1,13 @@
 import { Hono } from "hono";
+import { z } from "zod";
+import { buildVulnPriorityReport } from "./adapters/cyber.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
+
+const cvePrioritySchema = z.object({
+  cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(100),
+});
 
 export function createApp() {
   const app = new Hono();
@@ -136,6 +142,37 @@ export function createApp() {
 
     const result = runPreflight(parsed.data);
     return c.json(result, result.allowed ? 200 : 409);
+  });
+
+  app.post("/v1/adapters/cyber/vuln-priority/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cvePrioritySchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cve_priority_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await buildVulnPriorityReport(parsed.data.cves);
+      return c.json({
+        mode: "read_only_public_preview",
+        paidProductId: "cyber_exploited_vuln_priority",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
   });
 
   app.get("/v1/artifacts/:id/content", (c) => {

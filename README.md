@@ -32,6 +32,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/artifacts/:id/preview`
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`
+- `POST /v1/adapters/cyber/vuln-priority/preview`
 - `GET /v1/artifacts/:id/content`
 
 Full artifact content returns `402 Payment Required` until the caller presents a simulated payment header:
@@ -49,6 +50,17 @@ curl -s \
 ```
 
 This is deliberately simulated/testnet-only. No live settlement, trading, Telegram send, production data write, or external scan is enabled.
+
+The first live read-only source adapter is defensive cyber prioritization:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/adapters/cyber/vuln-priority/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"cves":["CVE-2021-44228","CVE-2023-34362"]}'
+```
+
+It calls public CISA KEV and FIRST EPSS APIs. It does not scan targets and does not return exploit instructions.
 
 ## Product Boundary
 
