@@ -8,6 +8,7 @@ import { artifacts, products, sources, getArtifact, getProduct } from "./catalog
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
+import { buildReadiness } from "./readiness.js";
 
 const cvePrioritySchema = z.object({
   cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(100),
@@ -115,6 +116,8 @@ export function createApp() {
 
     return c.json({ artifacts: rows });
   });
+
+  app.get("/v1/readiness", (c) => c.json(buildReadiness()));
 
   app.get("/v1/artifacts/:id", (c) => {
     const artifact = getArtifact(c.req.param("id"));

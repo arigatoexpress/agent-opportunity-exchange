@@ -29,6 +29,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/products`
 - `GET /v1/sources`
 - `GET /v1/artifacts`
+- `GET /v1/readiness`
 - `GET /v1/artifacts/:id/preview`
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`

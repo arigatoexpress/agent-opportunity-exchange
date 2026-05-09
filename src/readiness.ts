@@ -1,0 +1,96 @@
+export interface AdapterReadiness {
+  adapterId: string;
+  productId: string;
+  sourceIds: string[];
+  status: "live_read_only" | "configured_stub" | "key_required" | "blocked";
+  endpoint: string | null;
+  inputMode: string;
+  sideEffects: "none";
+  liveSettlementAllowed: false;
+  notes: string[];
+}
+
+export function buildReadiness() {
+  const adapters: AdapterReadiness[] = [
+    {
+      adapterId: "cyber_vuln_priority",
+      productId: "cyber_exploited_vuln_priority",
+      sourceIds: ["cisa_kev", "first_epss", "nvd_cve"],
+      status: "live_read_only",
+      endpoint: "/v1/adapters/cyber/vuln-priority/preview",
+      inputMode: "CVE list, CSV inventory, or nested JSON inventory via CLI/API",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["No active scanning.", "No exploit payloads.", "No credential material."],
+    },
+    {
+      adapterId: "wildfire_nws_alerts",
+      productId: "wildfire_regional_intel_pack",
+      sourceIds: ["nws_alerts"],
+      status: "live_read_only",
+      endpoint: "/v1/adapters/wildfire/alerts/preview",
+      inputMode: "State area code or lat/lon point",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["Not incident command.", "No alert sends.", "No drone authorization."],
+    },
+    {
+      adapterId: "markets_sec_filings",
+      productId: "market_regime_evidence_pack",
+      sourceIds: ["sec_edgar"],
+      status: "live_read_only",
+      endpoint: "/v1/adapters/markets/sec-filings/preview",
+      inputMode: "Ticker or CIK plus optional form filters",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["Document intelligence only.", "No investment advice.", "No trade execution."],
+    },
+    {
+      adapterId: "markets_fred_series",
+      productId: "market_regime_evidence_pack",
+      sourceIds: ["fred_alfred"],
+      status: "live_read_only",
+      endpoint: "/v1/adapters/markets/fred-series/preview",
+      inputMode: "FRED series ids",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["Public graph CSV preview.", "Use ALFRED vintages for production revision-aware research.", "No trading signal."],
+    },
+    {
+      adapterId: "wildfire_nasa_firms",
+      productId: "wildfire_regional_intel_pack",
+      sourceIds: ["nasa_firms"],
+      status: process.env.NASA_FIRMS_MAP_KEY ? "configured_stub" : "key_required",
+      endpoint: null,
+      inputMode: "Future AOI bounding box or country query",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["NASA FIRMS MAP_KEY required.", "No drone operation.", "Use as detection evidence, not evacuation authority."],
+    },
+    {
+      adapterId: "opportunity_public_programs",
+      productId: "opportunity_intel_pack",
+      sourceIds: ["sam_gov_opportunities", "grants_gov", "regulations_gov", "data_gov_catalog"],
+      status: "key_required",
+      endpoint: null,
+      inputMode: "Future buyer profile, geography, eligibility, and keywords",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["SAM.gov and some grants/regulatory workflows can require API keys.", "Do not scrape authenticated portals.", "Use official APIs and exports."],
+    },
+  ];
+
+  return {
+    generatedAt: new Date().toISOString(),
+    liveSettlementAllowed: false,
+    externalSideEffectsAllowed: false,
+    adapters,
+    counts: adapters.reduce(
+      (acc, adapter) => {
+        acc[adapter.status] += 1;
+        return acc;
+      },
+      { live_read_only: 0, configured_stub: 0, key_required: 0, blocked: 0 } satisfies Record<AdapterReadiness["status"], number>,
+    ),
+  };
+}
