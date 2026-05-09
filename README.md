@@ -35,6 +35,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `POST /v1/adapters/cyber/vuln-priority/preview`
 - `POST /v1/adapters/wildfire/alerts/preview`
 - `POST /v1/adapters/markets/sec-filings/preview`
+- `POST /v1/adapters/markets/fred-series/preview`
 - `GET /v1/artifacts/:id/content`
 
 Full artifact content returns `402 Payment Required` until the caller presents a simulated payment header:
@@ -95,6 +96,17 @@ curl -s \
 ```
 
 It is document intelligence only: no portfolio personalization, no trade advice, and no execution.
+
+Macro evidence previews can read public FRED graph CSV exports without a key:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/adapters/markets/fred-series/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"seriesIds":["FEDFUNDS","CPIAUCSL","UNRATE"],"limit":3}'
+```
+
+For revision-aware production research, upgrade this to FRED/ALFRED API usage with explicit vintages.
 
 ## Product Boundary
 

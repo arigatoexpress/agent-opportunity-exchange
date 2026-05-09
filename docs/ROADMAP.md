@@ -20,12 +20,13 @@
 - Add the first wildfire/regional read-only adapter for NWS alerts.
 - Add CSV/JSON asset-inventory intake for defensive cyber reports.
 - Add SEC EDGAR recent-filings preview for market intelligence.
+- Add FRED no-key graph CSV preview for macro evidence.
 
 ## 30 Days
 
 - Replace more seeded static artifacts with live source adapters for:
   - NASA FIRMS;
-  - FRED.
+- FRED/ALFRED vintage-aware API support.
 - Add package/SBOM parsing on top of the current CVE-list cyber CLI.
 - Add a simple artifact-generation CLI for the non-cyber products.
 - Add buyer-facing HTML report templates for wildfire and opportunity-intel.

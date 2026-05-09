@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
+import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
@@ -32,6 +33,11 @@ const secFilingsSchema = z
     limit: z.number().int().min(1).max(50).optional(),
   })
   .refine((value) => value.ticker || value.cik, { message: "Provide ticker or cik." });
+
+const fredSeriesSchema = z.object({
+  seriesIds: z.array(z.string().regex(/^[A-Z0-9_.$-]{1,32}$/i)).min(1).max(25),
+  limit: z.number().int().min(1).max(500).optional(),
+});
 
 export function createApp() {
   const app = new Hono();
@@ -245,6 +251,37 @@ export function createApp() {
 
     try {
       const report = await fetchSecRecentFilings(parsed.data);
+      return c.json({
+        mode: "read_only_public_preview",
+        paidProductId: "market_regime_evidence_pack",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/adapters/markets/fred-series/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = fredSeriesSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_fred_series_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await fetchFredSeriesReport(parsed.data);
       return c.json({
         mode: "read_only_public_preview",
         paidProductId: "market_regime_evidence_pack",
