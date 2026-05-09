@@ -33,8 +33,34 @@ export interface SourceRecord {
   notes: string;
 }
 
+export interface BuyerValueMetric {
+  metricId: string;
+  label: string;
+  buyerFacingValue: string;
+  measuredBy: string;
+}
+
+export interface SourceFreshnessSla {
+  cadence: Cadence;
+  ttlSeconds: number;
+  lastVerified: string;
+  expectedRefresh: string;
+  caveats: string[];
+}
+
+export interface ProductQualityMetadata {
+  qualityTier: "sellable_mvp";
+  contractCompleteness: "preview_quote_preflight_paid_content" | "preview_quote_preflight_adapter";
+  evidenceDepth: "seeded_static_research" | "live_adapter_plus_seeded_artifact";
+  sourceFreshnessSla: SourceFreshnessSla;
+  buyerValueMetrics: BuyerValueMetric[];
+  auditSignals: string[];
+}
+
 export interface Product {
   productId: string;
+  schemaId: string;
+  contractVersion: "v1";
   x402Stream: true;
   title: string;
   route: string;
@@ -48,6 +74,7 @@ export interface Product {
   tags: string[];
   sourceIds: string[];
   buyerValue: string;
+  quality: ProductQualityMetadata;
   disclaimers: string[];
 }
 
@@ -107,6 +134,22 @@ export interface Artifact {
   rights: RightsEnvelope;
   preview: ArtifactPreview;
   content: ArtifactContent;
+}
+
+export interface RouteDiscovery {
+  routeId: string;
+  route: string;
+  method: "GET" | "POST";
+  schemaId: string;
+  x402Stream: boolean;
+  productIds: string[];
+  workstreamIds?: string[];
+  access: "public" | "simulated_x402_payment";
+  readiness: "live_read_only" | "simulated_payment_required" | "separate_read_only_lane" | "key_required";
+  sourceIds: string[];
+  value: string;
+  freshnessSla?: SourceFreshnessSla;
+  caveats: string[];
 }
 
 export interface SeparateWorkstream {

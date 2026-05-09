@@ -5,7 +5,7 @@ import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { fetchMarketContextReport } from "./adapters/market-context.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
-import { artifacts, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
+import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
 import { renderPublicFrontend } from "./frontend.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
@@ -82,11 +82,22 @@ export function createApp() {
       settlementMode: "simulated_or_testnet",
       liveSettlementAllowed: false,
       x402Scope: "market_and_relevant_data_streams_only",
+      schemaIds: {
+        productDiscovery: "aoe.discovery.products.v1",
+        routeDiscovery: "aoe.discovery.routes.v1",
+        readiness: "aoe.readiness.v1",
+        preflight: "aoe.access.preflight.v1",
+      },
+      productDiscovery: "/v1/products",
+      routeDiscovery: "/v1/routes",
+      readiness: "/v1/readiness",
+      qualityMetadata: "Products include schemaId, quality, buyerValueMetrics, sourceFreshnessSla, and caveats.",
       separateWorkstreams: ["/v1/separate-workstreams"],
       streams: "/v1/streams",
       featuredStream: "/v1/streams/market-context/preview",
       freeEndpoints: [
         "/v1/products",
+        "/v1/routes",
         "/v1/streams",
         "/v1/sources",
         "/v1/artifacts",
@@ -99,7 +110,9 @@ export function createApp() {
     }),
   );
 
-  app.get("/v1/products", (c) => c.json({ products }));
+  app.get("/v1/products", (c) => c.json({ schemaId: "aoe.discovery.products.v1", products }));
+
+  app.get("/v1/routes", (c) => c.json({ schemaId: "aoe.discovery.routes.v1", routes: productRoutes }));
 
   app.get("/v1/streams", (c) => c.json({ streams }));
 

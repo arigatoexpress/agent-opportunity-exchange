@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getArtifact, getProduct, getSource } from "./catalog.js";
 import { buildQuote } from "./payments.js";
+import type { Product } from "./types.js";
 
 export const preflightSchema = z.object({
   artifactId: z.string().min(1),
@@ -33,6 +34,7 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
 
   const quote = buildQuote(artifact);
   const price = Number.parseFloat(product.priceUsd);
+  const productContract = buildProductContract(product);
   const checks: string[] = [];
 
   if (product.liveSettlementAllowed !== false) {
@@ -58,6 +60,7 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
       allowed: false,
       reason: "price_exceeds_max",
       quote,
+      productContract,
       checks: [...checks, `price ${price} exceeds maxPriceUsd ${input.maxPriceUsd}`],
     };
   }
@@ -68,6 +71,7 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
       allowed: false,
       reason: "price_exceeds_session_cap",
       quote,
+      productContract,
       checks: [...checks, `price ${price} exceeds sessionCapUsd ${input.sessionCapUsd}`],
     };
   }
@@ -78,6 +82,7 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
       allowed: false,
       reason: "price_exceeds_daily_cap",
       quote,
+      productContract,
       checks: [...checks, `price ${price} exceeds dailyCapUsd ${input.dailyCapUsd}`],
     };
   }
@@ -90,6 +95,7 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
         allowed: false,
         reason: "source_not_allowed",
         quote,
+        productContract,
         blockedSourceIds: blocked,
         checks: [...checks, `blocked source ids: ${blocked.join(", ")}`],
       };
@@ -103,6 +109,7 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
       allowed: false,
       reason: "red_source_present",
       quote,
+      productContract,
       blockedSourceIds: redSources,
       checks: [...checks, `red sources blocked: ${redSources.join(", ")}`],
     };
@@ -113,6 +120,20 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
     allowed: true,
     reason: "preflight_passed",
     quote,
+    productContract,
     checks,
+  };
+}
+
+function buildProductContract(product: Product) {
+  return {
+    productId: product.productId,
+    schemaId: product.schemaId,
+    contractVersion: product.contractVersion,
+    qualityTier: product.quality.qualityTier,
+    buyerValue: product.buyerValue,
+    buyerValueMetrics: product.quality.buyerValueMetrics,
+    sourceFreshnessSla: product.quality.sourceFreshnessSla,
+    disclaimers: product.disclaimers,
   };
 }

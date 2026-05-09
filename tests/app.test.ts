@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { createApp } from "../src/app.js";
-import { artifacts, products } from "../src/catalog.js";
+import { artifacts, productRoutes, products } from "../src/catalog.js";
 import { buildQuote, expectedSimulatedPayment } from "../src/payments.js";
 
 const app = createApp();
@@ -23,9 +23,73 @@ describe("Agent Opportunity Exchange API", () => {
       expect(product.liveSettlementAllowed).toBe(false);
       expect(product.externalSideEffectsAllowed).toBe(false);
       expect(product.disclaimers.length).toBeGreaterThan(0);
+      expect(product.schemaId).toMatch(/^aoe\.product\.[a-z0-9_]+\.v1$/);
+      expect(product.contractVersion).toBe("v1");
+      expect(product.quality.qualityTier).toBe("sellable_mvp");
+      expect(product.quality.buyerValueMetrics.length).toBeGreaterThan(0);
+      expect(product.quality.sourceFreshnessSla.ttlSeconds).toBeGreaterThan(0);
+      expect(product.quality.sourceFreshnessSla.caveats.length).toBeGreaterThan(0);
+      expect(product.quality.auditSignals.length).toBeGreaterThan(0);
       expect(product.tags).not.toContain("wildfire");
       expect(product.tags).not.toContain("drone-readiness");
     }
+  });
+
+  test("product discovery exposes buyer-facing contract metadata", async () => {
+    const res = await app.request("/v1/products");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.discovery.products.v1");
+
+    const cyberProduct = body.products.find((product: { productId: string }) => product.productId === "cyber_exploited_vuln_priority");
+    expect(cyberProduct.schemaId).toBe("aoe.product.cyber_exploited_vuln_priority.v1");
+    expect(cyberProduct.quality.buyerValueMetrics).toContainEqual(
+      expect.objectContaining({
+        metricId: "fix_now_queue",
+        buyerFacingValue: expect.stringContaining("CVE list"),
+      }),
+    );
+    expect(cyberProduct.quality.sourceFreshnessSla.caveats).toContain("No active scanning is performed by this product.");
+  });
+
+  test("well-known discovery points agents at product, route, readiness, and schema contracts", async () => {
+    const res = await app.request("/.well-known/agent-opportunity-exchange.json");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.productDiscovery).toBe("/v1/products");
+    expect(body.routeDiscovery).toBe("/v1/routes");
+    expect(body.readiness).toBe("/v1/readiness");
+    expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
+    expect(body.freeEndpoints).toContain("/v1/routes");
+    expect(body.qualityMetadata).toContain("sourceFreshnessSla");
+  });
+
+  test("route discovery covers public previews, simulated paid content, and separate lanes", async () => {
+    const res = await app.request("/v1/routes");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.discovery.routes.v1");
+
+    const paidContent = body.routes.find((route: { routeId: string }) => route.routeId === "artifact_paid_content");
+    expect(paidContent).toEqual(
+      expect.objectContaining({
+        route: "/v1/artifacts/:id/content",
+        access: "simulated_x402_payment",
+        readiness: "simulated_payment_required",
+        schemaId: "aoe.artifact.content.v1",
+      }),
+    );
+
+    const marketPreview = body.routes.find((route: { routeId: string }) => route.routeId === "market_context_preview");
+    expect(marketPreview.productIds).toEqual(["market_regime_evidence_pack"]);
+    expect(marketPreview.freshnessSla.caveats.join(" ")).toContain("SEC");
+
+    const wildfireRoute = body.routes.find((route: { routeId: string }) => route.routeId === "wildfire_alerts_preview");
+    expect(wildfireRoute.x402Stream).toBe(false);
+    expect(wildfireRoute.productIds).toEqual([]);
+    expect(wildfireRoute.workstreamIds).toEqual(["wildfire_drone_readiness_lane"]);
+
+    expect(productRoutes.map((route) => route.routeId)).toContain("access_preflight");
   });
 
   test("keeps wildfire and drone work out of the x402 artifact catalog", async () => {
@@ -201,6 +265,30 @@ describe("Agent Opportunity Exchange API", () => {
     const body = await res.json();
     expect(body.allowed).toBe(false);
     expect(body.reason).toBe("price_exceeds_max");
+  });
+
+  test("preflight returns the buyer-visible product contract before access", async () => {
+    const res = await app.request("/v1/access/preflight", {
+      method: "POST",
+      body: JSON.stringify({
+        artifactId: "aoe_cyber_kev_epss_priority",
+        maxPriceUsd: 1,
+        allowedSourceIds: ["cisa_kev", "nvd_cve", "first_epss", "osv"],
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.allowed).toBe(true);
+    expect(body.productContract).toEqual(
+      expect.objectContaining({
+        productId: "cyber_exploited_vuln_priority",
+        schemaId: "aoe.product.cyber_exploited_vuln_priority.v1",
+        qualityTier: "sellable_mvp",
+      }),
+    );
+    expect(body.productContract.buyerValueMetrics[0].metricId).toBe("fix_now_queue");
+    expect(body.productContract.sourceFreshnessSla.caveats).toContain("No active scanning is performed by this product.");
   });
 
   test("preflight blocks disallowed sources", async () => {

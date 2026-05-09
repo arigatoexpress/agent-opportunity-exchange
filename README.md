@@ -13,6 +13,24 @@ Wildfire and drone-readiness work is a separate read-only operational research l
 
 Every product starts from a source-rights envelope. x402 is the payment rail, not the permission model.
 
+## Product Contracts
+
+The API is discoverable before purchase:
+
+- `GET /v1/products` returns `aoe.discovery.products.v1` product contracts with
+  schema ids, quality metadata, buyer-facing value metrics, source freshness/SLA
+  caveats, rights, source ids, and disclaimers.
+- `GET /v1/routes` returns `aoe.discovery.routes.v1` route contracts for public
+  previews, quotes, preflight, simulated paid content, and separate read-only
+  lanes.
+- `GET /v1/readiness` reports whether product and route contract coverage is
+  buyer-discovery ready.
+- `POST /v1/access/preflight` returns the product contract alongside price and
+  source checks when the artifact exists.
+
+See [docs/API_CONTRACTS.md](docs/API_CONTRACTS.md) for the current contract
+shape and residual gaps.
+
 ## Quick Start
 
 ```bash
@@ -28,6 +46,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /health`
 - `GET /.well-known/agent-opportunity-exchange.json`
 - `GET /v1/products`
+- `GET /v1/routes`
 - `GET /v1/streams`
 - `GET /v1/sources`
 - `GET /v1/separate-workstreams`

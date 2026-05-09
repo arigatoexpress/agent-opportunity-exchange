@@ -1,3 +1,5 @@
+import { productRoutes, products } from "./catalog.js";
+
 export interface AdapterReadiness {
   adapterId: string;
   productId: string | null;
@@ -115,11 +117,43 @@ export function buildReadiness() {
     },
   ];
 
+  const missingProductSchemaIds = products.filter((product) => !product.schemaId).map((product) => product.productId);
+  const missingProductQuality = products
+    .filter(
+      (product) =>
+        product.quality.buyerValueMetrics.length === 0 ||
+        product.quality.sourceFreshnessSla.caveats.length === 0 ||
+        product.quality.auditSignals.length === 0,
+    )
+    .map((product) => product.productId);
+  const missingRouteSchemaIds = productRoutes.filter((route) => !route.schemaId).map((route) => route.routeId);
+  const paidContentRoutes = productRoutes.filter((route) => route.access === "simulated_x402_payment");
+  const publicDiscoveryRoutes = productRoutes.filter((route) => route.access === "public");
+
   return {
+    schemaId: "aoe.readiness.v1",
     generatedAt: new Date().toISOString(),
     liveSettlementAllowed: false,
     externalSideEffectsAllowed: false,
     adapters,
+    contracts: {
+      schemaId: "aoe.readiness.contracts.v1",
+      buyerDiscoveryReady: missingProductSchemaIds.length === 0 && missingProductQuality.length === 0 && missingRouteSchemaIds.length === 0,
+      products: {
+        count: products.length,
+        schemaIds: products.map((product) => product.schemaId),
+        missingSchemaIds: missingProductSchemaIds,
+        missingQualityMetadata: missingProductQuality,
+      },
+      routes: {
+        discoveryEndpoint: "/v1/routes",
+        count: productRoutes.length,
+        publicCount: publicDiscoveryRoutes.length,
+        simulatedPaymentRequiredCount: paidContentRoutes.length,
+        missingSchemaIds: missingRouteSchemaIds,
+        paidContentRouteIds: paidContentRoutes.map((route) => route.routeId),
+      },
+    },
     counts: adapters.reduce(
       (acc, adapter) => {
         acc[adapter.status] += 1;
