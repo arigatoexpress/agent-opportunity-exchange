@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
 import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
+import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 
@@ -175,7 +176,7 @@ export function createApp() {
     }
   });
 
-  app.get("/v1/artifacts/:id/content", (c) => {
+  app.get("/v1/artifacts/:id/content", async (c) => {
     const artifact = getArtifact(c.req.param("id"));
     if (!artifact) return c.json({ error: "artifact_not_found" }, 404);
 
@@ -188,6 +189,7 @@ export function createApp() {
     }
 
     const receipt = buildReceipt(artifact, quote);
+    const ledgerPath = await appendReceipt(receipt);
     const product = getProduct(artifact.productId);
     return c.json({
       artifactId: artifact.artifactId,
@@ -198,6 +200,11 @@ export function createApp() {
       rights: artifact.rights,
       productDisclaimers: product?.disclaimers ?? [],
       receipt,
+      ledger: {
+        written: true,
+        path: ledgerPath,
+        containsSecrets: false,
+      },
     });
   });
 

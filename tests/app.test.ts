@@ -60,6 +60,8 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.content.summary).toContain("defensible cyber wedge");
     expect(body.receipt.liveSettlementAllowed).toBe(false);
     expect(body.receipt.artifactHash).toMatch(/^sha256:/);
+    expect(body.ledger.written).toBe(true);
+    expect(body.ledger.containsSecrets).toBe(false);
   });
 
   test("preflight blocks prices over caller cap", async () => {

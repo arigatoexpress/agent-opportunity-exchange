@@ -12,18 +12,17 @@
   - preflight controls;
   - x402-style 402 challenge;
   - simulated receipt.
-- Add the first live read-only adapter for CISA KEV and FIRST EPSS defensive
-  vulnerability prioritization.
+- Add the first live read-only adapter for CISA KEV, FIRST EPSS, and NVD
+  defensive vulnerability prioritization.
+- Add a local append-only receipt ledger.
 
 ## 30 Days
 
 - Replace more seeded static artifacts with live source adapters for:
-  - NVD CVE;
   - NASA FIRMS;
   - NWS alerts;
   - SEC EDGAR;
   - FRED.
-- Add a local append-only receipt ledger.
 - Add a simple artifact-generation CLI.
 - Add the first buyer-facing HTML report template.
 - Produce three demo packets:

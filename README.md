@@ -51,6 +51,8 @@ curl -s \
 
 This is deliberately simulated/testnet-only. No live settlement, trading, Telegram send, production data write, or external scan is enabled.
 
+Simulated paid access appends non-secret receipt records to `data/receipts/receipts.jsonl`, which is ignored by git.
+
 The first live read-only source adapter is defensive cyber prioritization:
 
 ```bash
