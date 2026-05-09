@@ -1,0 +1,80 @@
+import { readFile, writeFile } from "node:fs/promises";
+import { buildVulnPriorityReport } from "../adapters/cyber.js";
+
+interface CliOptions {
+  cves: string[];
+  input?: string;
+  output?: string;
+}
+
+const CVE_PATTERN = /^CVE-\d{4}-\d{4,}$/i;
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2));
+  const cves = options.input ? await readCves(options.input) : options.cves;
+  const normalized = [...new Set(cves.map((cve) => cve.toUpperCase()))];
+
+  if (normalized.length === 0) {
+    throw new Error("Provide CVEs as positional args or with --input <json-file>.");
+  }
+
+  const invalid = normalized.filter((cve) => !CVE_PATTERN.test(cve));
+  if (invalid.length > 0) {
+    throw new Error(`Invalid CVE ids: ${invalid.join(", ")}`);
+  }
+
+  const report = await buildVulnPriorityReport(normalized);
+  const json = `${JSON.stringify(report, null, 2)}\n`;
+  if (options.output) {
+    await writeFile(options.output, json, "utf8");
+  } else {
+    process.stdout.write(json);
+  }
+}
+
+function parseArgs(args: string[]): CliOptions {
+  const options: CliOptions = { cves: [] };
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--input" || arg === "-i") {
+      options.input = args[++index];
+      continue;
+    }
+    if (arg === "--output" || arg === "-o") {
+      options.output = args[++index];
+      continue;
+    }
+    if (arg === "--help" || arg === "-h") {
+      printHelp();
+      process.exit(0);
+    }
+    options.cves.push(arg);
+  }
+  return options;
+}
+
+async function readCves(path: string): Promise<string[]> {
+  const text = await readFile(path, "utf8");
+  const body = JSON.parse(text) as unknown;
+  if (Array.isArray(body)) {
+    return body.map(String);
+  }
+  if (body && typeof body === "object" && Array.isArray((body as { cves?: unknown }).cves)) {
+    return (body as { cves: unknown[] }).cves.map(String);
+  }
+  throw new Error("Input JSON must be an array of CVEs or an object with a cves array.");
+}
+
+function printHelp() {
+  console.log(`Usage:
+  npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
+  npm run cyber:priority -- --input ./cves.json --output ./report.json
+
+This command performs read-only public API lookups against CISA KEV, FIRST EPSS,
+and NVD. It does not scan targets or return exploit instructions.`);
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+});

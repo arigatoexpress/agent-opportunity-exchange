@@ -15,6 +15,7 @@
 - Add the first live read-only adapter for CISA KEV, FIRST EPSS, and NVD
   defensive vulnerability prioritization.
 - Add a local append-only receipt ledger.
+- Add a CLI for defensive cyber priority reports.
 
 ## 30 Days
 
@@ -23,7 +24,7 @@
   - NWS alerts;
   - SEC EDGAR;
   - FRED.
-- Add a simple artifact-generation CLI.
+- Add a simple artifact-generation CLI for the non-cyber products.
 - Add the first buyer-facing HTML report template.
 - Produce three demo packets:
   - exploited vulnerability priority pack;

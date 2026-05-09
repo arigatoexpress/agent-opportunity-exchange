@@ -64,6 +64,12 @@ curl -s \
 
 It calls public CISA KEV, FIRST EPSS, and NVD APIs. It does not scan targets and does not return exploit instructions.
 
+The same adapter is available as a CLI:
+
+```bash
+npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
+```
+
 ## Product Boundary
 
 The product sells normalization, prioritization, provenance, checklists, summaries, and machine-readable evidence packs. It does not sell raw source resale, paywall bypass, legal advice, investment advice, live trade execution, exploit instructions, credential dumps, or unauthorized scanning.
