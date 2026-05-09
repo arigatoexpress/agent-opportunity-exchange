@@ -9,6 +9,8 @@ describe("public frontend", () => {
     expect(html).toContain('data-action="wildfire"');
     expect(html).toContain('data-action="markets"');
     expect(html).toContain("scrollIntoView");
+    expect(html).toContain("x402 Data Streams");
+    expect(html).toContain("Separate Operational Lane");
   });
 
   test("ignores stale preview responses so clicks cannot be overwritten", () => {

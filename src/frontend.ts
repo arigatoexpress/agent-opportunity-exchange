@@ -6,7 +6,7 @@ export function renderPublicFrontend(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7faf8">
   <link rel="icon" href="data:,">
-  <title>SapphireAlpha - Agent Opportunity Exchange</title>
+  <title>SapphireAlpha - x402 Data Streams</title>
   <style>
     :root {
       --paper: #f7faf8;
@@ -236,7 +236,7 @@ export function renderPublicFrontend(): string {
         <div class="mark" aria-hidden="true"></div>
         <div>
           <strong>SapphireAlpha</strong>
-          <div class="small">Agent Opportunity Exchange</div>
+          <div class="small">x402 Data Streams</div>
         </div>
       </div>
       <button class="btn" id="refresh">Refresh Data</button>
@@ -246,18 +246,18 @@ export function renderPublicFrontend(): string {
       <div class="hero-copy">
         <div>
           <div class="eyebrow">Public preview surface</div>
-          <h1>Paid intelligence artifacts for agents, builders, and operators.</h1>
+          <h1>x402 streams for market and relevant data.</h1>
         </div>
-        <p class="lead">Rights-cleared previews, source provenance, simulated x402 receipts, and live public-source adapters for cyber, wildfire, filings, and macro evidence.</p>
+        <p class="lead">Rights-cleared previews, source provenance, simulated x402 receipts, and live public-source adapters for market, cyber, opportunity, filing, and macro evidence.</p>
         <div class="actions">
-          <button class="btn primary" data-action="cyber">Run Cyber Preview</button>
-          <button class="btn" data-action="wildfire">Check Colorado Fire Signals</button>
-          <button class="btn" data-action="markets">Load Market Evidence</button>
+          <button class="btn primary" data-action="markets">Load Market Evidence</button>
+          <button class="btn" data-action="cyber">Run Cyber Data Preview</button>
+          <button class="btn" data-action="wildfire">Check Separate Fire Signals</button>
         </div>
       </div>
       <aside class="status-board" aria-label="System readiness">
         <h2>Adapter Readiness</h2>
-        <p class="small">Live read-only sources stay separated from paid content and side-effecting actions.</p>
+        <p class="small">The x402 stream catalog stays separated from wildfire/drone operations and all side-effecting actions.</p>
         <div class="metric-grid">
           <div class="metric"><strong id="liveAdapters">-</strong><span>live read-only adapters</span></div>
           <div class="metric"><strong id="keyGated">-</strong><span>key-gated future adapters</span></div>
@@ -270,8 +270,15 @@ export function renderPublicFrontend(): string {
 
     <main>
       <section class="band">
-        <h2>Sellable Artifacts</h2>
+        <h2>x402 Data Streams</h2>
         <div class="grid" id="products"></div>
+      </section>
+
+      <section class="band">
+        <h2>Separate Operational Lane</h2>
+        <div class="grid">
+          <div class="item"><h3>Wildfire and Drone Readiness</h3><p>Read-only planning previews live outside the x402 stream catalog. No incident command, alert sends, dispatch, flight authorization, or drone operations.</p><div class="tagrow"><span class="tag">not x402</span><span class="tag">planning-only</span><span class="tag">read-only</span></div></div>
+        </div>
       </section>
 
       <section class="band" id="workbench">
@@ -289,7 +296,7 @@ export function renderPublicFrontend(): string {
             <label for="previewInput">Input</label>
             <input id="previewInput" value="CVE-2021-44228,CVE-2023-34362,CVE-2024-3094">
             <button class="btn primary" id="runPreview">Run Preview</button>
-            <p class="small">The public site performs read-only API calls only. Paid access is still simulated/testnet and no scans, trades, sends, or drone actions are enabled.</p>
+            <p class="small">Paid access applies only to market and relevant-data streams. Wildfire previews are separate read-only operations research. No scans, trades, sends, flights, or drone actions are enabled.</p>
           </div>
           <pre id="output" tabindex="-1">Loading readiness...</pre>
         </div>
@@ -298,14 +305,14 @@ export function renderPublicFrontend(): string {
       <section class="band">
         <h2>Boundary</h2>
         <div class="grid">
-          <div class="item"><h3>Payment</h3><p>x402 is a payment rail, not permission. Live settlement remains disabled until KYT, refunds, tax/accounting, source rights, and buyer terms are ready.</p></div>
+          <div class="item"><h3>Payment</h3><p>x402 is only for market and relevant-data streams. Live settlement remains disabled until KYT, refunds, tax/accounting, source rights, and buyer terms are ready.</p></div>
           <div class="item"><h3>Cyber</h3><p>Defensive prioritization only. No exploit payloads, unauthorized scans, credential material, or offensive automation.</p></div>
-          <div class="item"><h3>Wildfire</h3><p>Planning and situational awareness only. No incident command claims, public alert sends, dispatch, or drone authorization.</p></div>
+          <div class="item"><h3>Wildfire</h3><p>Separate planning lane only. No x402 stream, incident command claims, public alert sends, dispatch, flight authorization, or drone operation.</p></div>
         </div>
       </section>
     </main>
 
-    <div class="footer">SapphireAlpha public frontend. THO remains separate at its own canonical host.</div>
+    <div class="footer">SapphireAlpha public frontend. Wildfire/drone and THO remain separate from the x402 data stream catalog.</div>
   </div>
 
   <script>
@@ -326,7 +333,7 @@ export function renderPublicFrontend(): string {
     };
     const labels = {
       cyber: 'Cyber CVE Priority',
-      wildfire: 'Wildfire WFIGS Perimeters',
+      wildfire: 'Separate Wildfire WFIGS Preview',
       alerts: 'NWS Fire Weather Alerts',
       sec: 'SEC Recent Filings',
       fred: 'FRED Macro Series'

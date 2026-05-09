@@ -2,8 +2,8 @@
 
 ## Executive Thesis
 
-Agent Opportunity Exchange sells rights-cleared, source-cited intelligence
-artifacts over an agent-native payment flow.
+Agent Opportunity Exchange sells rights-cleared, source-cited market and
+relevant-data streams over an agent-native payment flow.
 
 The core insight from the Sapphire-era projects is not that every satellite
 repo should be integrated. It is that several high-value workflows share one
@@ -16,18 +16,19 @@ commercial shape:
    they must operate.
 4. x402 makes per-artifact purchase natural for agents and workflows.
 
-This repo starts with a paid intelligence kernel, not a monolith.
+This repo starts with a paid data-stream kernel, not a monolith.
 
 ## First Commercial Wedge
 
-The first sellable product should be **opportunity and risk intelligence
-packets**:
+The first sellable product should be **market and relevant-data streams**:
 
 - grant/RFP/local-program briefs for builders and public-safety projects;
-- regional wildfire intelligence and drone-readiness evidence packs;
 - exploited-vulnerability priority packs for MSPs and SMBs;
 - non-advisory market-regime and filing-change evidence packs;
 - developer API-change radar for agents before they generate stale code.
+
+Regional wildfire and drone-readiness work stays separate as read-only
+operational research. It is not an x402 stream.
 
 These are valuable because the buyer pays for normalization, prioritization,
 source proof, and next actions. They are safer than selling raw scraped content,
@@ -52,17 +53,20 @@ project, not a day-one assumption.
 | Product | Buyer | Price Shape | Why It Sells |
 | --- | --- | --- | --- |
 | Opportunity Intel Pack | grant writers, founders, agencies | $0.25-$10 per artifact | turns public notices into bid/no-bid evidence |
-| Regional Wildfire Intel Pack | fire districts, counties, utilities, HOAs | $50-$5k packet or subscription | fuses fire, fuels, weather, WUI, and airspace into planning output |
 | Exploited Vulnerability Priority Pack | MSPs, SMBs, cyber insurers | $0.50-$50 per asset batch/report | answers what to fix today with public exploit evidence |
 | Market Regime Evidence Pack | analysts, operators, agents | $1-$50 per report/backtest receipt | sells non-advisory research and reproducibility |
 | Developer API Change Radar | agent builders, DevRel, consultants | $0.25-$5 per diff/brief | prevents stale agent code and broken integrations |
+
+Separate lane: Regional Wildfire and Drone Readiness remains read-only planning
+and situational awareness. It can have previews and operational artifacts, but
+it is outside the x402 stream catalog.
 
 ## Principles
 
 - Payment is not permission.
 - Publicly available is not automatically redistributable.
 - Source rights and output policy are product primitives.
-- Public preview is free; full normalized artifact is paid.
+- Public preview is free; full normalized x402 stream artifact is paid.
 - Every paid artifact should include source ids, rights, caveats, and a receipt.
 - Side effects are separate from intelligence. No scans, sends, trades, flights,
   or infrastructure changes happen from paid artifact access.

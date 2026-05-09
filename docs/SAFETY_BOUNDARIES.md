@@ -14,8 +14,9 @@
 
 ## Payment Boundary
 
-x402 is only a payment protocol. It does not grant copyright, database,
-contract, privacy, API, or anti-circumvention rights.
+x402 is only for market and relevant-data streams in this repo. It is not the
+payment surface for wildfire/drone work. It also does not grant copyright,
+database, contract, privacy, API, or anti-circumvention rights.
 
 Before live settlement:
 
@@ -62,6 +63,9 @@ Not allowed:
 - performance claims without hypothetical-performance disclosure.
 
 ## Wildfire / Drone Boundary
+
+Wildfire and drone-readiness are a separate operational research lane, not an
+x402 stream catalog.
 
 Allowed:
 

@@ -14,6 +14,17 @@ describe("adapter readiness", () => {
     }
   });
 
+  test("marks wildfire adapters as separate from x402 streams", () => {
+    const readiness = buildReadiness();
+    const wildfireAdapters = readiness.adapters.filter((adapter) => adapter.adapterId.startsWith("wildfire_"));
+    expect(wildfireAdapters.length).toBeGreaterThan(0);
+    for (const adapter of wildfireAdapters) {
+      expect(adapter.productId).toBeNull();
+      expect(adapter.x402Stream).toBe(false);
+      expect(adapter.workstreamId).toBe("wildfire_drone_readiness_lane");
+    }
+  });
+
   test("exposes readiness API", async () => {
     const res = await createApp().request("/v1/readiness");
     expect(res.status).toBe(200);

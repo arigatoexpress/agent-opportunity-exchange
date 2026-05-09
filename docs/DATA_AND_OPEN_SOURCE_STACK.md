@@ -18,7 +18,9 @@
 - Data.gov.
 - Census ACS and County/ZIP Business Patterns.
 
-### Regional Wildfire Intelligence
+### Separate Regional Wildfire Intelligence
+
+This stack is outside the x402 stream catalog.
 
 - NASA FIRMS active fire detections.
 - NIFC/WFIGS incidents and perimeters.
@@ -56,7 +58,7 @@
 ## Future Infrastructure
 
 - Postgres plus pgvector for artifact search.
-- PostGIS for wildfire/regional spatial products.
+- PostGIS for the separate wildfire/regional spatial lane.
 - MapLibre GL JS and deck.gl for operational 2D maps.
 - CesiumJS for 3D terrain and airspace demos.
 - ROS 2, PX4, Gazebo, MAVSDK only for simulation products, not real flights.

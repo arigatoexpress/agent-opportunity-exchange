@@ -35,6 +35,7 @@ export interface SourceRecord {
 
 export interface Product {
   productId: string;
+  x402Stream: true;
   title: string;
   route: string;
   method: "GET" | "POST";
@@ -78,6 +79,7 @@ export interface ArtifactContent {
 export interface Artifact {
   artifactId: string;
   productId: string;
+  x402Stream: true;
   title: string;
   category: string;
   description: string;
@@ -86,6 +88,18 @@ export interface Artifact {
   rights: RightsEnvelope;
   preview: ArtifactPreview;
   content: ArtifactContent;
+}
+
+export interface SeparateWorkstream {
+  workstreamId: string;
+  title: string;
+  category: string;
+  x402Stream: false;
+  tags: string[];
+  sourceIds: string[];
+  publicPreviewEndpoints: string[];
+  boundary: string[];
+  status: "separate_read_only_lane" | "planned";
 }
 
 export interface Quote {

@@ -21,20 +21,22 @@
 - Add CSV/JSON asset-inventory intake for defensive cyber reports.
 - Add SEC EDGAR recent-filings preview for market intelligence.
 - Add FRED no-key graph CSV preview for macro evidence.
-- Add NIFC/WFIGS current-perimeters preview for wildfire intelligence.
+- Add NIFC/WFIGS current-perimeters preview for the separate wildfire lane.
 
 ## 30 Days
 
-- Replace more seeded static artifacts with live source adapters for:
+- Keep wildfire/drone work in a separate read-only lane:
   - NASA FIRMS;
+  - no x402 stream catalog entry;
+  - no dispatch or flight operations.
 - FRED/ALFRED vintage-aware API support.
 - Add package/SBOM parsing on top of the current CVE-list cyber CLI.
-- Add a simple artifact-generation CLI for the non-cyber products.
-- Add buyer-facing HTML report templates for wildfire and opportunity-intel.
+- Add a simple artifact-generation CLI for the x402 data-stream products.
+- Add buyer-facing HTML report templates for opportunity and market intel.
 - Produce three demo packets:
   - exploited vulnerability priority pack;
-  - regional wildfire readiness pack;
-  - opportunity intelligence pack.
+  - opportunity intelligence pack;
+  - market-regime evidence pack.
 
 ## 60 Days
 
@@ -45,14 +47,14 @@
   - `aoe_fetch_paid`;
   - `aoe_receipt`.
 - Add Postgres/pgvector for catalog search.
-- Add PostGIS for regional/wildfire geometry.
+- Add geospatial tooling only inside the separate wildfire lane.
 - Add source-health jobs and drift warnings.
 - Convert the simulated x402 shim to official testnet x402 middleware.
 
 ## 90 Days
 
 - Launch self-serve public previews.
-- Add paid pilot packaging for MSPs, grant writers, and wildfire-planning buyers.
+- Add paid pilot packaging for MSPs, grant writers, and market/relevant-data buyers.
 - Add partner/licensed source workflows for yellow sources.
 - Add buyer terms, refund policy, KYT/sanctions workflow, and tax/accounting export before mainnet settlement.
 

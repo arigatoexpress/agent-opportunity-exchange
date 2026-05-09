@@ -13,11 +13,14 @@ that can be purchased by agents and humans without onboarding friction.
 The first wedge should be:
 
 1. exploited-vulnerability priority packs for MSP/SMB buyers;
-2. regional wildfire intelligence and grant-ready evidence packs;
-3. opportunity-intelligence packs for grants, RFPs, programs, and regulatory
+2. opportunity-intelligence packs for grants, RFPs, programs, and regulatory
    deadlines;
-4. market-regime and filings evidence packs with no investment advice;
-5. developer API-change radar.
+3. market-regime and filings evidence packs with no investment advice;
+4. developer API-change radar.
+
+Regional wildfire and drone-readiness remain valuable, but they are a separate
+read-only operational research lane and should not be represented as x402
+streams.
 
 ## x402
 
@@ -26,7 +29,8 @@ Required`, facilitator verification, and agent-friendly purchase flows. The
 repo should use the open x402 SDK when moving beyond the current simulated
 challenge.
 
-Near-term use: per-artifact purchase with source rights and receipts.
+Near-term use: per-artifact purchase with source rights and receipts for market
+and relevant-data streams only.
 
 Do not use x402 as permission laundering. Payment does not grant copyright,
 database, API, privacy, or anti-circumvention rights.
@@ -40,9 +44,9 @@ Primary references:
 
 ## Wildfire / Regional
 
-Best wedge: regional wildfire intelligence desk and grant-ready evidence packs
-before drone operations. Public datasets are strong, fragmented, and valuable
-when fused:
+Separate lane: regional wildfire intelligence desk and grant-ready evidence
+packs before drone operations. Public datasets are strong, fragmented, and
+valuable when fused:
 
 - NASA FIRMS;
 - NIFC/WFIGS;

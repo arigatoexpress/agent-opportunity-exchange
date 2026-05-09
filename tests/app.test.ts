@@ -18,11 +18,30 @@ describe("Agent Opportunity Exchange API", () => {
   test("all registered products are simulated/testnet and side-effect free", () => {
     expect(products.length).toBeGreaterThan(0);
     for (const product of products) {
+      expect(product.x402Stream).toBe(true);
       expect(product.settlementMode).toBe("simulated_or_testnet");
       expect(product.liveSettlementAllowed).toBe(false);
       expect(product.externalSideEffectsAllowed).toBe(false);
       expect(product.disclaimers.length).toBeGreaterThan(0);
+      expect(product.tags).not.toContain("wildfire");
+      expect(product.tags).not.toContain("drone-readiness");
     }
+  });
+
+  test("keeps wildfire and drone work out of the x402 artifact catalog", async () => {
+    const productsRes = await app.request("/v1/products");
+    const productsBody = await productsRes.json();
+    expect(JSON.stringify(productsBody)).not.toContain("wildfire_regional_intel_pack");
+
+    const artifactsRes = await app.request("/v1/artifacts");
+    const artifactsBody = await artifactsRes.json();
+    expect(JSON.stringify(artifactsBody)).not.toContain("drone");
+    expect(JSON.stringify(artifactsBody)).not.toContain("wildfire");
+
+    const separateRes = await app.request("/v1/separate-workstreams");
+    const separateBody = await separateRes.json();
+    expect(separateBody.workstreams[0].x402Stream).toBe(false);
+    expect(separateBody.workstreams[0].workstreamId).toBe("wildfire_drone_readiness_lane");
   });
 
   test("artifacts expose previews without full content", async () => {
@@ -68,7 +87,7 @@ describe("Agent Opportunity Exchange API", () => {
     const res = await app.request("/v1/access/preflight", {
       method: "POST",
       body: JSON.stringify({
-        artifactId: "aoe_wildfire_gunnison_readiness",
+        artifactId: "aoe_macro_regime_public_evidence",
         maxPriceUsd: 0.25,
       }),
       headers: { "Content-Type": "application/json" },

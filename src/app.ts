@@ -4,7 +4,7 @@ import { buildVulnPriorityReport } from "./adapters/cyber.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
-import { artifacts, products, sources, getArtifact, getProduct } from "./catalog.js";
+import { artifacts, products, separateWorkstreams, sources, getArtifact, getProduct } from "./catalog.js";
 import { renderPublicFrontend } from "./frontend.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
@@ -68,10 +68,12 @@ export function createApp() {
     c.json({
       schemaVersion: 1,
       name: "Agent Opportunity Exchange",
-      description: "x402-ready, rights-cleared intelligence artifacts with public previews, quotes, preflight controls, and simulated receipts.",
+      description: "x402-ready market and relevant-data streams with public previews, quotes, preflight controls, and simulated receipts.",
       paymentProtocol: "x402",
       settlementMode: "simulated_or_testnet",
       liveSettlementAllowed: false,
+      x402Scope: "market_and_relevant_data_streams_only",
+      separateWorkstreams: ["/v1/separate-workstreams"],
       freeEndpoints: ["/v1/products", "/v1/sources", "/v1/artifacts", "/v1/artifacts/:id/preview", "/v1/artifacts/:id/quote"],
       paidEndpoints: ["/v1/artifacts/:id/content"],
       safety: ["/docs/SAFETY_BOUNDARIES.md"],
@@ -81,6 +83,8 @@ export function createApp() {
   app.get("/v1/products", (c) => c.json({ products }));
 
   app.get("/v1/sources", (c) => c.json({ sources }));
+
+  app.get("/v1/separate-workstreams", (c) => c.json({ workstreams: separateWorkstreams }));
 
   app.get("/v1/artifacts", (c) => {
     const q = c.req.query("q")?.toLowerCase();
@@ -103,6 +107,7 @@ export function createApp() {
         title: artifact.title,
         category: artifact.category,
         description: artifact.description,
+        x402Stream: artifact.x402Stream,
         tags: artifact.tags,
         sourceIds: artifact.sourceIds,
         preview: artifact.preview,
@@ -123,10 +128,10 @@ export function createApp() {
         status_counts: readiness.counts,
       },
       silos: {
-        exchange: { status: "active", live_read_only_adapters: readiness.counts.live_read_only },
-        cyber: { status: "active" },
-        wildfire: { status: "active" },
-        markets: { status: "active" },
+        exchange: { status: "active", x402Scope: "market_and_relevant_data_streams_only", x402Products: products.length },
+        cyber: { status: "active", x402Stream: true },
+        wildfire: { status: "separate", x402Stream: false, workstreamId: "wildfire_drone_readiness_lane" },
+        markets: { status: "active", x402Stream: true },
         tho: { status: "separate", url: "https://tho.sapphirealpha.xyz/" },
       },
       admin_required_for: ["raw service hosts", "secret values", "production controls"],
@@ -145,6 +150,7 @@ export function createApp() {
         title: artifact.title,
         category: artifact.category,
         description: artifact.description,
+        x402Stream: artifact.x402Stream,
         tags: artifact.tags,
         sourceIds: artifact.sourceIds,
         rights: artifact.rights,
@@ -161,6 +167,7 @@ export function createApp() {
       artifactId: artifact.artifactId,
       title: artifact.title,
       description: artifact.description,
+      x402Stream: artifact.x402Stream,
       tags: artifact.tags,
       sourceIds: artifact.sourceIds,
       rights: artifact.rights,
@@ -209,6 +216,8 @@ export function createApp() {
       const report = await buildVulnPriorityReport(parsed.data.cves);
       return c.json({
         mode: "read_only_public_preview",
+        x402Stream: true,
+        x402ProductId: "cyber_exploited_vuln_priority",
         paidProductId: "cyber_exploited_vuln_priority",
         report,
       });
@@ -240,7 +249,9 @@ export function createApp() {
       const report = await fetchWildfireAlerts(parsed.data);
       return c.json({
         mode: "read_only_public_preview",
-        paidProductId: "wildfire_regional_intel_pack",
+        x402Stream: false,
+        workstreamId: "wildfire_drone_readiness_lane",
+        boundary: "separate_from_x402_streams",
         report,
       });
     } catch (error) {
@@ -271,7 +282,9 @@ export function createApp() {
       const report = await fetchWfigsCurrentPerimeters(parsed.data);
       return c.json({
         mode: "read_only_public_preview",
-        paidProductId: "wildfire_regional_intel_pack",
+        x402Stream: false,
+        workstreamId: "wildfire_drone_readiness_lane",
+        boundary: "separate_from_x402_streams",
         report,
       });
     } catch (error) {
@@ -302,6 +315,8 @@ export function createApp() {
       const report = await fetchSecRecentFilings(parsed.data);
       return c.json({
         mode: "read_only_public_preview",
+        x402Stream: true,
+        x402ProductId: "market_regime_evidence_pack",
         paidProductId: "market_regime_evidence_pack",
         report,
       });
@@ -333,6 +348,8 @@ export function createApp() {
       const report = await fetchFredSeriesReport(parsed.data);
       return c.json({
         mode: "read_only_public_preview",
+        x402Stream: true,
+        x402ProductId: "market_regime_evidence_pack",
         paidProductId: "market_regime_evidence_pack",
         report,
       });

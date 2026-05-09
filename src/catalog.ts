@@ -1,4 +1,4 @@
-import type { Artifact, Product, RightsEnvelope, SourceRecord } from "./types.js";
+import type { Artifact, Product, RightsEnvelope, SeparateWorkstream, SourceRecord } from "./types.js";
 
 const publicOfficialRights: RightsEnvelope = {
   licenseId: "public_official_derived_facts",
@@ -299,6 +299,7 @@ export const sources: SourceRecord[] = [
 export const products: Product[] = [
   {
     productId: "opportunity_intel_pack",
+    x402Stream: true,
     title: "Opportunity Intel Pack",
     route: "/v1/artifacts/:id/content",
     method: "GET",
@@ -308,29 +309,14 @@ export const products: Product[] = [
     settlementMode: "simulated_or_testnet",
     liveSettlementAllowed: false,
     externalSideEffectsAllowed: false,
-    tags: ["x402", "grants", "rfp", "regional", "agent-buyable"],
+    tags: ["x402", "grants", "rfp", "public-programs", "agent-buyable"],
     sourceIds: ["sam_gov_opportunities", "grants_gov", "regulations_gov", "data_gov_catalog", "census_acs"],
     buyerValue: "Turns fragmented public opportunities into fit-scored, source-cited action packets.",
     disclaimers: ["Not legal advice.", "Not an official agency determination.", "Verify deadlines at the source before filing."],
   },
   {
-    productId: "wildfire_regional_intel_pack",
-    title: "Regional Wildfire Intelligence Pack",
-    route: "/v1/artifacts/:id/content",
-    method: "GET",
-    category: "regional_wildfire",
-    priceUsd: "1.5000",
-    artifactKind: "wildfire_readiness_brief",
-    settlementMode: "simulated_or_testnet",
-    liveSettlementAllowed: false,
-    externalSideEffectsAllowed: false,
-    tags: ["wildfire", "regional-intel", "drone-readiness", "public-safety"],
-    sourceIds: ["nasa_firms", "nifc_wfigs", "landfire", "nws_alerts", "fema_nri", "faa_uas", "census_acs"],
-    buyerValue: "Fuses public fire, fuels, weather, exposure, and airspace data into grant-ready planning output.",
-    disclaimers: ["Decision support only.", "Not a replacement for incident command.", "No drone operation is authorized by this report."],
-  },
-  {
     productId: "cyber_exploited_vuln_priority",
+    x402Stream: true,
     title: "Exploited Vulnerability Priority Pack",
     route: "/v1/artifacts/:id/content",
     method: "GET",
@@ -347,6 +333,7 @@ export const products: Product[] = [
   },
   {
     productId: "market_regime_evidence_pack",
+    x402Stream: true,
     title: "Market Regime Evidence Pack",
     route: "/v1/artifacts/:id/content",
     method: "GET",
@@ -363,6 +350,7 @@ export const products: Product[] = [
   },
   {
     productId: "developer_api_change_radar",
+    x402Stream: true,
     title: "Developer API Change Radar",
     route: "/v1/artifacts/:id/content",
     method: "GET",
@@ -381,23 +369,24 @@ export const products: Product[] = [
 
 export const artifacts: Artifact[] = [
   {
-    artifactId: "aoe_grants_colorado_wildfire_ai",
+    artifactId: "aoe_public_program_data_opportunity",
     productId: "opportunity_intel_pack",
-    title: "Colorado Wildfire and AI Workforce Opportunity Brief",
+    x402Stream: true,
+    title: "Public Program and Data Opportunity Brief",
     category: "opportunity_intelligence",
-    description: "A source-cited profile for finding grants, public-safety RFPs, and local programs that match wildfire intelligence and workforce training concepts.",
-    tags: ["grants", "wildfire", "ai-workforce", "colorado", "public-sector"],
+    description: "A source-cited profile for grants, RFPs, local programs, and public datasets that match a builder or operator profile.",
+    tags: ["grants", "rfp", "public-programs", "datasets", "public-sector"],
     sourceIds: ["sam_gov_opportunities", "grants_gov", "data_gov_catalog", "census_acs"],
     rights: publicOfficialRights,
     preview: {
-      headline: "Find public-sector money for wildfire intelligence without promising hardware before agency trust exists.",
-      audience: ["grant_writers", "rural_founders", "fire_district_consultants", "economic_development_groups"],
+      headline: "Find public-sector opportunities and relevant datasets without turning the product into a crawler.",
+      audience: ["grant_writers", "founders", "economic_development_groups", "agent_builders"],
       dataPoints: ["deadline", "agency", "eligibility", "award_range", "required_documents", "source_vintage"],
-      sampleQuestions: ["Which grants fit a regional wildfire intel pilot?", "What evidence is needed before a bid/no-bid decision?"],
+      sampleQuestions: ["Which opportunities fit this buyer profile?", "What source evidence is needed before a bid/no-bid decision?"],
       freshness: { class: "daily", ttlSeconds: 86_400, lastVerified: "seeded_static_research_2026-05-08" },
     },
     content: {
-      summary: "Use official opportunity portals and public regional datasets to package a bid/no-bid brief for wildfire intelligence, drone-readiness simulation, and rural workforce training. The near-term sale is planning evidence, not drone operations.",
+      summary: "Use official opportunity portals and public datasets to package a bid/no-bid brief for builders, operators, and agents. The x402 stream sells normalized evidence, eligibility context, and source proof, not raw portal resale.",
       evidenceCards: [
         {
           title: "Opportunity fit starts with public notices, not bespoke scraping.",
@@ -408,12 +397,12 @@ export const artifacts: Artifact[] = [
         {
           title: "Regional context makes the artifact sellable.",
           sourceIds: ["data_gov_catalog", "census_acs"],
-          finding: "A grant writer needs county, workforce, exposure, and program-fit context more than another generic opportunity list.",
+          finding: "A buyer needs geography, workforce, market, and program-fit context more than another generic opportunity list.",
           action: "Attach source vintage warnings when daily opportunities are mixed with annual Census data.",
         },
       ],
       nextActions: [
-        "Create buyer profiles for fire districts, counties, HOAs, utilities, and rural workforce groups.",
+        "Create buyer profiles for founders, agencies, consultants, and regional operators.",
         "Add a daily source-refresh job before claiming current opportunity status.",
         "Export the accepted matches to a proposal tracker with source links and deadline proof.",
       ],
@@ -422,55 +411,9 @@ export const artifacts: Artifact[] = [
     },
   },
   {
-    artifactId: "aoe_wildfire_gunnison_readiness",
-    productId: "wildfire_regional_intel_pack",
-    title: "Gunnison-Crested Butte Wildfire Readiness Evidence Pack",
-    category: "regional_wildfire",
-    description: "A regional wildfire intelligence packet blending fire detections, perimeters, fuels, weather, WUI exposure, and drone-readiness constraints.",
-    tags: ["wildfire", "gunnison", "wui", "fuels", "drone-readiness"],
-    sourceIds: ["nasa_firms", "nifc_wfigs", "landfire", "nws_alerts", "fema_nri", "faa_uas", "census_acs"],
-    rights: publicOfficialRights,
-    preview: {
-      headline: "Sell fire-district intelligence and grant-ready evidence before attempting real drone deployment.",
-      audience: ["fire_chiefs", "county_emergency_managers", "utilities", "HOAs", "grant_writers"],
-      dataPoints: ["active_fire", "perimeter", "fuels", "weather_alerts", "wui_exposure", "airspace_constraints"],
-      sampleQuestions: ["What changed in this AOR in the last 24 hours?", "Can a drone pilot legally and safely fly this mission?"],
-      freshness: { class: "hourly", ttlSeconds: 3_600, lastVerified: "seeded_static_research_2026-05-08" },
-    },
-    content: {
-      summary: "The first commercial wildfire product is an intelligence desk: nightly and on-demand evidence packs for risk, readiness, airspace, and simulated coverage. Real drone swarms become an upgrade path after trust, approvals, and procurement constraints are solved.",
-      evidenceCards: [
-        {
-          title: "Live fire context is public but fragmented.",
-          sourceIds: ["nasa_firms", "nifc_wfigs", "nws_alerts"],
-          finding: "Active detections, incident records, perimeters, and weather alerts live in separate systems with different freshness and confidence.",
-          action: "Return a source-health table and explicitly mark stale or missing layers.",
-        },
-        {
-          title: "Drone-readiness is a planning product first.",
-          sourceIds: ["faa_uas"],
-          finding: "Airspace, TFR, LAANC, public-aircraft, and BVLOS constraints determine whether a sortie is even plausible.",
-          action: "Package a no-fly/needs-approval map and SOP checklist before any hardware pitch.",
-        },
-        {
-          title: "Grant evidence needs exposure and mitigation context.",
-          sourceIds: ["landfire", "fema_nri", "census_acs"],
-          finding: "Fuels, hazard, WUI, demographics, and evacuation constraints turn a map into a fundable mitigation narrative.",
-          action: "Create a county-ready appendix with data vintage, methodology, and limitations.",
-        },
-      ],
-      nextActions: [
-        "Implement source adapters for FIRMS, NIFC/WFIGS, LANDFIRE metadata, NWS alerts, FEMA NRI, and FAA UAS/TFR links.",
-        "Build a sample AOI packet with map-ready GeoJSON and a chief-facing PDF later.",
-        "Keep drone operations disabled; model simulated coverage only.",
-      ],
-      caveats: ["Not incident command.", "Not a flight authorization.", "Not a replacement for local emergency alerts."],
-      outputPolicy: ["Use public official data and derived analysis.", "Show uncertainty and source freshness on every map/report."],
-    },
-  },
-  {
     artifactId: "aoe_cyber_kev_epss_priority",
     productId: "cyber_exploited_vuln_priority",
+    x402Stream: true,
     title: "MSP Exploited Vulnerability Priority Pack",
     category: "defensive_cyber",
     description: "A defensive report that ranks vulnerabilities using CISA KEV, EPSS, NVD, and OSV context without exploit instructions.",
@@ -512,6 +455,7 @@ export const artifacts: Artifact[] = [
   {
     artifactId: "aoe_macro_regime_public_evidence",
     productId: "market_regime_evidence_pack",
+    x402Stream: true,
     title: "Macro Regime and Cross-Asset Evidence Pack",
     category: "market_intelligence",
     description: "A non-advisory market-intelligence artifact using macro, positioning, filings, onchain, and narrative sources.",
@@ -553,6 +497,7 @@ export const artifacts: Artifact[] = [
   {
     artifactId: "aoe_x402_api_change_radar",
     productId: "developer_api_change_radar",
+    x402Stream: true,
     title: "x402 and Agent Payments API Change Radar",
     category: "developer_intelligence",
     description: "A public-docs change radar for x402, MCP, and agent-payment infrastructure.",
@@ -590,6 +535,24 @@ export const artifacts: Artifact[] = [
       caveats: ["Unofficial derived analysis.", "No vendor certification.", "Verify source docs before production changes."],
       outputPolicy: ["Return metadata, links, and short attributed summaries.", "Do not republish full docs or gated content."],
     },
+  },
+];
+
+export const separateWorkstreams: SeparateWorkstream[] = [
+  {
+    workstreamId: "wildfire_drone_readiness_lane",
+    title: "Regional Wildfire and Drone Readiness",
+    category: "separate_operational_research",
+    x402Stream: false,
+    tags: ["wildfire", "drone-readiness", "public-safety", "planning-only"],
+    sourceIds: ["nasa_firms", "nifc_wfigs", "landfire", "nws_alerts", "fema_nri", "faa_uas", "census_acs"],
+    publicPreviewEndpoints: ["/v1/adapters/wildfire/alerts/preview", "/v1/adapters/wildfire/wfigs-perimeters/preview"],
+    boundary: [
+      "Separate from the x402 paid-stream catalog.",
+      "Read-only planning and situational awareness only.",
+      "No incident command, alert sends, dispatch, flight authorization, or drone operations.",
+    ],
+    status: "separate_read_only_lane",
   },
 ];
 

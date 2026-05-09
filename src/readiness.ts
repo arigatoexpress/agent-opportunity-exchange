@@ -1,6 +1,8 @@
 export interface AdapterReadiness {
   adapterId: string;
-  productId: string;
+  productId: string | null;
+  workstreamId?: string;
+  x402Stream: boolean;
   sourceIds: string[];
   status: "live_read_only" | "configured_stub" | "key_required" | "blocked";
   endpoint: string | null;
@@ -15,6 +17,7 @@ export function buildReadiness() {
     {
       adapterId: "cyber_vuln_priority",
       productId: "cyber_exploited_vuln_priority",
+      x402Stream: true,
       sourceIds: ["cisa_kev", "first_epss", "nvd_cve"],
       status: "live_read_only",
       endpoint: "/v1/adapters/cyber/vuln-priority/preview",
@@ -25,7 +28,9 @@ export function buildReadiness() {
     },
     {
       adapterId: "wildfire_nws_alerts",
-      productId: "wildfire_regional_intel_pack",
+      productId: null,
+      workstreamId: "wildfire_drone_readiness_lane",
+      x402Stream: false,
       sourceIds: ["nws_alerts"],
       status: "live_read_only",
       endpoint: "/v1/adapters/wildfire/alerts/preview",
@@ -36,7 +41,9 @@ export function buildReadiness() {
     },
     {
       adapterId: "wildfire_wfigs_perimeters",
-      productId: "wildfire_regional_intel_pack",
+      productId: null,
+      workstreamId: "wildfire_drone_readiness_lane",
+      x402Stream: false,
       sourceIds: ["nifc_wfigs"],
       status: "live_read_only",
       endpoint: "/v1/adapters/wildfire/wfigs-perimeters/preview",
@@ -48,6 +55,7 @@ export function buildReadiness() {
     {
       adapterId: "markets_sec_filings",
       productId: "market_regime_evidence_pack",
+      x402Stream: true,
       sourceIds: ["sec_edgar"],
       status: "live_read_only",
       endpoint: "/v1/adapters/markets/sec-filings/preview",
@@ -59,6 +67,7 @@ export function buildReadiness() {
     {
       adapterId: "markets_fred_series",
       productId: "market_regime_evidence_pack",
+      x402Stream: true,
       sourceIds: ["fred_alfred"],
       status: "live_read_only",
       endpoint: "/v1/adapters/markets/fred-series/preview",
@@ -69,7 +78,9 @@ export function buildReadiness() {
     },
     {
       adapterId: "wildfire_nasa_firms",
-      productId: "wildfire_regional_intel_pack",
+      productId: null,
+      workstreamId: "wildfire_drone_readiness_lane",
+      x402Stream: false,
       sourceIds: ["nasa_firms"],
       status: process.env.NASA_FIRMS_MAP_KEY ? "configured_stub" : "key_required",
       endpoint: null,
@@ -81,6 +92,7 @@ export function buildReadiness() {
     {
       adapterId: "opportunity_public_programs",
       productId: "opportunity_intel_pack",
+      x402Stream: true,
       sourceIds: ["sam_gov_opportunities", "grants_gov", "regulations_gov", "data_gov_catalog"],
       status: "key_required",
       endpoint: null,
