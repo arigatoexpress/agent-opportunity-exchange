@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
+import { decodePaymentRequiredHeader } from "@x402/core/http";
 import { createApp } from "../src/app.js";
 import { artifacts, productRoutes, products } from "../src/catalog.js";
 import { buildQuote, expectedSimulatedPayment } from "../src/payments.js";
@@ -11,8 +12,21 @@ describe("Agent Opportunity Exchange API", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
+    expect(body.paymentRail).toBe("simulated_header");
     expect(body.liveSettlementAllowed).toBe(false);
     expect(body.externalSideEffectsAllowed).toBe(false);
+  });
+
+  test("x402 status defaults to simulated and server-keyless", async () => {
+    const res = await app.request("/v1/x402/status");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.x402.status.v1");
+    expect(body.mode).toBe("simulated");
+    expect(body.activeRail).toBe("simulated_header");
+    expect(body.middlewareActive).toBe(false);
+    expect(body.serverPrivateKeyRequired).toBe(false);
+    expect(body.liveSettlementAllowed).toBe(false);
   });
 
   test("all registered products are simulated/testnet and side-effect free", () => {
@@ -59,7 +73,9 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.productDiscovery).toBe("/v1/products");
     expect(body.routeDiscovery).toBe("/v1/routes");
     expect(body.readiness).toBe("/v1/readiness");
+    expect(body.x402Status).toBe("/v1/x402/status");
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
+    expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
     expect(body.freeEndpoints).toContain("/v1/routes");
     expect(body.qualityMetadata).toContain("sourceFreshnessSla");
   });
@@ -287,6 +303,77 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.workOrderId).toBe(buildQuote(artifact!).workOrderId);
   });
 
+  test("configured testnet mode emits official x402 payment requirements", async () => {
+    const originalEnv = snapshotPaymentEnv();
+    process.env.AOE_PAYMENT_MODE = "x402_testnet";
+    process.env.AOE_X402_NETWORK = "eip155:84532";
+    process.env.AOE_X402_PAY_TO = "0x1111111111111111111111111111111111111111";
+    process.env.AOE_X402_FACILITATOR_URL = "https://x402.org/facilitator";
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url === "https://x402.org/facilitator/supported") {
+        return jsonResponse({
+          kinds: [{ x402Version: 2, scheme: "exact", network: "eip155:84532" }],
+          extensions: [],
+          signers: {},
+        });
+      }
+      throw new Error(`Unexpected fetch in x402 test: ${url}`);
+    });
+
+    try {
+      const testnetApp = createApp();
+      const statusRes = await testnetApp.request("/v1/x402/status");
+      const status = await statusRes.json();
+      expect(status.mode).toBe("x402_testnet");
+      expect(status.middlewareActive).toBe(true);
+      expect(status.liveSettlementAllowed).toBe(false);
+
+      const res = await testnetApp.request("/v1/artifacts/aoe_cyber_kev_epss_priority/content", {
+        headers: { Accept: "application/json" },
+      });
+      expect(res.status).toBe(402);
+      const header = res.headers.get("PAYMENT-REQUIRED");
+      expect(header).toBeTruthy();
+      const paymentRequired = decodePaymentRequiredHeader(header!);
+      expect(paymentRequired.x402Version).toBe(2);
+      expect(paymentRequired.accepts[0]).toEqual(
+        expect.objectContaining({
+          scheme: "exact",
+          network: "eip155:84532",
+          payTo: "0x1111111111111111111111111111111111111111",
+        }),
+      );
+      expect(paymentRequired.accepts[0].amount).toBe("500000");
+      const body = await res.json();
+      expect(body.activeRail).toBe("official_x402_testnet");
+      expect(body.quote.priceUsd).toBe("0.5000");
+      expect(body.instructions.join(" ")).toContain("PAYMENT-SIGNATURE");
+      expect(body.instructions.join(" ")).not.toContain("X-AOE-Payment");
+    } finally {
+      restorePaymentEnv(originalEnv);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("testnet mode without payTo fails closed before content access", async () => {
+    const originalEnv = snapshotPaymentEnv();
+    process.env.AOE_PAYMENT_MODE = "x402_testnet";
+    delete process.env.AOE_X402_PAY_TO;
+    delete process.env.EVM_PAY_TO;
+
+    try {
+      const testnetApp = createApp();
+      const res = await testnetApp.request("/v1/artifacts/aoe_cyber_kev_epss_priority/content");
+      expect(res.status).toBe(503);
+      const body = await res.json();
+      expect(body.error).toBe("x402_testnet_not_ready");
+      expect(body.status.errors).toContain("missing_AOE_X402_PAY_TO");
+      expect(body.content).toBeUndefined();
+    } finally {
+      restorePaymentEnv(originalEnv);
+    }
+  });
+
   test("simulated payment returns content and a non-live receipt", async () => {
     const artifact = artifacts.find((row) => row.artifactId === "aoe_cyber_kev_epss_priority")!;
     const quote = buildQuote(artifact);
@@ -365,4 +452,26 @@ function jsonResponse(body: unknown): Response {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+function snapshotPaymentEnv(): Record<string, string | undefined> {
+  return {
+    AOE_PAYMENT_MODE: process.env.AOE_PAYMENT_MODE,
+    AOE_X402_NETWORK: process.env.AOE_X402_NETWORK,
+    AOE_TESTNET_NETWORK: process.env.AOE_TESTNET_NETWORK,
+    AOE_X402_PAY_TO: process.env.AOE_X402_PAY_TO,
+    EVM_PAY_TO: process.env.EVM_PAY_TO,
+    AOE_X402_FACILITATOR_URL: process.env.AOE_X402_FACILITATOR_URL,
+    X402_FACILITATOR_URL: process.env.X402_FACILITATOR_URL,
+  };
+}
+
+function restorePaymentEnv(snapshot: Record<string, string | undefined>): void {
+  for (const [key, value] of Object.entries(snapshot)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
 }

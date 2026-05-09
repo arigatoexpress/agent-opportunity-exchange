@@ -186,6 +186,19 @@ export interface Quote {
   sourceIds: string[];
 }
 
+export interface ReceiptSettlement {
+  rail: "simulated_header" | "official_x402_testnet";
+  status: "simulated" | "settled" | "pending_middleware_settlement";
+  network: string;
+  amount?: string;
+  asset?: string;
+  payer?: string;
+  transaction?: string;
+  facilitatorUrl?: string;
+  paymentResponseHash?: string;
+  liveSettlementAllowed: false;
+}
+
 export interface Receipt {
   receiptId: string;
   quoteId: string;
@@ -198,4 +211,5 @@ export interface Receipt {
   artifactHash: string;
   sourceIds: string[];
   rights: RightsEnvelope;
+  settlement: ReceiptSettlement;
 }

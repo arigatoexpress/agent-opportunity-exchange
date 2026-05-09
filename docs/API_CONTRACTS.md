@@ -11,6 +11,9 @@ artifact content unlocks. The contract surface is intentionally small:
   quote, preflight, simulated paid-content, and separate read-only lane routes.
 - `GET /v1/readiness` returns `aoe.readiness.v1` with adapter status and
   contract coverage checks.
+- `GET /v1/x402/status` returns `aoe.x402.status.v1` with payment mode,
+  Base Sepolia readiness, facilitator URL, redacted pay-to address, and
+  no-mainnet safety posture.
 - `POST /v1/access/preflight` returns `aoe.access.preflight.v1`-shaped access
   decisions with the buyer-visible product contract when the product exists.
 
@@ -38,7 +41,9 @@ Route discovery entries include:
 - `routeId`;
 - `route` and `method`;
 - route-level `schemaId`;
-- `access` as `public` or `simulated_x402_payment`;
+- `access` as `public` or `simulated_x402_payment`. The paid-content route is
+  simulated by default and can be official x402 testnet only when
+  `AOE_PAYMENT_MODE=x402_testnet` and `AOE_X402_PAY_TO` are configured;
 - `readiness`;
 - product/workstream ids;
 - source ids;
@@ -53,6 +58,7 @@ Wildfire and drone-readiness routes can appear in route discovery only as
   files yet.
 - Source freshness is declared in the registry; no scheduled refresh ledger
   proves ongoing SLA attainment yet.
-- Live settlement is deliberately absent. The payment surface is simulated or
-  testnet only until compliance, refunds, KYT/sanctions, tax/accounting, buyer
-  terms, and source-rights review are complete.
+- Mainnet/live settlement is deliberately absent. The payment surface is
+  simulated or Base Sepolia testnet only until compliance, refunds,
+  KYT/sanctions, tax/accounting, buyer terms, and source-rights review are
+  complete.

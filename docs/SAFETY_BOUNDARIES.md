@@ -20,7 +20,10 @@ database, contract, privacy, API, or anti-circumvention rights.
 
 Before live settlement:
 
-- settlement network and facilitator must be selected;
+- settlement network and facilitator must be selected and reviewed beyond the
+  current Base Sepolia-only testnet gate;
+- mainnet network ids must remain blocked until a separate launch review;
+- server deployments must never store buyer private keys;
 - sanctions/KYT and abuse handling must be documented;
 - refund and dispute policy must exist;
 - receipts and tax/accounting export must exist;

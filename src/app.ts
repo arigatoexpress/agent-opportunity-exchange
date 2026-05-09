@@ -11,6 +11,7 @@ import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
+import { createX402TestnetGate } from "./x402-testnet.js";
 
 const cvePrioritySchema = z.object({
   cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(100),
@@ -57,6 +58,10 @@ const marketContextSchema = z.object({
 
 export function createApp() {
   const app = new Hono();
+  const x402Gate = createX402TestnetGate();
+  if (x402Gate.middleware) {
+    app.use(x402Gate.middleware);
+  }
 
   app.get("/favicon.ico", () => new Response(null, { status: 204 }));
 
@@ -66,7 +71,9 @@ export function createApp() {
     c.json({
       ok: true,
       service: "agent-opportunity-exchange",
-      paymentMode: "simulated_or_testnet",
+      paymentMode: x402Gate.status.mode,
+      paymentRail: x402Gate.status.activeRail,
+      x402Ready: x402Gate.status.ready,
       liveSettlementAllowed: false,
       externalSideEffectsAllowed: false,
       timestamp: new Date().toISOString(),
@@ -87,10 +94,12 @@ export function createApp() {
         routeDiscovery: "aoe.discovery.routes.v1",
         readiness: "aoe.readiness.v1",
         preflight: "aoe.access.preflight.v1",
+        x402Status: "aoe.x402.status.v1",
       },
       productDiscovery: "/v1/products",
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
+      x402Status: "/v1/x402/status",
       qualityMetadata: "Products include schemaId, quality, buyerValueMetrics, sourceFreshnessSla, and caveats.",
       separateWorkstreams: ["/v1/separate-workstreams"],
       streams: "/v1/streams",
@@ -100,6 +109,7 @@ export function createApp() {
         "/v1/routes",
         "/v1/streams",
         "/v1/sources",
+        "/v1/x402/status",
         "/v1/artifacts",
         "/v1/artifacts/:id/preview",
         "/v1/artifacts/:id/quote",
@@ -151,6 +161,19 @@ export function createApp() {
   });
 
   app.get("/v1/readiness", (c) => c.json(buildReadiness()));
+
+  app.get("/v1/x402/status", (c) =>
+    c.json({
+      schemaId: "aoe.x402.status.v1",
+      ...x402Gate.status,
+      middlewareActive: x402Gate.gateActive,
+      docs: {
+        sellerQuickstart: "https://docs.x402.org/getting-started/quickstart-for-sellers",
+        buyerQuickstart: "https://docs.x402.org/getting-started/quickstart-for-buyers",
+        networks: "https://docs.x402.org/core-concepts/network-and-token-support",
+      },
+    }),
+  );
 
   app.get("/api/silos/health", (c) => {
     const readiness = buildReadiness();
@@ -584,15 +607,37 @@ export function createApp() {
     if (!artifact) return c.json({ error: "artifact_not_found" }, 404);
 
     const quote = buildQuote(artifact);
-    if (!hasValidSimulatedPayment(c.req.raw.headers, quote)) {
+    if (x402Gate.status.mode === "x402_testnet" && !x402Gate.gateActive) {
+      return c.json(
+        {
+          error: "x402_testnet_not_ready",
+          liveSettlementAllowed: false,
+          status: x402Gate.status,
+          quote,
+        },
+        503,
+      );
+    }
+
+    if (!x402Gate.gateActive && !hasValidSimulatedPayment(c.req.raw.headers, quote)) {
       return c.json(paymentRequiredPayload(quote), 402, {
         "Payment-Required": paymentRequiredHeader(quote),
         "X-AOE-Work-Order": quote.workOrderId,
       });
     }
 
-    const receipt = buildReceipt(artifact, quote);
-    const ledgerPath = await appendReceipt(receipt);
+    const receipt = x402Gate.gateActive
+      ? buildReceipt(artifact, quote, new Date(), {
+          rail: "official_x402_testnet",
+          status: "pending_middleware_settlement",
+          network: quote.accepted[0]?.network ?? x402Gate.status.network.id,
+          asset: "USDC",
+          amount: quote.priceUsd,
+          facilitatorUrl: x402Gate.status.facilitator.url,
+          liveSettlementAllowed: false,
+        })
+      : buildReceipt(artifact, quote);
+    const ledgerPath = x402Gate.gateActive ? null : await appendReceipt(receipt);
     const product = getProduct(artifact.productId);
     return c.json({
       artifactId: artifact.artifactId,
@@ -604,8 +649,8 @@ export function createApp() {
       productDisclaimers: product?.disclaimers ?? [],
       receipt,
       ledger: {
-        written: true,
-        path: ledgerPath,
+        written: x402Gate.gateActive ? "after_x402_settlement_hook" : true,
+        ...(ledgerPath ? { path: ledgerPath } : {}),
         containsSecrets: false,
       },
     });

@@ -52,6 +52,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/separate-workstreams`
 - `GET /v1/artifacts`
 - `GET /v1/readiness`
+- `GET /v1/x402/status`
 - `GET /v1/artifacts/:id/preview`
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`
@@ -80,6 +81,30 @@ curl -s \
 This is deliberately simulated/testnet-only. No live settlement, trading, Telegram send, production data write, or external scan is enabled.
 
 Simulated paid access appends non-secret receipt records to `data/receipts/receipts.jsonl`, which is ignored by git.
+
+## Official x402 Testnet
+
+The repo now has the official `@x402/hono`, `@x402/core`, `@x402/evm`, and
+`@x402/fetch` packages wired behind an explicit testnet gate. Default mode is
+still simulated. To test real x402 headers on Base Sepolia:
+
+```bash
+npm run x402:burner -- --write-env
+set -a; source .env.x402.local; set +a
+npm run dev
+```
+
+In another terminal, fund the buyer burner with Base Sepolia test USDC only,
+then run:
+
+```bash
+set -a; source .env.x402.local; set +a
+npm run x402:testnet:fetch -- aoe_cyber_kev_epss_priority
+```
+
+The server needs only `AOE_X402_PAY_TO`; it must never receive the buyer private
+key. `GET /v1/x402/status` reports whether the official testnet middleware is
+active. Mainnet network ids are blocked in code and tests.
 
 The first live read-only source adapter is defensive cyber prioritization:
 

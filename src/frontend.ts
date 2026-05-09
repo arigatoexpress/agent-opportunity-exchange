@@ -493,7 +493,7 @@ export function renderPublicFrontend(): string {
       <div class="status-cell"><dt>Live adapters</dt><dd id="liveAdapters">-</dd></div>
       <div class="status-cell"><dt>Source records</dt><dd id="sourceRecords">-</dd></div>
       <div class="status-cell"><dt>Paid products</dt><dd id="paidProducts">-</dd></div>
-      <div class="status-cell"><dt>Live settlement</dt><dd class="ok">off</dd></div>
+      <div class="status-cell"><dt>x402 rail</dt><dd class="ok" id="x402Rail">loading</dd></div>
     </dl>
 
     <main class="first-screen">
@@ -501,7 +501,7 @@ export function renderPublicFrontend(): string {
         <div class="panel-head">
           <div class="eyebrow">Evidence storefront</div>
           <h1 id="storefront-title">Show buyers the proof before asking them to pay.</h1>
-          <p class="lead">Every product row is grounded in the live registry: buyer value, source IDs, rights posture, readiness, price, and an inspectable preview or quote. Simulated x402 settlement only; no trading, no scans, no external sends.</p>
+          <p class="lead">Every product row is grounded in the live registry: buyer value, source IDs, rights posture, readiness, price, and an inspectable preview or quote. Simulated by default, official Base Sepolia x402 testnet when explicitly configured; no trading, no scans, no external sends.</p>
           <div class="tagrow">
             <span class="tag">derived facts with citation</span>
             <span class="tag">public preview before payment</span>
@@ -527,8 +527,8 @@ export function renderPublicFrontend(): string {
           </div>
           <div class="proof-cell">
             <span>Payment Posture</span>
-            <strong class="ok">Simulated/testnet</strong>
-            <p class="small">No live settlement, money movement, or production side effects are enabled.</p>
+            <strong class="ok" id="paymentPosture">Loading x402 status</strong>
+            <p class="small" id="paymentPostureNote">No live settlement, money movement, or production side effects are enabled.</p>
           </div>
         </div>
 
@@ -649,7 +649,7 @@ export function renderPublicFrontend(): string {
     const schemaLabel = document.getElementById('schemaLabel');
     let activePreviewRequest = 0;
     let userStartedPreview = false;
-    let catalogState = { products: [], sources: [], artifacts: [], readiness: null };
+    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null };
 
     const examples = {
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
@@ -791,6 +791,17 @@ export function renderPublicFrontend(): string {
       catalogState.readiness = readiness;
       document.getElementById('liveAdapters').textContent = readiness.counts.live_read_only;
       document.getElementById('readinessSignal').textContent = readiness.counts.live_read_only + ' live read-only, ' + readiness.counts.key_required + ' key-gated';
+    }
+
+    async function loadX402Status() {
+      const status = await getJson('/v1/x402/status');
+      catalogState.x402 = status;
+      const rail = status.activeRail === 'official_x402_testnet' ? 'Base Sepolia testnet' : status.activeRail === 'x402_testnet_config_required' ? 'config needed' : 'simulated';
+      document.getElementById('x402Rail').textContent = rail;
+      document.getElementById('paymentPosture').textContent = rail;
+      document.getElementById('paymentPostureNote').textContent = status.activeRail === 'official_x402_testnet'
+        ? 'Official @x402 middleware is active on Base Sepolia only; live mainnet settlement remains blocked.'
+        : 'No official payment middleware is active until AOE_PAYMENT_MODE=x402_testnet and AOE_X402_PAY_TO are configured.';
     }
 
     function renderProofSignals() {
@@ -966,6 +977,14 @@ export function renderPublicFrontend(): string {
               readiness: readinessForProduct(product.productId),
               runnablePreviewButton: livePreviewKind ? labels[livePreviewKind] : 'artifact preview and quote only'
             },
+            x402Status: catalogState.x402 && {
+              mode: catalogState.x402.mode,
+              activeRail: catalogState.x402.activeRail,
+              network: catalogState.x402.network && catalogState.x402.network.id,
+              facilitator: catalogState.x402.facilitator && catalogState.x402.facilitator.url,
+              payToConfigured: catalogState.x402.payTo && catalogState.x402.payTo.configured,
+              liveSettlementAllowed: catalogState.x402.liveSettlementAllowed
+            },
             artifactPreview: data[0],
             quote: data[1].quote,
             sourceEvidence
@@ -1011,7 +1030,7 @@ export function renderPublicFrontend(): string {
       inspectProduct(productId, { scroll: true });
     });
     document.getElementById('refresh').addEventListener('click', async () => {
-      await Promise.all([loadReadiness(), loadCatalog()]);
+      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status()]);
       renderProducts();
       await runPreview();
     });
@@ -1025,7 +1044,7 @@ export function renderPublicFrontend(): string {
     });
 
     updateRouteChrome();
-    Promise.all([loadReadiness(), loadCatalog()])
+    Promise.all([loadReadiness(), loadCatalog(), loadX402Status()])
       .then(() => {
         renderProducts();
         if (!userStartedPreview) return runPreview({ system: true });
