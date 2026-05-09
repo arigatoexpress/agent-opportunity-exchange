@@ -6,7 +6,7 @@ export function renderPublicFrontend(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7faf8">
   <link rel="icon" href="data:,">
-  <title>SapphireAlpha - x402 Data Streams</title>
+  <title>SapphireAlpha - Market Data Streams</title>
   <style>
     :root {
       --paper: #f7faf8;
@@ -163,6 +163,23 @@ export function renderPublicFrontend(): string {
       background: var(--surface);
       min-height: 164px;
     }
+    .featured {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(360px, 1.05fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+    .route {
+      display: inline-flex;
+      width: fit-content;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fbfdfc;
+      color: var(--blue);
+      font: 13px/1.35 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
     .item p, .small { color: var(--muted); font-size: 13px; line-height: 1.5; }
     .tagrow { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
     .tag {
@@ -194,7 +211,7 @@ export function renderPublicFrontend(): string {
       color: var(--ink);
       padding: 11px 12px;
     }
-    pre {
+    pre, .code {
       margin: 0;
       overflow: auto;
       min-height: 320px;
@@ -216,7 +233,7 @@ export function renderPublicFrontend(): string {
       padding: 16px 0 0;
     }
     @media (max-width: 860px) {
-      .hero, .workspace { grid-template-columns: 1fr; }
+      .hero, .workspace, .featured { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr; }
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       h1 { font-size: 38px; }
@@ -236,7 +253,7 @@ export function renderPublicFrontend(): string {
         <div class="mark" aria-hidden="true"></div>
         <div>
           <strong>SapphireAlpha</strong>
-          <div class="small">x402 Data Streams</div>
+          <div class="small">Market Data Streams</div>
         </div>
       </div>
       <button class="btn" id="refresh">Refresh Data</button>
@@ -246,9 +263,9 @@ export function renderPublicFrontend(): string {
       <div class="hero-copy">
         <div>
           <div class="eyebrow">Public preview surface</div>
-          <h1>x402 streams for market and relevant data.</h1>
+          <h1>Pay-per-call market context for agents.</h1>
         </div>
-        <p class="lead">Rights-cleared previews, source provenance, simulated x402 receipts, and live public-source adapters for market, cyber, opportunity, filing, and macro evidence.</p>
+        <p class="lead">A focused x402 storefront for source-cited SEC filing deltas, macro context, defensive cyber data, and other relevant machine-readable evidence streams.</p>
         <div class="actions">
           <button class="btn primary" data-action="markets">Load Market Evidence</button>
           <button class="btn" data-action="cyber">Run Cyber Data Preview</button>
@@ -256,8 +273,8 @@ export function renderPublicFrontend(): string {
         </div>
       </div>
       <aside class="status-board" aria-label="System readiness">
-        <h2>Adapter Readiness</h2>
-        <p class="small">The x402 stream catalog stays separated from wildfire/drone operations and all side-effecting actions.</p>
+        <h2>Stream Readiness</h2>
+        <p class="small">Market and relevant-data streams are x402-shaped. Wildfire/drone remains a separate read-only lane.</p>
         <div class="metric-grid">
           <div class="metric"><strong id="liveAdapters">-</strong><span>live read-only adapters</span></div>
           <div class="metric"><strong id="keyGated">-</strong><span>key-gated future adapters</span></div>
@@ -269,6 +286,21 @@ export function renderPublicFrontend(): string {
     </div>
 
     <main>
+      <section class="band">
+        <div class="featured">
+          <div class="item">
+            <div class="eyebrow">Featured stream</div>
+            <h2>SEC + Macro Context</h2>
+            <p>One request returns recent filing metadata, FRED macro observations, highlights, source links, schema metadata, and non-advisory caveats.</p>
+            <div class="tagrow"><span class="tag">x402</span><span class="tag">$1 preview price</span><span class="tag">SEC EDGAR</span><span class="tag">FRED</span></div>
+            <p class="route">POST /v1/streams/market-context/preview</p>
+          </div>
+          <pre class="code">curl -s https://sapphirealpha.xyz/v1/streams/market-context/preview \\
+  -H 'Content-Type: application/json' \\
+  -d '{"ticker":"AAPL","seriesIds":["FEDFUNDS","UNRATE","CPIAUCSL"],"filingLimit":3,"seriesLimit":2}'</pre>
+        </div>
+      </section>
+
       <section class="band">
         <h2>x402 Data Streams</h2>
         <div class="grid" id="products"></div>
@@ -287,6 +319,7 @@ export function renderPublicFrontend(): string {
           <div class="controls">
             <label for="previewKind">Preview</label>
             <select id="previewKind">
+              <option value="marketContext">SEC + Macro Context</option>
               <option value="cyber">Cyber CVE Priority</option>
               <option value="wildfire">Wildfire WFIGS Perimeters</option>
               <option value="alerts">NWS Fire Weather Alerts</option>
@@ -294,7 +327,7 @@ export function renderPublicFrontend(): string {
               <option value="fred">FRED Macro Series</option>
             </select>
             <label for="previewInput">Input</label>
-            <input id="previewInput" value="CVE-2021-44228,CVE-2023-34362,CVE-2024-3094">
+            <input id="previewInput" value="AAPL">
             <button class="btn primary" id="runPreview">Run Preview</button>
             <p class="small">Paid access applies only to market and relevant-data streams. Wildfire previews are separate read-only operations research. No scans, trades, sends, flights, or drone actions are enabled.</p>
           </div>
@@ -326,6 +359,7 @@ export function renderPublicFrontend(): string {
 
     const examples = {
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
+      marketContext: 'AAPL',
       wildfire: 'CO',
       alerts: 'CO',
       sec: 'AAPL',
@@ -333,6 +367,7 @@ export function renderPublicFrontend(): string {
     };
     const labels = {
       cyber: 'Cyber CVE Priority',
+      marketContext: 'SEC + Macro Context',
       wildfire: 'Separate Wildfire WFIGS Preview',
       alerts: 'NWS Fire Weather Alerts',
       sec: 'SEC Recent Filings',
@@ -341,7 +376,7 @@ export function renderPublicFrontend(): string {
     const heroActions = {
       cyber: 'cyber',
       wildfire: 'wildfire',
-      markets: 'sec'
+      markets: 'marketContext'
     };
 
     function pretty(value) {
@@ -390,7 +425,10 @@ export function renderPublicFrontend(): string {
       }
       let path = '';
       let body = {};
-      if (selected === 'cyber') {
+      if (selected === 'marketContext') {
+        path = '/v1/streams/market-context/preview';
+        body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
+      } else if (selected === 'cyber') {
         path = '/v1/adapters/cyber/vuln-priority/preview';
         body = { cves: raw.split(/[,\s]+/).filter(Boolean) };
       } else if (selected === 'wildfire') {

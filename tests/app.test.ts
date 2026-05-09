@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { createApp } from "../src/app.js";
 import { artifacts, products } from "../src/catalog.js";
 import { buildQuote, expectedSimulatedPayment } from "../src/payments.js";
@@ -42,6 +42,54 @@ describe("Agent Opportunity Exchange API", () => {
     const separateBody = await separateRes.json();
     expect(separateBody.workstreams[0].x402Stream).toBe(false);
     expect(separateBody.workstreams[0].workstreamId).toBe("wildfire_drone_readiness_lane");
+  });
+
+  test("exposes a focused SEC plus macro market context stream", async () => {
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url.endsWith("/company_tickers.json")) {
+        return jsonResponse({
+          "0": { cik_str: 320193, ticker: "AAPL", title: "Apple Inc." },
+        });
+      }
+      if (url === "https://data.sec.gov/submissions/CIK0000320193.json") {
+        return jsonResponse({
+          name: "Apple Inc.",
+          filings: {
+            recent: {
+              accessionNumber: ["0000320193-26-000013"],
+              filingDate: ["2026-05-01"],
+              reportDate: ["2026-03-28"],
+              form: ["10-Q"],
+              primaryDocument: ["aapl-20260328.htm"],
+            },
+          },
+        });
+      }
+      const seriesId = new URL(url).searchParams.get("id");
+      return new Response(`observation_date,${seriesId}
+2026-04-01,4.3
+`, { status: 200, headers: { "Content-Type": "text/csv" } });
+    });
+
+    try {
+      const res = await app.request("/v1/streams/market-context/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          ticker: "AAPL",
+          seriesIds: ["FEDFUNDS", "UNRATE"],
+          filingLimit: 1,
+          seriesLimit: 1,
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.x402Stream).toBe(true);
+      expect(body.streamId).toBe("sec_macro_context");
+      expect(body.report.schemaVersion).toBe("sapphirealpha.market_context.v1");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   test("artifacts expose previews without full content", async () => {
@@ -114,3 +162,10 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.blockedSourceIds).toContain("sec_edgar");
   });
 });
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}

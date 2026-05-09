@@ -53,6 +53,18 @@ export function buildReadiness() {
       notes: ["Public NIFC/WFIGS ArcGIS service.", "Perimeters are not available for every incident.", "Not evacuation authority."],
     },
     {
+      adapterId: "market_sec_macro_context",
+      productId: "market_regime_evidence_pack",
+      x402Stream: true,
+      sourceIds: ["sec_edgar", "fred_alfred"],
+      status: "live_read_only",
+      endpoint: "/v1/streams/market-context/preview",
+      inputMode: "Ticker plus optional FRED series ids",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["Featured storefront stream.", "SEC filings plus macro context.", "No investment advice or trade execution."],
+    },
+    {
       adapterId: "markets_sec_filings",
       productId: "market_regime_evidence_pack",
       x402Stream: true,

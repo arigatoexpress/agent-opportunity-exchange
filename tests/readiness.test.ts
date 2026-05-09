@@ -30,5 +30,6 @@ describe("adapter readiness", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.adapters.map((adapter: { adapterId: string }) => adapter.adapterId)).toContain("cyber_vuln_priority");
+    expect(body.adapters.map((adapter: { adapterId: string }) => adapter.adapterId)).toContain("market_sec_macro_context");
   });
 });

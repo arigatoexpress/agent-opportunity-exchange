@@ -38,6 +38,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `POST /v1/adapters/cyber/vuln-priority/preview`
 - `POST /v1/adapters/wildfire/alerts/preview`
 - `POST /v1/adapters/wildfire/wfigs-perimeters/preview`
+- `POST /v1/streams/market-context/preview`
 - `POST /v1/adapters/markets/sec-filings/preview`
 - `POST /v1/adapters/markets/fred-series/preview`
 - `GET /v1/artifacts/:id/content`
@@ -100,6 +101,20 @@ curl -s \
 ```
 
 The first market-intelligence adapter previews public SEC EDGAR filings:
+
+The featured x402-shaped stream combines SEC recent filing metadata and FRED
+macro observations into one source-cited context payload:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/streams/market-context/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"ticker":"AAPL","seriesIds":["FEDFUNDS","UNRATE","CPIAUCSL"],"filingLimit":3,"seriesLimit":2}'
+```
+
+It returns `schemaVersion: sapphirealpha.market_context.v1`, SEC filing links,
+macro observations, highlights, source ids, and caveats. It is non-advisory
+market context, not trading advice or execution.
 
 ```bash
 curl -s \

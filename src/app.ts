@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { buildVulnPriorityReport } from "./adapters/cyber.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
+import { fetchMarketContextReport } from "./adapters/market-context.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, products, separateWorkstreams, sources, getArtifact, getProduct } from "./catalog.js";
@@ -46,6 +47,14 @@ const fredSeriesSchema = z.object({
   limit: z.number().int().min(1).max(500).optional(),
 });
 
+const marketContextSchema = z.object({
+  ticker: z.string().regex(/^[A-Z0-9.-]{1,12}$/i),
+  seriesIds: z.array(z.string().regex(/^[A-Z0-9_.$-]{1,32}$/i)).min(1).max(12).optional(),
+  filingForms: z.array(z.string().regex(/^[A-Z0-9-]{1,12}$/i)).max(8).optional(),
+  filingLimit: z.number().int().min(1).max(25).optional(),
+  seriesLimit: z.number().int().min(1).max(24).optional(),
+});
+
 export function createApp() {
   const app = new Hono();
 
@@ -74,7 +83,15 @@ export function createApp() {
       liveSettlementAllowed: false,
       x402Scope: "market_and_relevant_data_streams_only",
       separateWorkstreams: ["/v1/separate-workstreams"],
-      freeEndpoints: ["/v1/products", "/v1/sources", "/v1/artifacts", "/v1/artifacts/:id/preview", "/v1/artifacts/:id/quote"],
+      featuredStream: "/v1/streams/market-context/preview",
+      freeEndpoints: [
+        "/v1/products",
+        "/v1/sources",
+        "/v1/artifacts",
+        "/v1/artifacts/:id/preview",
+        "/v1/artifacts/:id/quote",
+        "/v1/streams/market-context/preview",
+      ],
       paidEndpoints: ["/v1/artifacts/:id/content"],
       safety: ["/docs/SAFETY_BOUNDARIES.md"],
     }),
@@ -351,6 +368,46 @@ export function createApp() {
         x402Stream: true,
         x402ProductId: "market_regime_evidence_pack",
         paidProductId: "market_regime_evidence_pack",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/streams/market-context/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = marketContextSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_market_context_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await fetchMarketContextReport({
+        ticker: parsed.data.ticker,
+        seriesIds: parsed.data.seriesIds ?? ["FEDFUNDS", "UNRATE", "CPIAUCSL"],
+        filingForms: parsed.data.filingForms,
+        filingLimit: parsed.data.filingLimit,
+        seriesLimit: parsed.data.seriesLimit,
+      });
+      return c.json({
+        mode: "read_only_public_preview",
+        x402Stream: true,
+        x402ProductId: "market_regime_evidence_pack",
+        streamId: "sec_macro_context",
+        previewPriceUsd: "1.0000",
         report,
       });
     } catch (error) {

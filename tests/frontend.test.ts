@@ -9,7 +9,9 @@ describe("public frontend", () => {
     expect(html).toContain('data-action="wildfire"');
     expect(html).toContain('data-action="markets"');
     expect(html).toContain("scrollIntoView");
-    expect(html).toContain("x402 Data Streams");
+    expect(html).toContain("Market Data Streams");
+    expect(html).toContain("SEC + Macro Context");
+    expect(html).toContain("/v1/streams/market-context/preview");
     expect(html).toContain("Separate Operational Lane");
   });
 
