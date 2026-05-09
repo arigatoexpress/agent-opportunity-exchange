@@ -274,7 +274,7 @@ export function renderPublicFrontend(): string {
         <div class="grid" id="products"></div>
       </section>
 
-      <section class="band">
+      <section class="band" id="workbench">
         <h2>Live Preview Workbench</h2>
         <div class="workspace">
           <div class="controls">
@@ -291,7 +291,7 @@ export function renderPublicFrontend(): string {
             <button class="btn primary" id="runPreview">Run Preview</button>
             <p class="small">The public site performs read-only API calls only. Paid access is still simulated/testnet and no scans, trades, sends, or drone actions are enabled.</p>
           </div>
-          <pre id="output">Loading readiness...</pre>
+          <pre id="output" tabindex="-1">Loading readiness...</pre>
         </div>
       </section>
 
@@ -312,6 +312,10 @@ export function renderPublicFrontend(): string {
     const output = document.getElementById('output');
     const kind = document.getElementById('previewKind');
     const input = document.getElementById('previewInput');
+    const workbench = document.getElementById('workbench');
+    const runButton = document.getElementById('runPreview');
+    let activePreviewRequest = 0;
+    let userStartedPreview = false;
 
     const examples = {
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
@@ -319,6 +323,18 @@ export function renderPublicFrontend(): string {
       alerts: 'CO',
       sec: 'AAPL',
       fred: 'FEDFUNDS,CPIAUCSL,UNRATE'
+    };
+    const labels = {
+      cyber: 'Cyber CVE Priority',
+      wildfire: 'Wildfire WFIGS Perimeters',
+      alerts: 'NWS Fire Weather Alerts',
+      sec: 'SEC Recent Filings',
+      fred: 'FRED Macro Series'
+    };
+    const heroActions = {
+      cyber: 'cyber',
+      wildfire: 'wildfire',
+      markets: 'sec'
     };
 
     function pretty(value) {
@@ -351,10 +367,20 @@ export function renderPublicFrontend(): string {
       }).join('');
     }
 
-    async function runPreview() {
-      output.textContent = 'Running preview...';
+    async function runPreview(options) {
+      const opts = options || {};
+      if (!opts.system) userStartedPreview = true;
+      const requestId = ++activePreviewRequest;
       const raw = input.value.trim();
       const selected = kind.value;
+      const label = labels[selected] || 'Selected';
+      output.textContent = 'Running ' + label + ' preview...';
+      runButton.textContent = 'Running...';
+      runButton.setAttribute('aria-busy', 'true');
+      if (opts.scroll) {
+        workbench.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        output.focus({ preventScroll: true });
+      }
       let path = '';
       let body = {};
       if (selected === 'cyber') {
@@ -374,13 +400,19 @@ export function renderPublicFrontend(): string {
         body = { seriesIds: raw.split(/[,\s]+/).filter(Boolean), limit: 3 };
       }
       try {
-        pretty(await getJson(path, {
+        const result = await getJson(path, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
-        }));
+        });
+        if (requestId === activePreviewRequest) pretty(result);
       } catch (error) {
-        pretty({ error });
+        if (requestId === activePreviewRequest) pretty({ error });
+      } finally {
+        if (requestId === activePreviewRequest) {
+          runButton.textContent = 'Run Preview';
+          runButton.removeAttribute('aria-busy');
+        }
       }
     }
 
@@ -389,13 +421,15 @@ export function renderPublicFrontend(): string {
     document.getElementById('refresh').addEventListener('click', async () => { await loadReadiness(); await loadProducts(); await runPreview(); });
     document.querySelectorAll('[data-action]').forEach(button => {
       button.addEventListener('click', () => {
-        kind.value = button.dataset.action === 'markets' ? 'sec' : button.dataset.action;
+        kind.value = heroActions[button.dataset.action] || button.dataset.action;
         input.value = examples[kind.value];
-        runPreview();
+        runPreview({ scroll: true });
       });
     });
 
-    Promise.all([loadReadiness(), loadProducts()]).then(runPreview).catch(error => pretty({ error }));
+    Promise.all([loadReadiness(), loadProducts()])
+      .then(() => { if (!userStartedPreview) return runPreview({ system: true }); })
+      .catch(error => pretty({ error }));
   </script>
 </body>
 </html>`;
