@@ -17,6 +17,10 @@ describe("public frontend", () => {
     expect(html).toContain("Buyer segment");
     expect(html).toContain("Evidence basis");
     expect(html).toContain("Inspect proof");
+    expect(html).toContain("Show Contracts");
+    expect(html).toContain('id="showContracts"');
+    expect(html).toContain("inspectContracts");
+    expect(html).toContain("/v1/contracts");
     expect(html).toContain("data-product-id");
     expect(html).toContain("inspectProduct('market_regime_evidence_pack'");
     expect(html).toContain("loadCatalog()");
@@ -65,5 +69,19 @@ describe("public frontend", () => {
     expect(html).toContain("/v1/sources");
     expect(html).toContain("/v1/artifacts/");
     expect(html).toContain("/quote");
+    expect(html).toContain("Buyer contract bundle");
+    expect(html).toContain("schemaCount");
+  });
+
+  test("surfaces disabled payment rail roadmap evidence for buyers", () => {
+    const html = renderPublicFrontend();
+    expect(html).toContain('id="paymentRailMap"');
+    expect(html).toContain("x402 payment rail roadmap");
+    expect(html).toContain("renderPaymentRailMap");
+    expect(html).toContain("solana-pay-sh-svm-candidate");
+    expect(html).toContain("Pay.sh / Solana provider catalog");
+    expect(html).toContain("liveWalletsAllowed");
+    expect(html).toContain("liveProviderCredentialsAllowed");
+    expect(html).toContain("/v1/x402/status");
   });
 });

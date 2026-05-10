@@ -6,6 +6,7 @@ import { attachMarketContextEvidenceProof, fetchMarketContextReport, withSourceT
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
+import { buildContractBundle, CONTRACT_BUNDLE_SCHEMA_ID } from "./contracts.js";
 import { renderPublicFrontend } from "./frontend.js";
 import { parseCyberInventory } from "./inputs/cyber-inventory.js";
 import { appendReceipt } from "./ledger.js";
@@ -96,12 +97,14 @@ export function createApp() {
       liveSettlementAllowed: false,
       x402Scope: "market_and_relevant_data_streams_only",
       schemaIds: {
+        contractBundle: CONTRACT_BUNDLE_SCHEMA_ID,
         productDiscovery: "aoe.discovery.products.v1",
         routeDiscovery: "aoe.discovery.routes.v1",
         readiness: "aoe.readiness.v1",
         preflight: "aoe.access.preflight.v1",
         x402Status: "aoe.x402.status.v1",
       },
+      contractBundle: "/v1/contracts",
       productDiscovery: "/v1/products",
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
@@ -111,6 +114,7 @@ export function createApp() {
       streams: "/v1/streams",
       featuredStream: "/v1/streams/market-context/preview",
       freeEndpoints: [
+        "/v1/contracts",
         "/v1/products",
         "/v1/routes",
         "/v1/streams",
@@ -127,6 +131,8 @@ export function createApp() {
   );
 
   app.get("/v1/products", (c) => c.json({ schemaId: "aoe.discovery.products.v1", products }));
+
+  app.get("/v1/contracts", (c) => c.json(buildContractBundle()));
 
   app.get("/v1/routes", (c) => c.json({ schemaId: "aoe.discovery.routes.v1", routes: productRoutes }));
 
