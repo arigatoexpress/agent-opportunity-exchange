@@ -650,16 +650,16 @@ export function renderPublicFrontend(): string {
 
         <div class="stream-spec" aria-label="Featured stream contract">
           <div class="spec-cell">
-            <span>Featured live preview route</span>
-            <div class="route">POST /v1/streams/market-context/preview</div>
+            <span>Featured live proof route</span>
+            <div class="route">POST /v1/streams/market-context/live-proof</div>
           </div>
           <div class="spec-cell">
-            <span>Preview price signal</span>
-            <div class="price">$1.0000</div>
+            <span>Mock data posture</span>
+            <div class="price">false</div>
           </div>
           <div class="spec-cell">
             <span>Schema</span>
-            <div class="mono schema">sapphirealpha.market_context.v1</div>
+            <div class="mono schema">aoe.market_live_upstream_proof.v1</div>
           </div>
           <div class="spec-cell">
             <span>Sources</span>
@@ -671,6 +671,7 @@ export function renderPublicFrontend(): string {
           <div>
             <label for="previewKind">Route</label>
             <select id="previewKind">
+              <option value="liveMarketProof">Live SEC/FRED Upstream Proof</option>
               <option value="marketContext">SEC + Macro Context</option>
               <option value="cyberInventory">Cyber Inventory Proof</option>
               <option value="cyber">Cyber CVE List</option>
@@ -686,7 +687,7 @@ export function renderPublicFrontend(): string {
           </div>
           <div class="request-line">
             <strong id="methodLabel">POST</strong>
-            <span class="route" id="routeLabel">/v1/streams/market-context/preview</span>
+            <span class="route" id="routeLabel">/v1/streams/market-context/live-proof</span>
           </div>
           <button class="btn primary" id="runPreview">Run Preview</button>
           <button class="btn" id="inspectFeatured">Inspect Featured Proof</button>
@@ -694,8 +695,8 @@ export function renderPublicFrontend(): string {
 
         <div class="output-wrap">
           <div class="output-toolbar">
-            <span id="outputTitle">Market context response</span>
-            <span class="schema-pill" id="schemaLabel">sapphirealpha.market_context.v1</span>
+            <span id="outputTitle">Live SEC/FRED proof response</span>
+            <span class="schema-pill" id="schemaLabel">aoe.market_live_upstream_proof.v1</span>
           </div>
           <pre id="output" tabindex="-1">Loading readiness...</pre>
         </div>
@@ -721,7 +722,7 @@ export function renderPublicFrontend(): string {
             </div>
             <div class="decision-row">
               <span>Route</span>
-              <strong class="route" id="decisionRoute">/v1/streams/market-context/preview</strong>
+              <strong class="route" id="decisionRoute">/v1/streams/market-context/live-proof</strong>
             </div>
             <div class="decision-row">
               <span>Evidence basis</span>
@@ -776,6 +777,7 @@ export function renderPublicFrontend(): string {
     const examples = {
       cyberInventory: 'demo-inventory',
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
+      liveMarketProof: 'AAPL',
       marketContext: 'AAPL',
       wildfire: 'CO',
       alerts: 'CO',
@@ -785,6 +787,7 @@ export function renderPublicFrontend(): string {
     const labels = {
       cyberInventory: 'Cyber Inventory Proof',
       cyber: 'Cyber CVE Priority',
+      liveMarketProof: 'Live SEC/FRED Upstream Proof',
       marketContext: 'SEC + Macro Context',
       wildfire: 'Separate Wildfire WFIGS Preview',
       alerts: 'NWS Fire Weather Alerts',
@@ -794,6 +797,7 @@ export function renderPublicFrontend(): string {
     const routes = {
       cyberInventory: '/v1/adapters/cyber/inventory-priority/preview',
       cyber: '/v1/adapters/cyber/vuln-priority/preview',
+      liveMarketProof: '/v1/streams/market-context/live-proof',
       marketContext: '/v1/streams/market-context/preview',
       wildfire: '/v1/adapters/wildfire/wfigs-perimeters/preview',
       alerts: '/v1/adapters/wildfire/alerts/preview',
@@ -803,6 +807,7 @@ export function renderPublicFrontend(): string {
     const schemas = {
       cyberInventory: 'sapphirealpha.cyber_inventory_priority.preview.v1',
       cyber: 'sapphirealpha.cyber_priority.v1',
+      liveMarketProof: 'aoe.market_live_upstream_proof.v1',
       marketContext: 'sapphirealpha.market_context.v1',
       wildfire: 'separate.wfigs_public_preview.v1',
       alerts: 'separate.nws_fire_weather.v1',
@@ -812,7 +817,7 @@ export function renderPublicFrontend(): string {
     const heroActions = {
       cyber: 'cyberInventory',
       wildfire: 'wildfire',
-      markets: 'marketContext'
+      markets: 'liveMarketProof'
     };
     const buyerSegments = {
       opportunity_intel_pack: 'Grant writers, founders, public-sector consultants',
@@ -822,11 +827,12 @@ export function renderPublicFrontend(): string {
     };
     const productPreviewMap = {
       cyber_exploited_vuln_priority: 'cyberInventory',
-      market_regime_evidence_pack: 'marketContext'
+      market_regime_evidence_pack: 'liveMarketProof'
     };
     const proofNotes = {
       cyberInventory: 'Maps a buyer-provided authorized asset inventory to live KEV, EPSS, and NVD priority evidence; no scans or exploit content.',
       cyber: 'Checks a buyer-provided CVE list against live read-only defensive sources; no scanning or exploit content.',
+      liveMarketProof: 'Proves current SEC and FRED upstream reachability, freshness, latency, source URLs, hashes, and mockDataUsed=false.',
       marketContext: 'Combines SEC and FRED public-source context for research only; no advice or execution.',
       wildfire: 'Reads public WFIGS perimeter data for planning context only; separate from paid x402 streams.',
       alerts: 'Reads public NWS alert data for fire-weather context only; no alert sends.',
@@ -838,6 +844,7 @@ export function renderPublicFrontend(): string {
     const valueSignals = {
       cyberInventory: 'An MSP can show which client assets make each CVE urgent before paying for the full remediation proof packet.',
       cyber: 'A buyer can verify fix-today prioritization logic before paying for a full remediation packet.',
+      liveMarketProof: 'A buyer can see that this is real SEC/FRED source data, when it was reached, and what evidence hashes bind the packet.',
       marketContext: 'A buyer can inspect filing/macro evidence shape before paying for the full market evidence pack.',
       wildfire: 'An operator can verify the separate read-only planning lane without treating it as a paid incident product.',
       alerts: 'An operator can verify source freshness and boundary language before using the preview for situational awareness.',
@@ -1039,7 +1046,10 @@ export function renderPublicFrontend(): string {
       }
       let path = '';
       let body = {};
-      if (selected === 'marketContext') {
+      if (selected === 'liveMarketProof') {
+        path = '/v1/streams/market-context/live-proof';
+        body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
+      } else if (selected === 'marketContext') {
         path = '/v1/streams/market-context/preview';
         body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
       } else if (selected === 'cyberInventory') {

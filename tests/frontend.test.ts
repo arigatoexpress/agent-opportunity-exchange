@@ -27,10 +27,14 @@ describe("public frontend", () => {
     expect(html).not.toContain("loadProducts()");
     expect(html).toContain("Provenance and readiness");
     expect(html).toContain("Who has a reason to pay first");
+    expect(html).toContain("Live SEC/FRED Upstream Proof");
+    expect(html).toContain("/v1/streams/market-context/live-proof");
+    expect(html).toContain("aoe.market_live_upstream_proof.v1");
+    expect(html).toContain("mockDataUsed=false");
+    expect(html).toContain("Mock data posture");
     expect(html).toContain("SEC + Macro Context");
     expect(html).toContain("/v1/streams/market-context/preview");
     expect(html).toContain("sapphirealpha.market_context.v1");
-    expect(html).toContain("$1.0000");
     expect(html).toContain("MSPs and SMB security");
     expect(html).toContain("Wildfire routes are visible here only as a separate read-only public-safety research lane.");
     expect(html).toContain("Retail/customer-facing assets, wildfire operations, and live settlement remain outside this storefront.");

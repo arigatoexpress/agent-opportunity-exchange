@@ -11,6 +11,8 @@ test("buyer workbench proves x402 posture before paid access", async ({ page }) 
 
   await expect(page).toHaveTitle("Agent Opportunity Exchange - Evidence Streams");
   await expect(page.locator("#workbench")).toBeVisible();
+  await expect(page.locator("#routeLabel")).toContainText("/v1/streams/market-context/live-proof");
+  await expect(page.locator("#schemaLabel")).toContainText("aoe.market_live_upstream_proof.v1");
   await expect(page.locator("#x402Rail")).toContainText(/simulated|Base Sepolia testnet|config needed/);
   await expect(page.locator("#paymentRailMap")).toContainText("solana-pay-sh-svm-candidate");
   await expect(page.locator("#paymentRailMap")).toContainText("Pay.sh / Solana provider catalog");

@@ -276,6 +276,18 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       previewPriceUsd: { type: "string" },
       report: objectSchema("SEC plus macro evidence proof", {}),
     }),
+    "aoe.market_live_upstream_proof.v1": objectSchema("Live market upstream proof", {
+      schemaId: { const: "aoe.market_live_upstream_proof.v1" },
+      mode: { const: "read_only_live_source_probe" },
+      x402Stream: { const: true },
+      productId: { const: "market_regime_evidence_pack" },
+      streamId: { const: "sec_macro_context" },
+      mockDataUsed: { type: "boolean" },
+      overall: { type: "string", enum: ["pass", "warn", "fail"] },
+      upstream: objectSchema("SEC and FRED upstream proof", {}),
+      reportSummary: objectSchema("Evidence summary", {}),
+      boundaries: objectSchema("Safety boundaries", {}),
+    }),
     "aoe.adapter.sec_filings.preview.v1": objectSchema("SEC filings preview", {
       mode: { const: "read_only_public_preview" },
       x402Stream: { const: true },

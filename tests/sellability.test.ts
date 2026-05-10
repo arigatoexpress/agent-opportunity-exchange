@@ -22,7 +22,7 @@ describe("sellability scorecard", () => {
     expect(market).toBeDefined();
 
     const score = scoreProductSellability(market!);
-    expect(score.livePreviewRoutes).toContain("/v1/streams/market-context/preview");
+    expect(score.livePreviewRoutes).toContain("/v1/streams/market-context/live-proof");
     expect(score.licenseReviewNeeded).toBe(true);
     expect(score.sourceRiskCounts.yellow).toBeGreaterThan(0);
     expect(score.issues.map((issue) => issue.code)).toContain("license_review_needed");

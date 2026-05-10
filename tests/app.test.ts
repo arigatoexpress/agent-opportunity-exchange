@@ -100,6 +100,17 @@ describe("Agent Opportunity Exchange API", () => {
     expect(marketPreview.productIds).toEqual(["market_regime_evidence_pack"]);
     expect(marketPreview.freshnessSla.caveats.join(" ")).toContain("SEC");
 
+    const marketLiveProof = body.routes.find((route: { routeId: string }) => route.routeId === "market_context_live_proof");
+    expect(marketLiveProof).toEqual(
+      expect.objectContaining({
+        route: "/v1/streams/market-context/live-proof",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.market_live_upstream_proof.v1",
+      }),
+    );
+    expect(marketLiveProof.caveats.join(" ")).toContain("not investment advice");
+
     const cyberInventoryPreview = body.routes.find((route: { routeId: string }) => route.routeId === "cyber_inventory_priority_preview");
     expect(cyberInventoryPreview).toEqual(
       expect.objectContaining({
@@ -261,8 +272,8 @@ describe("Agent Opportunity Exchange API", () => {
         streamId: "sec_macro_context",
         productId: "market_regime_evidence_pack",
         x402Stream: true,
-        route: "/v1/streams/market-context/preview",
-        schemaVersion: "sapphirealpha.market_context.v1",
+        route: "/v1/streams/market-context/live-proof",
+        schemaVersion: "aoe.market_live_upstream_proof.v1",
         liveSettlementAllowed: false,
       }),
     );
@@ -316,6 +327,60 @@ describe("Agent Opportunity Exchange API", () => {
       expect(body.report.filings[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
       expect(body.report.macro[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
       expect(body.report.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("exposes live SEC and FRED upstream proof without mock data or side effects", async () => {
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url.endsWith("/company_tickers.json")) {
+        return jsonResponse({
+          "0": { cik_str: 320193, ticker: "AAPL", title: "Apple Inc." },
+        });
+      }
+      if (url === "https://data.sec.gov/submissions/CIK0000320193.json") {
+        return jsonResponse({
+          name: "Apple Inc.",
+          filings: {
+            recent: {
+              accessionNumber: ["0000320193-26-000013"],
+              filingDate: ["2026-05-01"],
+              reportDate: ["2026-03-28"],
+              form: ["10-Q"],
+              primaryDocument: ["aapl-20260328.htm"],
+            },
+          },
+        });
+      }
+      const seriesId = new URL(url).searchParams.get("id");
+      return new Response(`observation_date,${seriesId}
+2026-04-01,4.3
+`, { status: 200, headers: { "Content-Type": "text/csv" } });
+    });
+
+    try {
+      const res = await app.request("/v1/streams/market-context/live-proof", {
+        method: "POST",
+        body: JSON.stringify({
+          ticker: "AAPL",
+          seriesIds: ["FEDFUNDS", "UNRATE"],
+          filingLimit: 1,
+          seriesLimit: 1,
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.schemaId).toBe("aoe.market_live_upstream_proof.v1");
+      expect(body.mode).toBe("read_only_live_source_probe");
+      expect(body.mockDataUsed).toBe(false);
+      expect(body.overall).toBe("pass");
+      expect(body.upstream.sec_edgar.status).toBe("ok");
+      expect(body.upstream.fred_alfred.status).toBe("ok");
+      expect(body.reportSummary.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+      expect(body.boundaries.liveSettlementAllowed).toBe(false);
+      expect(body.boundaries.tradeExecution).toBe(false);
     } finally {
       vi.unstubAllGlobals();
     }
