@@ -26,6 +26,9 @@ The API is discoverable before purchase:
 - `GET /v1/routes` returns `aoe.discovery.routes.v1` route contracts for public
   previews, quotes, preflight, simulated paid content, and separate read-only
   lanes.
+- `GET /v1/streams` returns `aoe.streams.discovery.v1` so buyers and agents can
+  see the current live-stream route, source ids, and historical-claims posture
+  before invoking a proof route.
 - `GET /v1/readiness` reports whether product and route contract coverage is
   buyer-discovery ready.
 - `POST /v1/access/preflight` returns the product contract alongside price and
@@ -168,6 +171,9 @@ It returns `schemaId: aoe.market_live_upstream_proof.v1`, upstream status for
 summary, explicit historical-claims posture (`revisionAware: false` and
 `productionHistoricalClaimsRequire: "alfred_vintages"` for the live proof
 path), and research-only/no-settlement/no-execution boundaries.
+
+That same ALFRED requirement is also visible in `GET /v1/streams` so discovery
+can fail closed on historical claims before runtime.
 
 The lower-level x402-shaped preview combines SEC recent filing metadata and
 FRED macro observations into one source-cited context payload:

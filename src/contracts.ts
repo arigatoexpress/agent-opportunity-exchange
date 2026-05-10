@@ -117,6 +117,54 @@ const routeDiscoverySchema = objectSchema(
   ["routeId", "route", "method", "schemaId", "x402Stream", "access", "readiness", "sourceIds", "caveats"],
 );
 
+const historicalClaimsPolicySchema = objectSchema(
+  "Historical claims policy",
+  {
+    revisionAware: { type: "boolean" },
+    liveMacroReadMode: { type: "string" },
+    productionHistoricalClaimsRequire: { type: "string" },
+    notes: arrayOf({ type: "string" }),
+  },
+  ["revisionAware", "liveMacroReadMode", "productionHistoricalClaimsRequire", "notes"],
+);
+
+const streamDefinitionSchema = objectSchema(
+  "Stream definition",
+  {
+    streamId: { type: "string" },
+    productId: { type: "string" },
+    x402Stream: { const: true },
+    title: { type: "string" },
+    route: { type: "string" },
+    method: stringEnum(["GET", "POST"]),
+    previewPriceUsd: { type: "string" },
+    schemaVersion: { type: "string" },
+    settlementMode: { const: "simulated_or_testnet" },
+    liveSettlementAllowed: { const: false },
+    externalSideEffectsAllowed: { const: false },
+    sourceIds: arrayOf({ type: "string" }),
+    tags: arrayOf({ type: "string" }),
+    inputSchema: objectSchema("Stream input schema", {}),
+    outputSummary: { type: "string" },
+    historicalClaimsPolicy: historicalClaimsPolicySchema,
+    caveats: arrayOf({ type: "string" }),
+  },
+  [
+    "streamId",
+    "productId",
+    "x402Stream",
+    "route",
+    "method",
+    "schemaVersion",
+    "settlementMode",
+    "liveSettlementAllowed",
+    "externalSideEffectsAllowed",
+    "sourceIds",
+    "outputSummary",
+    "caveats",
+  ],
+);
+
 const quoteSchema = objectSchema(
   "x402 quote",
   {
@@ -255,7 +303,7 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
         mainnet: { const: false },
       }),
     }),
-    "aoe.streams.discovery.v1": objectSchema("Streams response", { streams: arrayOf(objectSchema("Stream", {})) }),
+    "aoe.streams.discovery.v1": objectSchema("Streams response", { streams: arrayOf(streamDefinitionSchema) }),
     "aoe.workstreams.discovery.v1": objectSchema("Separate workstreams response", { workstreams: arrayOf(objectSchema("Workstream", {})) }),
     ...routeSchemaIds,
     ...productSchemaIds,
@@ -286,12 +334,7 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       overall: { type: "string", enum: ["pass", "warn", "fail"] },
       upstream: objectSchema("SEC and FRED upstream proof", {}),
       reportSummary: objectSchema("Evidence summary", {}),
-      historicalClaimsPolicy: objectSchema("Historical claims policy", {
-        revisionAware: { const: false },
-        liveMacroReadMode: { const: "fred_graph_csv" },
-        productionHistoricalClaimsRequire: { const: "alfred_vintages" },
-        notes: { type: "array", items: { type: "string" } },
-      }),
+      historicalClaimsPolicy: historicalClaimsPolicySchema,
       boundaries: objectSchema("Safety boundaries", {}),
     }),
     "aoe.adapter.sec_filings.preview.v1": objectSchema("SEC filings preview", {

@@ -519,6 +519,15 @@ export const streams: StreamDefinition[] = [
       seriesLimit: "optional 1-24 observations per series",
     },
     outputSummary: "Live SEC/FRED upstream availability, freshness, source URLs, evidence hashes, and research-only boundaries.",
+    historicalClaimsPolicy: {
+      revisionAware: false,
+      liveMacroReadMode: "fred_graph_csv",
+      productionHistoricalClaimsRequire: "alfred_vintages",
+      notes: [
+        "Live route proves current SEC/FRED reachability and freshness only.",
+        "Historical or revision-sensitive macro claims require explicit ALFRED vintages before resale.",
+      ],
+    },
     caveats: [
       "Research context only.",
       "Not investment advice.",

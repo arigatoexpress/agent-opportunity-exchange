@@ -267,7 +267,8 @@ describe("Agent Opportunity Exchange API", () => {
     const res = await app.request("/v1/streams");
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.streams).toContainEqual(
+    const marketStream = body.streams.find((stream: { streamId: string }) => stream.streamId === "sec_macro_context");
+    expect(marketStream).toEqual(
       expect.objectContaining({
         streamId: "sec_macro_context",
         productId: "market_regime_evidence_pack",
@@ -275,6 +276,13 @@ describe("Agent Opportunity Exchange API", () => {
         route: "/v1/streams/market-context/live-proof",
         schemaVersion: "aoe.market_live_upstream_proof.v1",
         liveSettlementAllowed: false,
+      }),
+    );
+    expect(marketStream.historicalClaimsPolicy).toEqual(
+      expect.objectContaining({
+        revisionAware: false,
+        liveMacroReadMode: "fred_graph_csv",
+        productionHistoricalClaimsRequire: "alfred_vintages",
       }),
     );
     expect(JSON.stringify(body)).not.toContain("wildfire");
