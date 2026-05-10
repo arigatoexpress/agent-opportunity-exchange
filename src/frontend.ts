@@ -458,6 +458,30 @@ export function renderPublicFrontend(): string {
       gap: 1px;
       background: var(--line);
     }
+    .rail-map {
+      display: grid;
+      gap: 1px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--line);
+      overflow: hidden;
+    }
+    .rail-row {
+      display: grid;
+      gap: 5px;
+      padding: 11px;
+      background: rgba(255, 255, 255, .82);
+      min-width: 0;
+    }
+    .rail-row strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .rail-row span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
     .source-row {
       display: grid;
       gap: 4px;
@@ -713,6 +737,14 @@ export function renderPublicFrontend(): string {
             <div class="source-row"><strong>Loading sources</strong><span class="small">/v1/sources</span><span class="small">Waiting for registry data.</span></div>
           </section>
 
+          <section class="rail-map" id="paymentRailMap" aria-label="x402 payment rail roadmap" aria-live="polite">
+            <div class="rail-row">
+              <strong>Loading payment rails</strong>
+              <span>/v1/x402/status</span>
+              <span>Base Sepolia and Solana/Pay.sh roadmap evidence will render here. Roadmap rail: solana-pay-sh-svm-candidate.</span>
+            </div>
+          </section>
+
           <section class="boundary-box">
             <div class="eyebrow">Boundary</div>
             <p class="small" id="buttonResultNote">Run Preview calls a live read-only route. Inspect Featured Proof calls artifact preview and quote endpoints only.</p>
@@ -910,6 +942,7 @@ export function renderPublicFrontend(): string {
       document.getElementById('paymentPostureNote').textContent = status.activeRail === 'official_x402_testnet'
         ? 'Official @x402 middleware is active on Base Sepolia only; live mainnet settlement remains blocked.'
         : 'No official payment middleware is active until AOE_PAYMENT_MODE=x402_testnet and AOE_X402_PAY_TO are configured.';
+      renderPaymentRailMap(status);
     }
 
     async function loadContracts() {
@@ -937,6 +970,29 @@ export function renderPublicFrontend(): string {
           '<span class="small">' + escapeHtml(source.accessPattern + ' | risk=' + source.risk + ' | ' + source.rights.redistribution) + '</span>' +
           '</div>';
       }).join('');
+    }
+
+    function renderPaymentRailMap(status) {
+      const rows = (status.rails || []).map(rail => {
+        const state = rail.status === 'enabled_when_configured'
+          ? 'testnet-ready when configured'
+          : 'planned / simulated only';
+        return '<div class="rail-row">' +
+          '<strong>' + escapeHtml(rail.railId) + '</strong>' +
+          '<span>' + escapeHtml(rail.runtime.toUpperCase() + ' | ' + rail.network + ' | ' + rail.asset + ' | ' + state) + '</span>' +
+          '<span>' + escapeHtml((rail.caveats || []).join(' ')) + '</span>' +
+          '</div>';
+      });
+      if (status.paySh) {
+        rows.push(
+          '<div class="rail-row">' +
+            '<strong>Pay.sh / Solana provider catalog</strong>' +
+            '<span>' + escapeHtml(status.paySh.gatewayPattern + ' | providerCatalogPlanned=' + status.paySh.providerCatalogPlanned) + '</span>' +
+            '<span>' + escapeHtml('liveWalletsAllowed=' + status.paySh.liveWalletsAllowed + ' | liveProviderCredentialsAllowed=' + status.paySh.liveProviderCredentialsAllowed) + '</span>' +
+          '</div>'
+        );
+      }
+      document.getElementById('paymentRailMap').innerHTML = rows.join('');
     }
 
     function renderProducts() {

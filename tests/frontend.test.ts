@@ -72,4 +72,16 @@ describe("public frontend", () => {
     expect(html).toContain("Buyer contract bundle");
     expect(html).toContain("schemaCount");
   });
+
+  test("surfaces disabled payment rail roadmap evidence for buyers", () => {
+    const html = renderPublicFrontend();
+    expect(html).toContain('id="paymentRailMap"');
+    expect(html).toContain("x402 payment rail roadmap");
+    expect(html).toContain("renderPaymentRailMap");
+    expect(html).toContain("solana-pay-sh-svm-candidate");
+    expect(html).toContain("Pay.sh / Solana provider catalog");
+    expect(html).toContain("liveWalletsAllowed");
+    expect(html).toContain("liveProviderCredentialsAllowed");
+    expect(html).toContain("/v1/x402/status");
+  });
 });
