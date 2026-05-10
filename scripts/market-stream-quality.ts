@@ -240,7 +240,7 @@ export async function runMarketStreamQualityHarness(options: MarketStreamQuality
   const gaps = [
     "Harness uses deterministic synthetic SEC/FRED responses; use npm run market:live-smoke for live SEC/FRED upstream availability and latency proof.",
     "FRED graph CSV checks are not revision-aware ALFRED vintage checks yet.",
-    "Product-level market catalog still names yellow/licensed sources for future packs; this harness only certifies the active SEC/FRED stream.",
+    "Future licensed/onchain/narrative market expansions still need separate source-terms review and should not widen the active SEC/FRED contract silently.",
   ];
 
   return {

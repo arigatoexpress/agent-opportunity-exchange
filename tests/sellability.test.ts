@@ -17,15 +17,15 @@ describe("sellability scorecard", () => {
     }
   });
 
-  test("flags market-license review without blocking the green SEC/FRED stream", () => {
+  test("keeps the active market contract on green public sources", () => {
     const market = products.find((product) => product.productId === "market_regime_evidence_pack");
     expect(market).toBeDefined();
 
     const score = scoreProductSellability(market!);
     expect(score.livePreviewRoutes).toContain("/v1/streams/market-context/live-proof");
-    expect(score.licenseReviewNeeded).toBe(true);
-    expect(score.sourceRiskCounts.yellow).toBeGreaterThan(0);
-    expect(score.issues.map((issue) => issue.code)).toContain("license_review_needed");
+    expect(score.licenseReviewNeeded).toBe(false);
+    expect(score.sourceRiskCounts.yellow).toBe(0);
+    expect(score.issues.map((issue) => issue.code)).not.toContain("license_review_needed");
     expect(score.issues.filter((issue) => issue.severity === "critical")).toEqual([]);
   });
 
