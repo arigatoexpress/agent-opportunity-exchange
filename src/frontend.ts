@@ -141,7 +141,7 @@ export function renderPublicFrontend(): string {
     }
     .canvas {
       display: grid;
-      grid-template-rows: auto auto auto auto minmax(420px, 620px) auto;
+      grid-template-rows: auto auto auto auto auto minmax(420px, 620px) auto;
       min-height: 0;
     }
     .panel-head {
@@ -385,10 +385,38 @@ export function renderPublicFrontend(): string {
     }
     .output-wrap {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
       min-width: 0;
       min-height: 0;
       height: 100%;
+    }
+    .proof-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .summary-cell {
+      min-height: 86px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, .82);
+      min-width: 0;
+    }
+    .summary-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .summary-cell strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.15;
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
     }
     .output-toolbar {
       display: grid;
@@ -529,7 +557,7 @@ export function renderPublicFrontend(): string {
       }
     }
     @media (max-width: 920px) {
-      .workspace, header, .controls, .proof-strip, .stream-spec, .lane-strip {
+      .workspace, header, .controls, .proof-strip, .stream-spec, .proof-summary, .lane-strip {
         grid-template-columns: 1fr;
       }
       .inspector-body {
@@ -694,6 +722,28 @@ export function renderPublicFrontend(): string {
         </div>
 
         <div class="output-wrap">
+          <div class="proof-summary" id="proofSummary" aria-live="polite">
+            <div class="summary-cell">
+              <span>Live Proof</span>
+              <strong>Awaiting preview</strong>
+              <p class="small">Run the market route to read current upstream proof.</p>
+            </div>
+            <div class="summary-cell">
+              <span>Mock Data</span>
+              <strong>Unknown</strong>
+              <p class="small">Live proof must return false.</p>
+            </div>
+            <div class="summary-cell">
+              <span>Upstreams</span>
+              <strong>SEC + FRED</strong>
+              <p class="small">Status appears here after the route returns.</p>
+            </div>
+            <div class="summary-cell">
+              <span>Evidence Hash</span>
+              <strong>Pending</strong>
+              <p class="small">SHA-256 report hash binds normalized records.</p>
+            </div>
+          </div>
           <div class="output-toolbar">
             <span id="outputTitle">Live SEC/FRED proof response</span>
             <span class="schema-pill" id="schemaLabel">aoe.market_live_upstream_proof.v1</span>
@@ -770,6 +820,7 @@ export function renderPublicFrontend(): string {
     const methodLabel = document.getElementById('methodLabel');
     const outputTitle = document.getElementById('outputTitle');
     const schemaLabel = document.getElementById('schemaLabel');
+    const proofSummary = document.getElementById('proofSummary');
     let activePreviewRequest = 0;
     let userStartedPreview = false;
     let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null, contracts: null };
@@ -872,8 +923,42 @@ export function renderPublicFrontend(): string {
       document.getElementById('buttonResultNote').textContent = context.label + ' returned route, request, value, proof, safety, and response JSON.';
     }
 
+    function shortHash(value) {
+      if (!value) return 'Pending';
+      return String(value).replace('sha256:', '').slice(0, 12);
+    }
+
+    function renderProofSummary(value, context) {
+      const safeLabel = context ? context.label : 'Awaiting preview';
+      if (value && value.schemaId === 'aoe.market_live_upstream_proof.v1') {
+        const sec = value.upstream && value.upstream.sec_edgar ? value.upstream.sec_edgar : {};
+        const fred = value.upstream && value.upstream.fred_alfred ? value.upstream.fred_alfred : {};
+        const hash = value.reportSummary && value.reportSummary.evidenceProof ? value.reportSummary.evidenceProof.reportHash : null;
+        proofSummary.innerHTML =
+          '<div class="summary-cell"><span>Live Proof</span><strong class="' + (value.overall === 'pass' ? 'ok' : value.overall === 'warn' ? 'warn' : 'danger') + '">' + escapeHtml(value.overall || 'unknown') + '</strong><p class="small">' + escapeHtml(value.query ? value.query.ticker + ' | ' + value.durationMs + 'ms' : safeLabel) + '</p></div>' +
+          '<div class="summary-cell"><span>Mock Data</span><strong class="' + (value.mockDataUsed ? 'danger' : 'ok') + '">' + escapeHtml(String(value.mockDataUsed)) + '</strong><p class="small">Live buyer proof must stay false.</p></div>' +
+          '<div class="summary-cell"><span>Upstreams</span><strong>' + escapeHtml('SEC ' + (sec.status || '?') + ' / FRED ' + (fred.status || '?')) + '</strong><p class="small">' + escapeHtml((sec.observedRecords || 0) + ' filings, ' + (fred.observedRecords || 0) + ' macro observations') + '</p></div>' +
+          '<div class="summary-cell"><span>Evidence Hash</span><strong class="mono">' + escapeHtml(shortHash(hash)) + '</strong><p class="small">Latest SEC ' + escapeHtml(sec.latestRecordDate || 'none') + ' | FRED ' + escapeHtml(fred.latestRecordDate || 'none') + '</p></div>';
+        return;
+      }
+      if (value && value.error) {
+        proofSummary.innerHTML =
+          '<div class="summary-cell"><span>Route Result</span><strong class="danger">Failed</strong><p class="small">' + escapeHtml(safeLabel) + '</p></div>' +
+          '<div class="summary-cell"><span>Mock Data</span><strong>Unknown</strong><p class="small">The route did not return a proof packet.</p></div>' +
+          '<div class="summary-cell"><span>Upstreams</span><strong>Check JSON</strong><p class="small">Failure details remain visible below.</p></div>' +
+          '<div class="summary-cell"><span>Evidence Hash</span><strong>None</strong><p class="small">No proof hash was returned.</p></div>';
+        return;
+      }
+      proofSummary.innerHTML =
+        '<div class="summary-cell"><span>Route Result</span><strong>' + escapeHtml(safeLabel) + '</strong><p class="small">See JSON for detailed proof.</p></div>' +
+        '<div class="summary-cell"><span>Mock Data</span><strong>Not applicable</strong><p class="small">Only the live market proof route asserts this field.</p></div>' +
+        '<div class="summary-cell"><span>Upstreams</span><strong>Source cited</strong><p class="small">Registry and response data stay visible below.</p></div>' +
+        '<div class="summary-cell"><span>Evidence Hash</span><strong>See JSON</strong><p class="small">Hash availability depends on the route.</p></div>';
+    }
+
     function pretty(value, context) {
       updateDecisionRail(context);
+      renderProofSummary(value, context);
       if (!context) {
         output.textContent = JSON.stringify(value, null, 2);
         return;

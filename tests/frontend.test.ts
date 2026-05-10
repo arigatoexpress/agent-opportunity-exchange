@@ -32,6 +32,10 @@ describe("public frontend", () => {
     expect(html).toContain("aoe.market_live_upstream_proof.v1");
     expect(html).toContain("mockDataUsed=false");
     expect(html).toContain("Mock data posture");
+    expect(html).toContain('id="proofSummary"');
+    expect(html).toContain("Evidence Hash");
+    expect(html).toContain("Live buyer proof must stay false.");
+    expect(html).toContain("macro observations");
     expect(html).toContain("SEC + Macro Context");
     expect(html).toContain("/v1/streams/market-context/preview");
     expect(html).toContain("sapphirealpha.market_context.v1");
