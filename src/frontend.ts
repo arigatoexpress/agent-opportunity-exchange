@@ -551,6 +551,7 @@ export function renderPublicFrontend(): string {
       </div>
       <div class="top-actions">
         <button class="btn" id="refresh">Refresh Evidence</button>
+        <button class="btn" id="showContracts">Show Contracts</button>
         <button class="btn" data-action="cyber">Run Cyber Preview</button>
         <button class="btn primary" data-action="markets">Run Market Preview</button>
       </div>
@@ -738,7 +739,7 @@ export function renderPublicFrontend(): string {
     const schemaLabel = document.getElementById('schemaLabel');
     let activePreviewRequest = 0;
     let userStartedPreview = false;
-    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null };
+    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null, contracts: null };
 
     const examples = {
       cyberInventory: 'demo-inventory',
@@ -799,7 +800,8 @@ export function renderPublicFrontend(): string {
       alerts: 'Reads public NWS alert data for fire-weather context only; no alert sends.',
       sec: 'Reads SEC filing metadata and links; no recommendations or trading actions.',
       fred: 'Reads public FRED graph data; production research should add revision-aware ALFRED handling.',
-      product: 'Shows pre-payment artifact preview, quote, source ids, rights, and readiness evidence.'
+      product: 'Shows pre-payment artifact preview, quote, source ids, rights, and readiness evidence.',
+      contracts: 'Exports the buyer-facing OpenAPI and JSON Schema bundle generated from the current product, route, readiness, and x402 registries.'
     };
     const valueSignals = {
       cyberInventory: 'An MSP can show which client assets make each CVE urgent before paying for the full remediation proof packet.',
@@ -809,7 +811,8 @@ export function renderPublicFrontend(): string {
       alerts: 'An operator can verify source freshness and boundary language before using the preview for situational awareness.',
       sec: 'A research buyer can confirm public filing coverage and response shape before buying derived analysis.',
       fred: 'A research buyer can confirm macro series coverage and timestamps before buying packaged context.',
-      product: 'A buyer can see what is sourced, what is priced, and what is withheld until simulated/testnet access.'
+      product: 'A buyer can see what is sourced, what is priced, and what is withheld until simulated/testnet access.',
+      contracts: 'A buyer or integrating agent can validate route schemas, payment boundaries, source-rights posture, and no-live-settlement guarantees before implementation.'
     };
 
     function escapeHtml(value) {
@@ -907,6 +910,12 @@ export function renderPublicFrontend(): string {
       document.getElementById('paymentPostureNote').textContent = status.activeRail === 'official_x402_testnet'
         ? 'Official @x402 middleware is active on Base Sepolia only; live mainnet settlement remains blocked.'
         : 'No official payment middleware is active until AOE_PAYMENT_MODE=x402_testnet and AOE_X402_PAY_TO are configured.';
+    }
+
+    async function loadContracts() {
+      const contracts = await getJson('/v1/contracts');
+      catalogState.contracts = contracts;
+      return contracts;
     }
 
     function renderProofSignals() {
@@ -1139,12 +1148,60 @@ export function renderPublicFrontend(): string {
       }
     }
 
+    async function inspectContracts(options) {
+      const opts = options || {};
+      userStartedPreview = true;
+      const requestId = ++activePreviewRequest;
+      runButton.textContent = 'Run Preview';
+      runButton.removeAttribute('aria-busy');
+      if (opts.scroll) {
+        workbench.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        output.focus({ preventScroll: true });
+      }
+      output.textContent = 'Loading buyer contract bundle from /v1/contracts...';
+      try {
+        const contracts = catalogState.contracts || await loadContracts();
+        if (requestId !== activePreviewRequest) return;
+        pretty({
+          schemaId: contracts.schemaId,
+          bundleVersion: contracts.bundleVersion,
+          generatedAt: contracts.generatedAt,
+          coverage: contracts.coverage,
+          paymentBoundary: contracts.paymentBoundary,
+          rightsBoundary: contracts.rightsBoundary,
+          pathContracts: contracts.pathContracts,
+          openapi: {
+            openapi: contracts.openapi.openapi,
+            title: contracts.openapi.info.title,
+            pathCount: Object.keys(contracts.openapi.paths || {}).length,
+            schemaCount: Object.keys(contracts.openapi.components?.schemas || {}).length
+          }
+        }, {
+          label: 'Buyer contract bundle',
+          path: '/v1/contracts',
+          body: null,
+          valueSignal: valueSignals.contracts,
+          proof: proofNotes.contracts
+        });
+      } catch (error) {
+        if (requestId !== activePreviewRequest) return;
+        pretty({ error }, {
+          label: 'Buyer contract bundle failed',
+          path: '/v1/contracts',
+          body: null,
+          valueSignal: valueSignals.contracts,
+          proof: proofNotes.contracts
+        });
+      }
+    }
+
     kind.addEventListener('change', () => {
       input.value = examples[kind.value];
       updateRouteChrome();
     });
     document.getElementById('runPreview').addEventListener('click', runPreview);
     document.getElementById('inspectFeatured').addEventListener('click', () => inspectProduct('market_regime_evidence_pack', { scroll: true }));
+    document.getElementById('showContracts').addEventListener('click', () => inspectContracts({ scroll: true }));
     document.getElementById('products').addEventListener('click', event => {
       const button = event.target.closest('[data-product-id]');
       if (!button) return;
@@ -1160,7 +1217,7 @@ export function renderPublicFrontend(): string {
       inspectProduct(productId, { scroll: true });
     });
     document.getElementById('refresh').addEventListener('click', async () => {
-      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status()]);
+      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadContracts()]);
       renderProducts();
       await runPreview();
     });
@@ -1174,7 +1231,7 @@ export function renderPublicFrontend(): string {
     });
 
     updateRouteChrome();
-    Promise.all([loadReadiness(), loadCatalog(), loadX402Status()])
+    Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadContracts()])
       .then(() => {
         renderProducts();
         if (!userStartedPreview) return runPreview({ system: true });

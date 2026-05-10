@@ -5,6 +5,9 @@ artifact content unlocks. The contract surface is intentionally small:
 
 - `GET /.well-known/agent-opportunity-exchange.json` advertises discovery,
   schema, readiness, and safety endpoints.
+- `GET /v1/contracts` returns `aoe.contract_bundle.v1`, a buyer-facing
+  OpenAPI 3.1 and JSON Schema bundle generated from the current product, route,
+  readiness, x402, and source-rights registries.
 - `GET /v1/products` returns `aoe.discovery.products.v1` with product schema
   ids, quality metadata, buyer value metrics, and source freshness/SLA caveats.
 - `GET /v1/routes` returns `aoe.discovery.routes.v1` with public preview,
@@ -33,6 +36,24 @@ Every sellable product must include:
 - `quality.auditSignals`;
 - rights, source ids, disclaimers, and explicit no-live-settlement posture.
 
+## Contract Bundle
+
+`GET /v1/contracts` is the integration handoff for buyers, agents, and future
+frontends. It includes:
+
+- `pathContracts`: route ids, paths, methods, schema ids, source ids, product or
+  workstream ids, access mode, readiness, caveats, and disabled side-effect
+  flags;
+- `schemaCatalog`: reusable JSON Schemas keyed by existing schema ids;
+- `openapi`: an OpenAPI 3.1 document with `x-aoe` extensions that repeat the
+  route-level access, readiness, x402, source, and safety posture;
+- `paymentBoundary`: simulated-header default, Base Sepolia x402 testnet only
+  when explicitly configured, `mainnetAllowed=false`, and
+  `liveSettlementAllowed=false`;
+- `rightsBoundary`: the payment-is-not-permission rule, source count/risk
+  summary, and prohibited use classes such as raw source resale, paywall bypass,
+  credential material, unauthorized scans, trading, and money movement.
+
 `quality.sourceFreshnessSla` is not a guarantee that upstream public data is
 always reachable. It is the buyer-facing expectation and caveat envelope for
 how current a paid artifact may claim to be. If a route falls back to partial
@@ -58,8 +79,6 @@ Wildfire and drone-readiness routes can appear in route discovery only as
 
 ## Current Contract Gaps
 
-- Product schemas are ids and TypeScript contracts, not published JSON Schema
-  files yet.
 - Source freshness is declared in the registry; no scheduled refresh ledger
   proves ongoing SLA attainment yet.
 - Mainnet/live settlement is deliberately absent. The payment surface is

@@ -17,6 +17,9 @@ Every product starts from a source-rights envelope. x402 is the payment rail, no
 
 The API is discoverable before purchase:
 
+- `GET /v1/contracts` returns `aoe.contract_bundle.v1`, a buyer-facing OpenAPI
+  3.1 and JSON Schema bundle generated from the current product, route,
+  readiness, x402, and source-rights registries.
 - `GET /v1/products` returns `aoe.discovery.products.v1` product contracts with
   schema ids, quality metadata, buyer-facing value metrics, source freshness/SLA
   caveats, rights, source ids, and disclaimers.
@@ -45,6 +48,7 @@ The default server listens on `http://127.0.0.1:4402`.
 
 - `GET /health`
 - `GET /.well-known/agent-opportunity-exchange.json`
+- `GET /v1/contracts`
 - `GET /v1/products`
 - `GET /v1/routes`
 - `GET /v1/streams`
