@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    exclude: ["dist/**", "node_modules/**"],
+    exclude: ["browser-smoke/**", "dist/**", "node_modules/**", "playwright-report/**", "test-results/**"],
   },
 });

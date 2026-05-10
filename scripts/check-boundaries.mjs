@@ -10,7 +10,7 @@ const forbiddenRuntimeClaims = [
 ];
 
 const self = new URL(import.meta.url).pathname;
-const ignoredDirs = new Set([".git", ".playwright-cli", "coverage", "dist", "node_modules"]);
+const ignoredDirs = new Set([".git", ".playwright-cli", "coverage", "dist", "node_modules", "playwright-report", "test-results"]);
 const files = walk(root).filter((file) => file !== self);
 
 const violations = [];
