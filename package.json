@@ -13,6 +13,8 @@
     "monitor": "tsx scripts/monitor-runtime.ts",
     "market:quality": "tsx scripts/market-stream-quality.ts",
     "sellability": "tsx scripts/sellability-scorecard.ts",
+    "serve:smoke": "tsx src/server.ts",
+    "browser:smoke": "playwright test",
     "cyber:priority": "tsx src/cli/cyber-priority.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -32,6 +34,7 @@
   "devDependencies": {
     "@emnapi/core": "^1.10.0",
     "@emnapi/runtime": "^1.10.0",
+    "@playwright/test": "^1.59.1",
     "@types/node": "^24.10.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
