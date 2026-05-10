@@ -74,10 +74,52 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.routeDiscovery).toBe("/v1/routes");
     expect(body.readiness).toBe("/v1/readiness");
     expect(body.x402Status).toBe("/v1/x402/status");
+    expect(body.paymentRails).toBe("/v1/payment-rails");
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
     expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
+    expect(body.schemaIds.paymentRails).toBe("aoe.payment_rails.v1");
     expect(body.freeEndpoints).toContain("/v1/routes");
+    expect(body.freeEndpoints).toContain("/v1/payment-rails");
     expect(body.qualityMetadata).toContain("sourceFreshnessSla");
+  });
+
+  test("exposes Pay.sh and Solana as a sandbox roadmap rail without enabling settlement", async () => {
+    const res = await app.request("/v1/payment-rails");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.payment_rails.v1");
+    expect(body.railPosture).toBe("simulation_first_testnet_only");
+    expect(body.liveSettlementAllowed).toBe(false);
+    expect(body.externalSideEffectsAllowed).toBe(false);
+    expect(body.counts.liveEnabled).toBe(0);
+
+    for (const rail of body.rails) {
+      expect(rail.liveSettlementAllowed).toBe(false);
+      expect(rail.externalSideEffectsAllowed).toBe(false);
+    }
+
+    const paySh = body.rails.find((rail: { railId: string }) => rail.railId === "pay_sh_solana_sandbox");
+    expect(paySh).toEqual(
+      expect.objectContaining({
+        providerId: "pay_sh",
+        readiness: "planned_sandbox_adapter",
+        activeInRuntime: false,
+        liveSettlementAllowed: false,
+      }),
+    );
+    expect(paySh.protocols).toEqual(["x402", "mpp"]);
+    expect(paySh.network).toEqual(
+      expect.objectContaining({
+        family: "solana",
+        caip2: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+        mainnet: false,
+      }),
+    );
+    expect(paySh.integrationGates.join(" ")).toContain("pay --sandbox");
+
+    const mainnet = body.rails.find((rail: { railId: string }) => rail.railId === "pay_sh_solana_mainnet");
+    expect(mainnet.readiness).toBe("blocked_until_compliance_review");
+    expect(mainnet.activeInRuntime).toBe(false);
   });
 
   test("route discovery covers public previews, simulated paid content, and separate lanes", async () => {
@@ -117,6 +159,7 @@ describe("Agent Opportunity Exchange API", () => {
     expect(wildfireRoute.workstreamIds).toEqual(["wildfire_drone_readiness_lane"]);
 
     expect(productRoutes.map((route) => route.routeId)).toContain("access_preflight");
+    expect(productRoutes.map((route) => route.routeId)).toContain("payment_rails");
   });
 
   test("cyber inventory preview maps buyer assets to defensive priority evidence", async () => {

@@ -58,6 +58,12 @@ This stack is outside the x402 stream catalog.
 ## Future Infrastructure
 
 - Postgres plus pgvector for artifact search.
+- Pay.sh sandbox gateway and provider specs for agent-payable API discovery,
+  starting with preview endpoints and no live settlement.
+- Solana x402/MPP support as a rail-registry and sandbox-integration target,
+  with mainnet blocked until compliance and buyer terms are complete.
+- Google Cloud data products through Cloud Run or BigQuery only after provider,
+  source-rights, and billing boundaries are reviewed.
 - PostGIS for the separate wildfire/regional spatial lane.
 - MapLibre GL JS and deck.gl for operational 2D maps.
 - CesiumJS for 3D terrain and airspace demos.

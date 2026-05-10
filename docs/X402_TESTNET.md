@@ -17,6 +17,9 @@ testnet-only gate:
 - The default facilitator is `https://x402.org/facilitator`.
 - Mainnet network ids are blocked by tests and config validation.
 - The server only needs a receiving address; buyer private keys stay local.
+- Pay.sh/Solana appears only in `/v1/payment-rails` as a planned sandbox
+  adapter. It is not a valid `AOE_PAYMENT_MODE` and does not unlock paid
+  content.
 
 ## Local Test Flow
 
@@ -52,6 +55,21 @@ npm run x402:testnet:fetch -- aoe_cyber_kev_epss_priority
 
 The buyer script enforces `eip155:84532` and `AOE_X402_CLIENT_MAX_USD` before it
 lets the x402 client create a payment payload.
+
+## Pay.sh / Solana Roadmap
+
+Pay.sh is worth tracking because its public docs define sandbox-first agent and
+gateway flows for HTTP 402 payment challenges on Solana. In this repo the first
+step is only rail discovery:
+
+```bash
+curl -s http://127.0.0.1:4402/v1/payment-rails | jq .
+```
+
+The planned sandbox adapter should start with a provider spec and a public
+preview endpoint, not paid-content unlock. Mainnet or real-funds use remains
+blocked until compliance, refunds, tax/accounting, buyer terms, source-rights,
+and deployment review are complete.
 
 ## Production Posture
 

@@ -24,6 +24,8 @@ Before live settlement:
   current Base Sepolia-only testnet gate;
 - mainnet network ids must remain blocked until a separate launch review;
 - server deployments must never store buyer private keys;
+- Pay.sh/Solana integration must stay sandbox-roadmap only until a separate
+  launch review approves live settlement;
 - sanctions/KYT and abuse handling must be documented;
 - refund and dispute policy must exist;
 - receipts and tax/accounting export must exist;

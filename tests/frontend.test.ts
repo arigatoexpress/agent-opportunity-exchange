@@ -14,6 +14,7 @@ describe("public frontend", () => {
     expect(html).toContain("Live stream workbench");
     expect(html).toContain("Show buyers the proof before asking them to pay.");
     expect(html).toContain("Proof before purchase");
+    expect(html).toContain("Pay.sh sandbox roadmap");
     expect(html).toContain("Buyer segment");
     expect(html).toContain("Evidence basis");
     expect(html).toContain("Inspect proof");
@@ -22,6 +23,9 @@ describe("public frontend", () => {
     expect(html).toContain("loadCatalog()");
     expect(html).not.toContain("loadProducts()");
     expect(html).toContain("Provenance and readiness");
+    expect(html).toContain("Rail Roadmap");
+    expect(html).toContain("/v1/payment-rails");
+    expect(html).toContain("pay_sh_solana_sandbox");
     expect(html).toContain("Who has a reason to pay first");
     expect(html).toContain("SEC + Macro Context");
     expect(html).toContain("/v1/streams/market-context/preview");

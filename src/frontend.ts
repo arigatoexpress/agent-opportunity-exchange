@@ -289,13 +289,15 @@ export function renderPublicFrontend(): string {
     .route { color: var(--blue); }
     .schema { color: var(--teal); }
     .proof-strip {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 1px;
       background: var(--line);
       border-bottom: 1px solid var(--line);
     }
     .proof-cell {
+      flex: 1 1 160px;
+      min-width: 148px;
       min-height: 104px;
       padding: 13px 14px;
       background: rgba(255, 255, 255, .78);
@@ -310,7 +312,7 @@ export function renderPublicFrontend(): string {
     }
     .proof-cell strong {
       display: block;
-      font-size: 18px;
+      font-size: 17px;
       line-height: 1.1;
       margin-bottom: 7px;
     }
@@ -336,12 +338,17 @@ export function renderPublicFrontend(): string {
     }
     .controls {
       display: grid;
-      grid-template-columns: minmax(170px, .85fr) minmax(130px, .55fr) minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(170px, 1fr) minmax(130px, 1fr);
       gap: 10px;
       align-items: end;
       padding: 12px;
       border-bottom: 1px solid var(--line);
       background: rgba(249, 251, 250, .72);
+    }
+    .controls .btn {
+      width: 100%;
+      min-height: 40px;
+      white-space: normal;
     }
     label {
       display: block;
@@ -361,6 +368,7 @@ export function renderPublicFrontend(): string {
       padding: 9px 10px;
     }
     .request-line {
+      grid-column: 1 / -1;
       display: grid;
       grid-template-columns: 54px minmax(0, 1fr);
       border: 1px solid var(--line);
@@ -561,10 +569,11 @@ export function renderPublicFrontend(): string {
         <div class="panel-head">
           <div class="eyebrow">Evidence storefront</div>
           <h1 id="storefront-title">Show buyers the proof before asking them to pay.</h1>
-          <p class="lead">A rights-cleared x402 storefront for paid artifacts, public previews, quotes, readiness, and source proof. Simulated by default; Base Sepolia x402 testnet only when explicitly configured.</p>
+          <p class="lead">A rights-cleared x402 storefront for paid artifacts, public previews, quotes, readiness, source proof, and payment-rail discovery. Simulated by default; Base Sepolia x402 testnet only when explicitly configured; Solana Pay.sh stays sandbox-roadmap only.</p>
           <div class="tagrow">
             <span class="tag">Proof before purchase</span>
             <span class="tag">No live settlement</span>
+            <span class="tag">Pay.sh sandbox roadmap</span>
             <span class="tag">No external sends</span>
           </div>
         </div>
@@ -620,6 +629,11 @@ export function renderPublicFrontend(): string {
             <span>Payment Posture</span>
             <strong class="ok" id="paymentPosture">Loading x402 status</strong>
             <p class="small" id="paymentPostureNote">No live settlement, money movement, or production side effects are enabled.</p>
+          </div>
+          <div class="proof-cell">
+            <span>Rail Roadmap</span>
+            <strong id="railRoadmap">Loading payment rails</strong>
+            <p class="small" id="railRoadmapNote">/v1/payment-rails keeps planned Pay.sh/Solana work visible without activating settlement.</p>
           </div>
         </div>
 
@@ -738,7 +752,7 @@ export function renderPublicFrontend(): string {
     const schemaLabel = document.getElementById('schemaLabel');
     let activePreviewRequest = 0;
     let userStartedPreview = false;
-    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null };
+    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null, paymentRails: null };
 
     const examples = {
       cyberInventory: 'demo-inventory',
@@ -909,6 +923,17 @@ export function renderPublicFrontend(): string {
         : 'No official payment middleware is active until AOE_PAYMENT_MODE=x402_testnet and AOE_X402_PAY_TO are configured.';
     }
 
+    async function loadPaymentRails() {
+      const roadmap = await getJson('/v1/payment-rails');
+      catalogState.paymentRails = roadmap;
+      const plannedPaySh = roadmap.rails.find(rail => rail.railId === 'pay_sh_solana_sandbox');
+      const active = roadmap.rails.find(rail => rail.activeInRuntime);
+      document.getElementById('railRoadmap').textContent = roadmap.counts.total + ' rails, active=' + (active ? active.railId : roadmap.activeRuntimeRail);
+      document.getElementById('railRoadmapNote').textContent = plannedPaySh
+        ? 'Pay.sh/Solana is ' + plannedPaySh.readiness.replace(/_/g, ' ') + '; liveSettlementAllowed=false across every rail.'
+        : 'No Solana Pay.sh roadmap rail is active.';
+    }
+
     function renderProofSignals() {
       const sources = catalogState.sources;
       const products = catalogState.products;
@@ -919,8 +944,8 @@ export function renderPublicFrontend(): string {
       document.getElementById('sourceQuality').textContent = sources.length ? green + '/' + sources.length + ' green source-rights' : 'Loading source rights';
       document.getElementById('sourceQualityNote').textContent = sources.length ? official + ' official API/download sources; yellow entries stay terms-review gated.' : 'Official owners, access modes, and rights envelopes come from /v1/sources.';
       const featured = sources
-        .filter(source => ['cisa_kev', 'first_epss', 'nvd_cve', 'sec_edgar', 'fred_alfred', 'developer_docs_public'].includes(source.sourceId))
-        .slice(0, 6);
+        .filter(source => ['cisa_kev', 'first_epss', 'nvd_cve', 'sec_edgar', 'fred_alfred', 'developer_docs_public', 'pay_sh_docs', 'solana_pay_sh_launch'].includes(source.sourceId))
+        .slice(0, 8);
       document.getElementById('sourceRail').innerHTML = featured.map(source => {
         return '<div class="source-row">' +
           '<strong>' + escapeHtml(source.name) + '</strong>' +
@@ -1160,7 +1185,7 @@ export function renderPublicFrontend(): string {
       inspectProduct(productId, { scroll: true });
     });
     document.getElementById('refresh').addEventListener('click', async () => {
-      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status()]);
+      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadPaymentRails()]);
       renderProducts();
       await runPreview();
     });
@@ -1174,7 +1199,7 @@ export function renderPublicFrontend(): string {
     });
 
     updateRouteChrome();
-    Promise.all([loadReadiness(), loadCatalog(), loadX402Status()])
+    Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadPaymentRails()])
       .then(() => {
         renderProducts();
         if (!userStartedPreview) return runPreview({ system: true });

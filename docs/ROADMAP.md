@@ -24,6 +24,8 @@
 - Add the first combined x402-shaped market stream: SEC filings plus FRED macro
   context.
 - Add NIFC/WFIGS current-perimeters preview for the separate wildfire lane.
+- Add public payment-rail discovery for simulated x402, Base Sepolia x402
+  testnet, and Pay.sh/Solana sandbox-roadmap entries.
 
 ## 30 Days
 
@@ -52,6 +54,8 @@
 - Add geospatial tooling only inside the separate wildfire lane.
 - Add source-health jobs and drift warnings.
 - Convert the simulated x402 shim to official testnet x402 middleware.
+- Prototype a Pay.sh sandbox provider spec for one public preview endpoint,
+  keeping paid-content unlock on the existing simulated/Base Sepolia gate.
 
 ## 90 Days
 
@@ -59,6 +63,8 @@
 - Add paid pilot packaging for MSPs, grant writers, and market/relevant-data buyers.
 - Add partner/licensed source workflows for yellow sources.
 - Add buyer terms, refund policy, KYT/sanctions workflow, and tax/accounting export before mainnet settlement.
+- Revisit Solana/Pay.sh mainnet only after compliance, accounting, buyer terms,
+  source-rights, and deployment review.
 
 ## Deferred
 

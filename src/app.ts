@@ -10,6 +10,7 @@ import { renderPublicFrontend } from "./frontend.js";
 import { parseCyberInventory } from "./inputs/cyber-inventory.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
+import { buildPaymentRailRoadmap } from "./payment-rails.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
 import { createX402TestnetGate } from "./x402-testnet.js";
@@ -101,11 +102,13 @@ export function createApp() {
         readiness: "aoe.readiness.v1",
         preflight: "aoe.access.preflight.v1",
         x402Status: "aoe.x402.status.v1",
+        paymentRails: "aoe.payment_rails.v1",
       },
       productDiscovery: "/v1/products",
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
       x402Status: "/v1/x402/status",
+      paymentRails: "/v1/payment-rails",
       qualityMetadata: "Products include schemaId, quality, buyerValueMetrics, sourceFreshnessSla, and caveats.",
       separateWorkstreams: ["/v1/separate-workstreams"],
       streams: "/v1/streams",
@@ -116,6 +119,7 @@ export function createApp() {
         "/v1/streams",
         "/v1/sources",
         "/v1/x402/status",
+        "/v1/payment-rails",
         "/v1/artifacts",
         "/v1/artifacts/:id/preview",
         "/v1/artifacts/:id/quote",
@@ -180,6 +184,8 @@ export function createApp() {
       },
     }),
   );
+
+  app.get("/v1/payment-rails", (c) => c.json(buildPaymentRailRoadmap()));
 
   app.get("/api/silos/health", (c) => {
     const readiness = buildReadiness();

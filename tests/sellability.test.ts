@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { products } from "../src/catalog.js";
+import { buildPaymentRailRoadmap } from "../src/payment-rails.js";
 import { buildSellabilityReport, scoreProductSellability } from "../src/sellability.js";
 
 describe("sellability scorecard", () => {
@@ -34,5 +35,13 @@ describe("sellability scorecard", () => {
     expect(JSON.stringify(report.products)).not.toContain("wildfire_in_x402_product");
     expect(JSON.stringify(report.products)).not.toContain("nasa_firms");
     expect(JSON.stringify(report.products)).not.toContain("nifc_wfigs");
+  });
+
+  test("payment-rail roadmap does not make products eligible for live settlement", () => {
+    const roadmap = buildPaymentRailRoadmap(new Date("2026-05-09T00:00:00.000Z"));
+    expect(roadmap.counts.liveEnabled).toBe(0);
+    expect(roadmap.rails.map((rail) => rail.railId)).toContain("pay_sh_solana_sandbox");
+    expect(roadmap.rails.every((rail) => rail.liveSettlementAllowed === false)).toBe(true);
+    expect(products.every((product) => product.liveSettlementAllowed === false)).toBe(true);
   });
 });
