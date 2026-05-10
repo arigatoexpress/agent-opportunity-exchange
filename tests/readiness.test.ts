@@ -9,6 +9,13 @@ describe("adapter readiness", () => {
     expect(readiness.liveSettlementAllowed).toBe(false);
     expect(readiness.externalSideEffectsAllowed).toBe(false);
     expect(readiness.counts.live_read_only).toBeGreaterThanOrEqual(4);
+    expect(readiness.paymentRails.schemaId).toBe("aoe.payment_rails.v1");
+    expect(readiness.paymentRails.counts.liveEnabled).toBe(0);
+    expect(readiness.paymentRails.rails.map((rail) => rail.railId)).toContain("pay_sh_solana_sandbox");
+    for (const rail of readiness.paymentRails.rails) {
+      expect(rail.liveSettlementAllowed).toBe(false);
+      expect(rail.externalSideEffectsAllowed).toBe(false);
+    }
     for (const adapter of readiness.adapters) {
       expect(adapter.sideEffects).toBe("none");
       expect(adapter.liveSettlementAllowed).toBe(false);

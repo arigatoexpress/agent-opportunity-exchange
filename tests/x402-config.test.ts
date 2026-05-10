@@ -37,4 +37,27 @@ describe("x402 payment configuration", () => {
     expect(status.errors).toContain("unsupported_network:eip155:8453");
     expect(status.errors).toContain("mainnet_network_blocked:eip155:8453");
   });
+
+  test("fails closed on Solana mainnet ids and does not treat Pay.sh as a live mode", () => {
+    const solanaMainnet = getX402PaymentStatus({
+      AOE_PAYMENT_MODE: "x402_testnet",
+      AOE_X402_NETWORK: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      AOE_X402_PAY_TO: "0x1111111111111111111111111111111111111111",
+    });
+    expect(solanaMainnet.ready).toBe(false);
+    expect(solanaMainnet.activeRail).toBe("x402_testnet_config_required");
+    expect(solanaMainnet.errors).toContain("unsupported_network:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
+    expect(solanaMainnet.errors).toContain("mainnet_network_blocked:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
+
+    const payShMode = getX402PaymentStatus({
+      AOE_PAYMENT_MODE: "pay_sh_solana_mainnet",
+      AOE_X402_NETWORK: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    });
+    expect(payShMode.mode).toBe("simulated");
+    expect(payShMode.activeRail).toBe("simulated_header");
+    expect(payShMode.ready).toBe(false);
+    expect(payShMode.errors).toContain("unsupported_payment_mode:pay_sh_solana_mainnet");
+    expect(payShMode.errors).toContain("unsupported_network:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
+    expect(payShMode.errors).toContain("mainnet_network_blocked:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
+  });
 });

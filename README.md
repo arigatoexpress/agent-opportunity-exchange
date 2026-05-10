@@ -25,6 +25,8 @@ The API is discoverable before purchase:
   lanes.
 - `GET /v1/readiness` reports whether product and route contract coverage is
   buyer-discovery ready.
+- `GET /v1/payment-rails` reports simulated, Base Sepolia testnet, and planned
+  Pay.sh/Solana rails without activating live settlement.
 - `POST /v1/access/preflight` returns the product contract alongside price and
   source checks when the artifact exists.
 
@@ -53,6 +55,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/artifacts`
 - `GET /v1/readiness`
 - `GET /v1/x402/status`
+- `GET /v1/payment-rails`
 - `GET /v1/artifacts/:id/preview`
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`
@@ -105,6 +108,11 @@ npm run x402:testnet:fetch -- aoe_cyber_kev_epss_priority
 The server needs only `AOE_X402_PAY_TO`; it must never receive the buyer private
 key. `GET /v1/x402/status` reports whether the official testnet middleware is
 active. Mainnet network ids are blocked in code and tests.
+
+`GET /v1/payment-rails` is the new rail-roadmap contract. It keeps the Solana
+Pay.sh opportunity visible as a planned sandbox adapter built on public Pay.sh
+and x402 documentation, while the active content gate remains simulated or Base
+Sepolia testnet only.
 
 The first live read-only source adapter is defensive cyber prioritization:
 

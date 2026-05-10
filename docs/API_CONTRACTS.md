@@ -14,6 +14,10 @@ artifact content unlocks. The contract surface is intentionally small:
 - `GET /v1/x402/status` returns `aoe.x402.status.v1` with payment mode,
   Base Sepolia readiness, facilitator URL, redacted pay-to address, and
   no-mainnet safety posture.
+- `GET /v1/payment-rails` returns `aoe.payment_rails.v1` with the current
+  active runtime rail, simulated/Base Sepolia status, and Pay.sh/Solana
+  sandbox-roadmap entries. It is discovery only and does not activate
+  settlement.
 - `POST /v1/access/preflight` returns `aoe.access.preflight.v1`-shaped access
   decisions with the buyer-visible product contract when the product exists.
 - `POST /v1/adapters/cyber/inventory-priority/preview` returns
@@ -55,6 +59,24 @@ Route discovery entries include:
 
 Wildfire and drone-readiness routes can appear in route discovery only as
 `x402Stream: false` separate read-only lanes. They are not paid x402 products.
+
+## Payment Rail Metadata
+
+Payment-rail discovery entries include:
+
+- `railId`;
+- `providerId`;
+- protocol list, for example `x402` or `mpp`;
+- CAIP-2 network id where applicable;
+- `readiness`;
+- `activeInRuntime`;
+- `liveSettlementAllowed=false`;
+- source ids and source URLs;
+- integration gates and safety notes.
+
+Pay.sh/Solana entries are intentionally roadmap/sandbox records. They make the
+new provider opportunity visible to agents without changing the paid-content
+gate or authorizing real funds.
 
 ## Current Contract Gaps
 

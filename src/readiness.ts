@@ -1,4 +1,5 @@
 import { productRoutes, products } from "./catalog.js";
+import { buildPaymentRailRoadmap } from "./payment-rails.js";
 
 export interface AdapterReadiness {
   adapterId: string;
@@ -15,6 +16,7 @@ export interface AdapterReadiness {
 }
 
 export function buildReadiness() {
+  const paymentRails = buildPaymentRailRoadmap();
   const adapters: AdapterReadiness[] = [
     {
       adapterId: "cyber_vuln_priority",
@@ -147,6 +149,22 @@ export function buildReadiness() {
     generatedAt: new Date().toISOString(),
     liveSettlementAllowed: false,
     externalSideEffectsAllowed: false,
+    paymentRails: {
+      schemaId: paymentRails.schemaId,
+      activeRuntimeRail: paymentRails.activeRuntimeRail,
+      railPosture: paymentRails.railPosture,
+      counts: paymentRails.counts,
+      rails: paymentRails.rails.map((rail) => ({
+        railId: rail.railId,
+        providerId: rail.providerId,
+        readiness: rail.readiness,
+        activeInRuntime: rail.activeInRuntime,
+        network: rail.network,
+        protocols: rail.protocols,
+        liveSettlementAllowed: rail.liveSettlementAllowed,
+        externalSideEffectsAllowed: rail.externalSideEffectsAllowed,
+      })),
+    },
     adapters,
     contracts: {
       schemaId: "aoe.readiness.contracts.v1",
