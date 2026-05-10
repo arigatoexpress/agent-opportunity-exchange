@@ -10,6 +10,31 @@ describe("x402 payment configuration", () => {
     expect(status.liveSettlementAllowed).toBe(false);
     expect(status.serverPrivateKeyRequired).toBe(false);
     expect(status.network.id).toBe("eip155:84532");
+    expect(status.rails).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          railId: "base-sepolia-official-x402",
+          runtime: "evm",
+          status: "enabled_when_configured",
+          liveSettlementAllowed: false,
+        }),
+        expect.objectContaining({
+          railId: "solana-pay-sh-svm-candidate",
+          network: "solana-devnet",
+          runtime: "svm",
+          status: "planned_simulated_only",
+          liveSettlementAllowed: false,
+        }),
+      ]),
+    );
+    expect(status.paySh).toEqual(
+      expect.objectContaining({
+        providerCatalogPlanned: true,
+        gatewayPattern: "gcp_api_proxy",
+        liveWalletsAllowed: false,
+        liveProviderCredentialsAllowed: false,
+      }),
+    );
     expect(getReadyX402TestnetConfig({})).toBeNull();
   });
 

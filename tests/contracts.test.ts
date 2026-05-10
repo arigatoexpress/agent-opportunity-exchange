@@ -12,6 +12,24 @@ describe("buyer contract bundle", () => {
     expect(bundle.paymentBoundary.liveSettlementAllowed).toBe(false);
     expect(bundle.paymentBoundary.mainnetAllowed).toBe(false);
     expect(bundle.paymentBoundary.acceptedTestnet).toBe("eip155:84532");
+    expect(bundle.paymentBoundary.rails).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ railId: "base-sepolia-official-x402", runtime: "evm" }),
+        expect.objectContaining({
+          railId: "solana-pay-sh-svm-candidate",
+          runtime: "svm",
+          status: "planned_simulated_only",
+          liveSettlementAllowed: false,
+        }),
+      ]),
+    );
+    expect(bundle.paymentBoundary.paySh).toEqual(
+      expect.objectContaining({
+        providerCatalogPlanned: true,
+        liveWalletsAllowed: false,
+        liveProviderCredentialsAllowed: false,
+      }),
+    );
     expect(bundle.rightsBoundary.principle).toBe("payment_is_not_permission");
     expect(bundle.coverage.buyerDiscoveryReady).toBe(true);
     expect(bundle.coverage.routeSchemasCovered).toBe(true);

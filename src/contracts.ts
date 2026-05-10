@@ -336,10 +336,13 @@ export function buildContractBundle(now = new Date()) {
       mainnetAllowed: false,
       acceptedTestnet: x402Status.network.id,
       acceptedAsset: x402Status.acceptedAsset,
+      rails: x402Status.rails,
+      paySh: x402Status.paySh,
       serverPrivateKeyRequired: false,
       instructions: [
         "Simulated header access is the default buyer proof rail.",
         "Official x402 middleware is Base Sepolia testnet only when explicitly configured.",
+        "Solana/Pay.sh support is a disabled quote/catalog candidate until an explicit testnet plan is approved.",
         "Do not send mainnet funds to demo or testnet payment addresses.",
       ],
     },

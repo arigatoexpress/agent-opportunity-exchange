@@ -1,4 +1,5 @@
 const BASE_SEPOLIA_NETWORK = "eip155:84532";
+const SOLANA_DEVNET_NETWORK = "solana-devnet";
 const DEFAULT_TESTNET_FACILITATOR_URL = "https://x402.org/facilitator";
 const DEFAULT_SIMULATED_PAY_TO = "0x000000000000000000000000000000000000dEaD";
 const MAINNET_NETWORKS = new Set(["eip155:8453", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", "stellar:pubnet"]);
@@ -26,6 +27,26 @@ export interface X402PaymentStatus {
     configured: boolean;
     address?: string;
     redacted?: string;
+  };
+  rails: Array<{
+    railId: string;
+    scheme: "exact";
+    network: string;
+    runtime: "evm" | "svm";
+    status: "enabled_when_configured" | "planned_simulated_only";
+    asset: "USDC";
+    liveSettlementAllowed: false;
+    serverPrivateKeyRequired: false;
+    docs: string[];
+    caveats: string[];
+  }>;
+  paySh: {
+    providerCatalogPlanned: true;
+    gatewayPattern: "gcp_api_proxy";
+    liveWalletsAllowed: false;
+    liveProviderCredentialsAllowed: false;
+    sources: string[];
+    caveats: string[];
   };
   acceptedAsset: "USDC";
   errors: string[];
@@ -90,6 +111,53 @@ export function getX402PaymentStatus(env: NodeJS.ProcessEnv = process.env): X402
     payTo: {
       configured: Boolean(payTo),
       ...(payTo ? { address: payTo, redacted: redactAddress(payTo) } : {}),
+    },
+    rails: [
+      {
+        railId: "base-sepolia-official-x402",
+        scheme: "exact",
+        network: BASE_SEPOLIA_NETWORK,
+        runtime: "evm",
+        status: "enabled_when_configured",
+        asset: "USDC",
+        liveSettlementAllowed: false,
+        serverPrivateKeyRequired: false,
+        docs: ["https://github.com/coinbase/x402", "https://docs.x402.org/"],
+        caveats: ["Requires AOE_PAYMENT_MODE=x402_testnet and AOE_X402_PAY_TO.", "Mainnet remains blocked."],
+      },
+      {
+        railId: "solana-pay-sh-svm-candidate",
+        scheme: "exact",
+        network: SOLANA_DEVNET_NETWORK,
+        runtime: "svm",
+        status: "planned_simulated_only",
+        asset: "USDC",
+        liveSettlementAllowed: false,
+        serverPrivateKeyRequired: false,
+        docs: [
+          "https://solana.com/uk/news/solana-foundation-launches-pay-sh-in-collaboration-with-google-cloud",
+          "https://solana.com/developers/guides/getstarted/intro-to-x402",
+          "https://github.com/coinbase/x402",
+        ],
+        caveats: [
+          "No Solana wallet, facilitator, or Pay.sh provider call is enabled in this repo.",
+          "Use as a quote/catalog contract only until an explicit testnet plan is approved.",
+        ],
+      },
+    ],
+    paySh: {
+      providerCatalogPlanned: true,
+      gatewayPattern: "gcp_api_proxy",
+      liveWalletsAllowed: false,
+      liveProviderCredentialsAllowed: false,
+      sources: [
+        "https://solana.com/uk/news/solana-foundation-launches-pay-sh-in-collaboration-with-google-cloud",
+        "https://solana.com/developers/guides/getstarted/intro-to-x402",
+      ],
+      caveats: [
+        "Payment is access control, not permission to resell or bypass provider terms.",
+        "Google Cloud, BigQuery, Vertex, Gemini, and Pay.sh provider credentials must stay outside public repo artifacts.",
+      ],
     },
     acceptedAsset: "USDC",
     errors,
