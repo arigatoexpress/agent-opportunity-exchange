@@ -286,6 +286,12 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       overall: { type: "string", enum: ["pass", "warn", "fail"] },
       upstream: objectSchema("SEC and FRED upstream proof", {}),
       reportSummary: objectSchema("Evidence summary", {}),
+      historicalClaimsPolicy: objectSchema("Historical claims policy", {
+        revisionAware: { const: false },
+        liveMacroReadMode: { const: "fred_graph_csv" },
+        productionHistoricalClaimsRequire: { const: "alfred_vintages" },
+        notes: { type: "array", items: { type: "string" } },
+      }),
       boundaries: objectSchema("Safety boundaries", {}),
     }),
     "aoe.adapter.sec_filings.preview.v1": objectSchema("SEC filings preview", {

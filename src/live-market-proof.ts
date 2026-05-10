@@ -40,6 +40,12 @@ export interface LiveMarketUpstreamProof {
     sourceUrls: string[];
     recordHashes: string[];
   }>;
+  historicalClaimsPolicy: {
+    revisionAware: false;
+    liveMacroReadMode: "fred_graph_csv";
+    productionHistoricalClaimsRequire: "alfred_vintages";
+    notes: string[];
+  };
   boundaries: {
     researchOnly: true;
     investmentAdvice: false;
@@ -114,6 +120,15 @@ export async function buildLiveMarketUpstreamProof(
         recordHashes: report.evidenceProof.macroObservationRecordHashes,
       },
     ],
+    historicalClaimsPolicy: {
+      revisionAware: false,
+      liveMacroReadMode: "fred_graph_csv",
+      productionHistoricalClaimsRequire: "alfred_vintages",
+      notes: [
+        "Live proof uses public FRED graph CSV reads for current macro context.",
+        "Historical or revision-sensitive claims require explicit ALFRED vintage handling before resale.",
+      ],
+    },
     boundaries: {
       researchOnly: true,
       investmentAdvice: false,

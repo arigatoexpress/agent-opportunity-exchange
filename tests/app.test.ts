@@ -379,6 +379,13 @@ describe("Agent Opportunity Exchange API", () => {
       expect(body.upstream.sec_edgar.status).toBe("ok");
       expect(body.upstream.fred_alfred.status).toBe("ok");
       expect(body.reportSummary.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+      expect(body.historicalClaimsPolicy).toEqual(
+        expect.objectContaining({
+          revisionAware: false,
+          liveMacroReadMode: "fred_graph_csv",
+          productionHistoricalClaimsRequire: "alfred_vintages",
+        }),
+      );
       expect(body.boundaries.liveSettlementAllowed).toBe(false);
       expect(body.boundaries.tradeExecution).toBe(false);
     } finally {

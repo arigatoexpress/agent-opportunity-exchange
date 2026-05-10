@@ -165,7 +165,9 @@ curl -s \
 
 It returns `schemaId: aoe.market_live_upstream_proof.v1`, upstream status for
 `sec_edgar` and `fred_alfred`, source URLs, hash counts, a concise report
-summary, and explicit research-only/no-settlement/no-execution boundaries.
+summary, explicit historical-claims posture (`revisionAware: false` and
+`productionHistoricalClaimsRequire: "alfred_vintages"` for the live proof
+path), and research-only/no-settlement/no-execution boundaries.
 
 The lower-level x402-shaped preview combines SEC recent filing metadata and
 FRED macro observations into one source-cited context payload:

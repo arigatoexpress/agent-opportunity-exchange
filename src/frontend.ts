@@ -934,11 +934,17 @@ export function renderPublicFrontend(): string {
         const sec = value.upstream && value.upstream.sec_edgar ? value.upstream.sec_edgar : {};
         const fred = value.upstream && value.upstream.fred_alfred ? value.upstream.fred_alfred : {};
         const hash = value.reportSummary && value.reportSummary.evidenceProof ? value.reportSummary.evidenceProof.reportHash : null;
+        const historicalClaims = value.historicalClaimsPolicy || {};
+        const vintageLabel = historicalClaims.revisionAware ? 'Revision aware' : 'ALFRED required';
+        const vintageNote = historicalClaims.productionHistoricalClaimsRequire === 'alfred_vintages'
+          ? 'Historical claims require ALFRED vintages.'
+          : 'Review macro source posture in JSON.';
         proofSummary.innerHTML =
           '<div class="summary-cell"><span>Live Proof</span><strong class="' + (value.overall === 'pass' ? 'ok' : value.overall === 'warn' ? 'warn' : 'danger') + '">' + escapeHtml(value.overall || 'unknown') + '</strong><p class="small">' + escapeHtml(value.query ? value.query.ticker + ' | ' + value.durationMs + 'ms' : safeLabel) + '</p></div>' +
           '<div class="summary-cell"><span>Mock Data</span><strong class="' + (value.mockDataUsed ? 'danger' : 'ok') + '">' + escapeHtml(String(value.mockDataUsed)) + '</strong><p class="small">Live buyer proof must stay false.</p></div>' +
           '<div class="summary-cell"><span>Upstreams</span><strong>' + escapeHtml('SEC ' + (sec.status || '?') + ' / FRED ' + (fred.status || '?')) + '</strong><p class="small">' + escapeHtml((sec.observedRecords || 0) + ' filings, ' + (fred.observedRecords || 0) + ' macro observations') + '</p></div>' +
-          '<div class="summary-cell"><span>Evidence Hash</span><strong class="mono">' + escapeHtml(shortHash(hash)) + '</strong><p class="small">Latest SEC ' + escapeHtml(sec.latestRecordDate || 'none') + ' | FRED ' + escapeHtml(fred.latestRecordDate || 'none') + '</p></div>';
+          '<div class="summary-cell"><span>Evidence Hash</span><strong class="mono">' + escapeHtml(shortHash(hash)) + '</strong><p class="small">Latest SEC ' + escapeHtml(sec.latestRecordDate || 'none') + ' | FRED ' + escapeHtml(fred.latestRecordDate || 'none') + '</p></div>' +
+          '<div class="summary-cell"><span>Historical Claims</span><strong>' + escapeHtml(vintageLabel) + '</strong><p class="small">' + escapeHtml(vintageNote) + '</p></div>';
         return;
       }
       if (value && value.error) {
@@ -946,14 +952,16 @@ export function renderPublicFrontend(): string {
           '<div class="summary-cell"><span>Route Result</span><strong class="danger">Failed</strong><p class="small">' + escapeHtml(safeLabel) + '</p></div>' +
           '<div class="summary-cell"><span>Mock Data</span><strong>Unknown</strong><p class="small">The route did not return a proof packet.</p></div>' +
           '<div class="summary-cell"><span>Upstreams</span><strong>Check JSON</strong><p class="small">Failure details remain visible below.</p></div>' +
-          '<div class="summary-cell"><span>Evidence Hash</span><strong>None</strong><p class="small">No proof hash was returned.</p></div>';
+          '<div class="summary-cell"><span>Evidence Hash</span><strong>None</strong><p class="small">No proof hash was returned.</p></div>' +
+          '<div class="summary-cell"><span>Historical Claims</span><strong>Unknown</strong><p class="small">No vintage posture was returned.</p></div>';
         return;
       }
       proofSummary.innerHTML =
         '<div class="summary-cell"><span>Route Result</span><strong>' + escapeHtml(safeLabel) + '</strong><p class="small">See JSON for detailed proof.</p></div>' +
         '<div class="summary-cell"><span>Mock Data</span><strong>Not applicable</strong><p class="small">Only the live market proof route asserts this field.</p></div>' +
         '<div class="summary-cell"><span>Upstreams</span><strong>Source cited</strong><p class="small">Registry and response data stay visible below.</p></div>' +
-        '<div class="summary-cell"><span>Evidence Hash</span><strong>See JSON</strong><p class="small">Hash availability depends on the route.</p></div>';
+        '<div class="summary-cell"><span>Evidence Hash</span><strong>See JSON</strong><p class="small">Hash availability depends on the route.</p></div>' +
+        '<div class="summary-cell"><span>Historical Claims</span><strong>Route specific</strong><p class="small">Vintage posture is surfaced on the live proof route.</p></div>';
     }
 
     function pretty(value, context) {

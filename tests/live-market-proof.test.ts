@@ -60,6 +60,15 @@ describe("live market upstream proof", () => {
     });
     expect(proof.reportSummary.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(proof.sourceEvidence.flatMap((source) => source.recordHashes)).toHaveLength(3);
+    expect(proof.historicalClaimsPolicy).toEqual({
+      revisionAware: false,
+      liveMacroReadMode: "fred_graph_csv",
+      productionHistoricalClaimsRequire: "alfred_vintages",
+      notes: expect.arrayContaining([
+        expect.stringContaining("FRED graph CSV"),
+        expect.stringContaining("ALFRED vintage"),
+      ]),
+    });
     expect(proof.boundaries).toEqual({
       researchOnly: true,
       investmentAdvice: false,

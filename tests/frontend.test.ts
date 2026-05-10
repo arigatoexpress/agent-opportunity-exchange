@@ -34,6 +34,9 @@ describe("public frontend", () => {
     expect(html).toContain("Mock data posture");
     expect(html).toContain('id="proofSummary"');
     expect(html).toContain("Evidence Hash");
+    expect(html).toContain("Historical Claims");
+    expect(html).toContain("ALFRED required");
+    expect(html).toContain("Historical claims require ALFRED vintages.");
     expect(html).toContain("Live buyer proof must stay false.");
     expect(html).toContain("macro observations");
     expect(html).toContain("SEC + Macro Context");
