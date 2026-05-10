@@ -128,6 +128,64 @@ const historicalClaimsPolicySchema = objectSchema(
   ["revisionAware", "liveMacroReadMode", "productionHistoricalClaimsRequire", "notes"],
 );
 
+const liveMarketUpstreamSourceSchema = objectSchema(
+  "Live market upstream source proof",
+  {
+    sourceId: stringEnum(["sec_edgar", "fred_alfred"]),
+    status: stringEnum(["ok", "empty", "degraded"]),
+    retrievalMode: { type: "string" },
+    sourceUrls: arrayOf({ type: "string" }),
+    observedRecords: { type: "integer", minimum: 0 },
+    latestRecordDate: { type: ["string", "null"] },
+    evidenceHashCount: { type: "integer", minimum: 0 },
+  },
+  ["sourceId", "status", "retrievalMode", "sourceUrls", "observedRecords", "latestRecordDate", "evidenceHashCount"],
+);
+
+const liveMarketEvidenceProofSchema = objectSchema(
+  "Live market evidence proof",
+  {
+    algorithm: { const: "sha256" },
+    canonicalization: { const: "stable-json-sorted-keys-v1" },
+    reportHash: { type: "string", pattern: "^sha256:[a-f0-9]{64}$" },
+    filingRecordHashes: arrayOf({ type: "string", pattern: "^sha256:[a-f0-9]{64}$" }),
+    macroSeriesRecordHashes: arrayOf({ type: "string", pattern: "^sha256:[a-f0-9]{64}$" }),
+    macroObservationRecordHashes: arrayOf({ type: "string", pattern: "^sha256:[a-f0-9]{64}$" }),
+  },
+  ["algorithm", "canonicalization", "reportHash", "filingRecordHashes", "macroSeriesRecordHashes", "macroObservationRecordHashes"],
+);
+
+const liveMarketSourceEvidenceSchema = objectSchema(
+  "Live market source evidence",
+  {
+    sourceId: stringEnum(["sec_edgar", "fred_alfred"]),
+    retrievalMode: { type: "string" },
+    sourceUrls: arrayOf({ type: "string" }),
+    recordHashes: arrayOf({ type: "string", pattern: "^sha256:[a-f0-9]{64}$" }),
+  },
+  ["sourceId", "retrievalMode", "sourceUrls", "recordHashes"],
+);
+
+const liveMarketBoundariesSchema = objectSchema(
+  "Live market boundaries",
+  {
+    researchOnly: { const: true },
+    investmentAdvice: { const: false },
+    tradeExecution: { const: false },
+    personalizedPortfolioAdvice: { const: false },
+    liveSettlementAllowed: { const: false },
+    externalSideEffectsAllowed: { const: false },
+  },
+  [
+    "researchOnly",
+    "investmentAdvice",
+    "tradeExecution",
+    "personalizedPortfolioAdvice",
+    "liveSettlementAllowed",
+    "externalSideEffectsAllowed",
+  ],
+);
+
 const streamDefinitionSchema = objectSchema(
   "Stream definition",
   {
@@ -326,17 +384,67 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
     }),
     "aoe.market_live_upstream_proof.v1": objectSchema("Live market upstream proof", {
       schemaId: { const: "aoe.market_live_upstream_proof.v1" },
+      generatedAt: { type: "string" },
       mode: { const: "read_only_live_source_probe" },
       x402Stream: { const: true },
       productId: { const: "market_regime_evidence_pack" },
       streamId: { const: "sec_macro_context" },
       mockDataUsed: { type: "boolean" },
+      durationMs: { type: "integer", minimum: 0 },
+      query: objectSchema("Live market query", {
+        ticker: { type: "string" },
+        seriesIds: arrayOf({ type: "string" }),
+        filingForms: arrayOf({ type: "string" }),
+        filingLimit: { type: "integer", minimum: 1 },
+        seriesLimit: { type: "integer", minimum: 1 },
+      }),
       overall: { type: "string", enum: ["pass", "warn", "fail"] },
-      upstream: objectSchema("SEC and FRED upstream proof", {}),
-      reportSummary: objectSchema("Evidence summary", {}),
+      upstream: objectSchema(
+        "SEC and FRED upstream proof",
+        {
+          sec_edgar: liveMarketUpstreamSourceSchema,
+          fred_alfred: liveMarketUpstreamSourceSchema,
+        },
+        ["sec_edgar", "fred_alfred"],
+      ),
+      reportSummary: objectSchema("Evidence summary", {
+        filingCount: { type: "integer", minimum: 0 },
+        macroSeriesCount: { type: "integer", minimum: 0 },
+        latestMacroObservations: arrayOf(
+          objectSchema(
+            "Latest macro observation",
+            {
+              seriesId: { type: "string" },
+              sourceUrl: { type: "string" },
+            },
+            ["seriesId", "sourceUrl"],
+          ),
+        ),
+        highlights: arrayOf(objectSchema("Highlight", {})),
+        evidenceProof: liveMarketEvidenceProofSchema,
+      }),
+      sourceEvidence: arrayOf(liveMarketSourceEvidenceSchema),
       historicalClaimsPolicy: historicalClaimsPolicySchema,
-      boundaries: objectSchema("Safety boundaries", {}),
-    }),
+      boundaries: liveMarketBoundariesSchema,
+      caveats: arrayOf({ type: "string" }),
+    }, [
+      "schemaId",
+      "generatedAt",
+      "mode",
+      "x402Stream",
+      "productId",
+      "streamId",
+      "mockDataUsed",
+      "durationMs",
+      "query",
+      "overall",
+      "upstream",
+      "reportSummary",
+      "sourceEvidence",
+      "historicalClaimsPolicy",
+      "boundaries",
+      "caveats",
+    ]),
     "aoe.adapter.sec_filings.preview.v1": objectSchema("SEC filings preview", {
       mode: { const: "read_only_public_preview" },
       x402Stream: { const: true },

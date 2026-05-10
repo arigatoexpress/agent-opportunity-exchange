@@ -86,6 +86,9 @@ For the market live-proof stream specifically, discovery should make the
 historical-claims boundary visible before runtime: the current live macro read
 mode is FRED graph CSV, `revisionAware=false`, and resale of historical or
 revision-sensitive macro claims requires explicit ALFRED vintages.
+The exported schema should also make freshness and provenance fail closed with
+explicit `generatedAt`, `durationMs`, `sourceEvidence`, and
+`reportSummary.evidenceProof` fields.
 
 ## Current Contract Gaps
 
