@@ -127,6 +127,34 @@ export async function runMarketStreamQualityHarness(options: MarketStreamQuality
   });
 
   checks.push({
+    id: "normalized-record-hashes",
+    label: "Normalized SEC/FRED rows and combined report proof are hash-addressed",
+    status:
+      primaryReport.filings.every((filing) => isSha256(filing.recordHash)) &&
+      primaryReport.macro.every(
+        (series) => isSha256(series.recordHash) && series.observations.every((observation) => isSha256(observation.recordHash)),
+      ) &&
+      primaryReport.evidenceProof.algorithm === "sha256" &&
+      primaryReport.evidenceProof.canonicalization === "stable-json-sorted-keys-v1" &&
+      isSha256(primaryReport.evidenceProof.reportHash) &&
+      arraysEqual(primaryReport.evidenceProof.filingRecordHashes, primaryReport.filings.map((filing) => filing.recordHash)) &&
+      arraysEqual(primaryReport.evidenceProof.macroSeriesRecordHashes, primaryReport.macro.map((series) => series.recordHash)) &&
+      arraysEqual(
+        primaryReport.evidenceProof.macroObservationRecordHashes,
+        primaryReport.macro.flatMap((series) => series.observations.map((observation) => observation.recordHash)),
+      )
+        ? "pass"
+        : "fail",
+    detail: "Sellable previews need deterministic sha256 row hashes plus a report-level evidence proof for reproducible buyer validation.",
+    evidence: {
+      filingRecordHashes: primaryReport.evidenceProof.filingRecordHashes,
+      macroSeriesRecordHashes: primaryReport.evidenceProof.macroSeriesRecordHashes,
+      macroObservationRecordHashes: primaryReport.evidenceProof.macroObservationRecordHashes,
+      reportHash: primaryReport.evidenceProof.reportHash,
+    },
+  });
+
+  checks.push({
     id: "rights-envelope",
     label: "Rights envelope supports derived resale only",
     status:
@@ -159,7 +187,7 @@ export async function runMarketStreamQualityHarness(options: MarketStreamQuality
       primaryReport.query.ticker === "TEST" &&
       primaryReport.highlights.length >= 3 &&
       primaryReport.highlights.every((highlight) => registrySourceIds.has(highlight.sourceId)) &&
-      primaryReport.company.name.length > 0 &&
+      Boolean(primaryReport.company?.name) &&
       primaryReport.filings.some((filing) => filing.archiveUrl) &&
       primaryReport.macro.every((series) => series.observations.length > 0 && series.latest)
         ? "pass"
@@ -213,7 +241,6 @@ export async function runMarketStreamQualityHarness(options: MarketStreamQuality
     "Harness uses deterministic synthetic SEC/FRED responses; it does not prove live upstream availability or latency.",
     "FRED graph CSV checks are not revision-aware ALFRED vintage checks yet.",
     "Product-level market catalog still names yellow/licensed sources for future packs; this harness only certifies the active SEC/FRED stream.",
-    "No normalized record hash is persisted for market stream rows yet.",
   ];
 
   return {
@@ -296,6 +323,14 @@ function sameSet(left: Set<string>, right: Set<string>): boolean {
   return [...left].every((entry) => right.has(entry));
 }
 
+function arraysEqual(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((entry, index) => entry === right[index]);
+}
+
+function isSha256(value: unknown): value is string {
+  return typeof value === "string" && /^sha256:[a-f0-9]{64}$/.test(value);
+}
+
 async function runDegradedMarketPreview(fetcher: FetchLike): Promise<Record<string, unknown>> {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = fetcher as typeof fetch;
@@ -330,6 +365,7 @@ function isPassingDegradedPreview(body: Record<string, unknown>): boolean {
     report.filings.length === 0 &&
     Array.isArray(report?.macro) &&
     report.macro.length >= 1 &&
+    isSha256((report?.evidenceProof as Record<string, unknown> | undefined)?.reportHash) &&
     /not investment advice/i.test(caveats) &&
     /trade execution/i.test(caveats) &&
     findForbiddenBoundaryKeys(body).length === 0
@@ -343,6 +379,7 @@ function summarizeDegradedPreview(body: Record<string, unknown>) {
     company: report?.company ?? undefined,
     filingCount: Array.isArray(report?.filings) ? report.filings.length : null,
     macroCount: Array.isArray(report?.macro) ? report.macro.length : null,
+    reportHash: (report?.evidenceProof as Record<string, unknown> | undefined)?.reportHash,
     caveats: report?.caveats,
   };
 }

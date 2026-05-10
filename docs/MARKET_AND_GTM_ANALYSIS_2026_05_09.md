@@ -101,7 +101,7 @@ vendor/onchain data redistribution."
 2. Keep the SEC/FRED live stream as a public trust demo:
    - show preview, schema, source owners, route, price, and caveats;
    - add live latency/freshness probes before public launch;
-   - add normalized record hashes.
+   - keep normalized record hashes and report evidence proofs visible in previews.
 3. Split market products into:
    - `market_sec_macro_evidence_pack` for green-source sellability;
    - future `market_vendor_onchain_evidence_pack` after licensing review.

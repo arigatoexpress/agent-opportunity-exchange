@@ -578,7 +578,8 @@ export function renderPublicFrontend(): string {
               <label for="previewKind">Route</label>
               <select id="previewKind">
                 <option value="marketContext">SEC + Macro Context</option>
-                <option value="cyber">Cyber CVE Priority</option>
+                <option value="cyberInventory">Cyber Inventory Proof</option>
+                <option value="cyber">Cyber CVE List</option>
                 <option value="wildfire">Wildfire WFIGS Perimeters</option>
                 <option value="alerts">NWS Fire Weather Alerts</option>
                 <option value="sec">SEC Recent Filings</option>
@@ -652,6 +653,7 @@ export function renderPublicFrontend(): string {
     let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null };
 
     const examples = {
+      cyberInventory: 'demo-inventory',
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
       marketContext: 'AAPL',
       wildfire: 'CO',
@@ -660,6 +662,7 @@ export function renderPublicFrontend(): string {
       fred: 'FEDFUNDS,CPIAUCSL,UNRATE'
     };
     const labels = {
+      cyberInventory: 'Cyber Inventory Proof',
       cyber: 'Cyber CVE Priority',
       marketContext: 'SEC + Macro Context',
       wildfire: 'Separate Wildfire WFIGS Preview',
@@ -668,6 +671,7 @@ export function renderPublicFrontend(): string {
       fred: 'FRED Macro Series'
     };
     const routes = {
+      cyberInventory: '/v1/adapters/cyber/inventory-priority/preview',
       cyber: '/v1/adapters/cyber/vuln-priority/preview',
       marketContext: '/v1/streams/market-context/preview',
       wildfire: '/v1/adapters/wildfire/wfigs-perimeters/preview',
@@ -676,6 +680,7 @@ export function renderPublicFrontend(): string {
       fred: '/v1/adapters/markets/fred-series/preview'
     };
     const schemas = {
+      cyberInventory: 'sapphirealpha.cyber_inventory_priority.preview.v1',
       cyber: 'sapphirealpha.cyber_priority.v1',
       marketContext: 'sapphirealpha.market_context.v1',
       wildfire: 'separate.wfigs_public_preview.v1',
@@ -684,7 +689,7 @@ export function renderPublicFrontend(): string {
       fred: 'sapphirealpha.fred_series.v1'
     };
     const heroActions = {
-      cyber: 'cyber',
+      cyber: 'cyberInventory',
       wildfire: 'wildfire',
       markets: 'marketContext'
     };
@@ -695,10 +700,11 @@ export function renderPublicFrontend(): string {
       developer_api_change_radar: 'Agent builders, DevRel, developer tooling teams'
     };
     const productPreviewMap = {
-      cyber_exploited_vuln_priority: 'cyber',
+      cyber_exploited_vuln_priority: 'cyberInventory',
       market_regime_evidence_pack: 'marketContext'
     };
     const proofNotes = {
+      cyberInventory: 'Maps a buyer-provided authorized asset inventory to live KEV, EPSS, and NVD priority evidence; no scans or exploit content.',
       cyber: 'Checks a buyer-provided CVE list against live read-only defensive sources; no scanning or exploit content.',
       marketContext: 'Combines SEC and FRED public-source context for research only; no advice or execution.',
       wildfire: 'Reads public WFIGS perimeter data for planning context only; separate from paid x402 streams.',
@@ -708,6 +714,7 @@ export function renderPublicFrontend(): string {
       product: 'Shows pre-payment artifact preview, quote, source ids, rights, and readiness evidence.'
     };
     const valueSignals = {
+      cyberInventory: 'An MSP can show which client assets make each CVE urgent before paying for the full remediation proof packet.',
       cyber: 'A buyer can verify fix-today prioritization logic before paying for a full remediation packet.',
       marketContext: 'A buyer can inspect filing/macro evidence shape before paying for the full market evidence pack.',
       wildfire: 'An operator can verify the separate read-only planning lane without treating it as a paid incident product.',
@@ -872,6 +879,31 @@ export function renderPublicFrontend(): string {
       if (selected === 'marketContext') {
         path = '/v1/streams/market-context/preview';
         body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
+      } else if (selected === 'cyberInventory') {
+        path = '/v1/adapters/cyber/inventory-priority/preview';
+        body = {
+          buyer: { buyerId: raw || 'demo-inventory', useCase: 'client remediation proof packet' },
+          assets: [
+            {
+              assetId: 'asset-1',
+              hostname: 'vpn-1',
+              owner: 'security',
+              environment: 'production',
+              criticality: 'critical',
+              internetFacing: true,
+              vulnerabilities: ['CVE-2023-34362']
+            },
+            {
+              assetId: 'asset-2',
+              hostname: 'app-1',
+              owner: 'platform',
+              environment: 'production',
+              criticality: 'high',
+              internetFacing: false,
+              vulnerabilities: ['CVE-2021-44228']
+            }
+          ]
+        };
       } else if (selected === 'cyber') {
         path = '/v1/adapters/cyber/vuln-priority/preview';
         body = { cves: raw.split(/[,\\s]+/).filter(Boolean) };

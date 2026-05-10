@@ -13,14 +13,16 @@ describe("market stream quality harness", () => {
       ["stream-registry-linkage", "pass"],
       ["freshness", "pass"],
       ["provenance-source-ids", "pass"],
+      ["normalized-record-hashes", "pass"],
       ["rights-envelope", "pass"],
       ["value-added-fields", "pass"],
       ["non-advice-non-execution-boundary", "pass"],
       ["degraded-source-behavior", "pass"],
     ]);
     expect(result.primaryReport.sources.map((source) => source.sourceId).sort()).toEqual(["fred_alfred", "sec_edgar"]);
+    expect(result.primaryReport.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(result.degradedPreview.partial).toBe(true);
-    expect(result.gaps).toContain("No normalized record hash is persisted for market stream rows yet.");
+    expect(result.gaps).not.toContain("No normalized record hash is persisted for market stream rows yet.");
   });
 
   test("detects advice-shaped fields before they become sellable payload keys", () => {

@@ -16,6 +16,10 @@ artifact content unlocks. The contract surface is intentionally small:
   no-mainnet safety posture.
 - `POST /v1/access/preflight` returns `aoe.access.preflight.v1`-shaped access
   decisions with the buyer-visible product contract when the product exists.
+- `POST /v1/adapters/cyber/inventory-priority/preview` returns
+  `sapphirealpha.cyber_inventory_priority.preview.v1` for authorized buyer JSON
+  inventories. It maps submitted CVEs/assets to live KEV/EPSS/NVD defensive
+  priority evidence without scans, exploit content, or credential material.
 
 ## Product Metadata
 

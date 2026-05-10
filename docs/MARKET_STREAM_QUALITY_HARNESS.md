@@ -21,6 +21,8 @@ npx tsx scripts/market-stream-quality.ts --json
   latest macro observation dates.
 - Provenance: stream source IDs, registry ownership and URLs, SEC archive links,
   FRED source URLs, and retrieval modes.
+- Normalized record hashes: SEC filing rows, FRED observation rows, FRED series,
+  and the combined report evidence proof expose deterministic `sha256:` hashes.
 - Rights envelope: active sources must stay green, attribution-backed, and
   limited to derived facts with raw source resale prohibited.
 - Buyer value: normalized query, highlights, parsed macro observations, SEC
@@ -39,4 +41,3 @@ in CI and can run without live upstream access.
 - FRED graph CSV checks are not revision-aware ALFRED vintage checks yet.
 - The broader market product catalog still includes future yellow/licensed
   sources; this harness certifies only the active SEC/FRED stream.
-- Market stream rows do not yet persist normalized record hashes.

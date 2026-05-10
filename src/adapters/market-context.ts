@@ -1,5 +1,6 @@
 import { fetchFredSeriesReport, type FredSeriesReport } from "./fred.js";
 import { fetchSecRecentFilings, type SecFilingsReport } from "./sec.js";
+import { sha256 } from "../hash.js";
 
 export interface MarketContextRequest {
   ticker: string;
@@ -19,8 +20,9 @@ export interface MarketContextReport {
   sources: Array<{
     sourceId: "sec_edgar" | "fred_alfred";
     retrievalMode: string;
+    status?: "ok" | "degraded";
   }>;
-  company: SecFilingsReport["company"];
+  company: SecFilingsReport["company"] | null;
   filings: SecFilingsReport["filings"];
   macro: FredSeriesReport["series"];
   highlights: Array<{
@@ -29,6 +31,16 @@ export interface MarketContextReport {
     sourceId: "sec_edgar" | "fred_alfred";
   }>;
   caveats: string[];
+  evidenceProof: MarketContextEvidenceProof;
+}
+
+export interface MarketContextEvidenceProof {
+  algorithm: "sha256";
+  canonicalization: "stable-json-sorted-keys-v1";
+  reportHash: string;
+  filingRecordHashes: string[];
+  macroSeriesRecordHashes: string[];
+  macroObservationRecordHashes: string[];
 }
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
@@ -62,7 +74,7 @@ export async function fetchMarketContextReport(request: MarketContextRequest, fe
     ),
   ]);
 
-  return {
+  const reportWithoutProof: Omit<MarketContextReport, "evidenceProof"> = {
     schemaVersion: "sapphirealpha.market_context.v1",
     generatedAt: new Date().toISOString(),
     x402Stream: true,
@@ -83,6 +95,7 @@ export async function fetchMarketContextReport(request: MarketContextRequest, fe
       "SEC filing metadata should be verified at the SEC source before business decisions.",
     ],
   };
+  return attachMarketContextEvidenceProof(reportWithoutProof);
 }
 
 export function withSourceTimeout(fetcher: FetchLike, timeoutMs: number): FetchLike {
@@ -138,4 +151,33 @@ function buildHighlights(sec: SecFilingsReport, fred: FredSeriesReport): MarketC
   }
 
   return highlights;
+}
+
+export function attachMarketContextEvidenceProof(report: Omit<MarketContextReport, "evidenceProof">): MarketContextReport {
+  const filingRecordHashes = report.filings.map((filing) => filing.recordHash);
+  const macroSeriesRecordHashes = report.macro.map((series) => series.recordHash);
+  const macroObservationRecordHashes = report.macro.flatMap((series) => series.observations.map((observation) => observation.recordHash));
+  return {
+    ...report,
+    evidenceProof: {
+      algorithm: "sha256",
+      canonicalization: "stable-json-sorted-keys-v1",
+      reportHash: sha256({
+        schemaVersion: report.schemaVersion,
+        x402Stream: report.x402Stream,
+        streamId: report.streamId,
+        query: report.query,
+        sources: report.sources,
+        company: report.company,
+        filingRecordHashes,
+        macroSeriesRecordHashes,
+        macroObservationRecordHashes,
+        highlights: report.highlights,
+        caveats: report.caveats,
+      }),
+      filingRecordHashes,
+      macroSeriesRecordHashes,
+      macroObservationRecordHashes,
+    },
+  };
 }

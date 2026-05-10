@@ -29,6 +29,18 @@ export function buildReadiness() {
       notes: ["No active scanning.", "No exploit payloads.", "No credential material."],
     },
     {
+      adapterId: "cyber_inventory_priority",
+      productId: "cyber_exploited_vuln_priority",
+      x402Stream: true,
+      sourceIds: ["cisa_kev", "first_epss", "nvd_cve"],
+      status: "live_read_only",
+      endpoint: "/v1/adapters/cyber/inventory-priority/preview",
+      inputMode: "Authorized JSON inventory with CVEs, assets, or asset rows",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: ["No active scanning.", "No exploit payloads.", "Buyer inventory evidence only."],
+    },
+    {
       adapterId: "wildfire_nws_alerts",
       productId: null,
       workstreamId: "wildfire_drone_readiness_lane",

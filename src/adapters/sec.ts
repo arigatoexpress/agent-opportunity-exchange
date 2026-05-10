@@ -1,3 +1,5 @@
+import { sha256 } from "../hash.js";
+
 export interface SecFilingRequest {
   ticker?: string;
   cik?: string;
@@ -12,6 +14,7 @@ export interface SecRecentFiling {
   accessionNumber: string;
   primaryDocument: string | null;
   archiveUrl: string | null;
+  recordHash: string;
 }
 
 export interface SecFilingsReport {
@@ -58,13 +61,26 @@ export async function fetchSecRecentFilings(request: SecFilingRequest, fetcher: 
       if (forms.size > 0 && !forms.has(form.toUpperCase())) continue;
       const accessionNumber = recent.accessionNumber[index] ?? "";
       const primaryDocument = recent.primaryDocument[index] ?? null;
+      const filingDate = recent.filingDate[index] ?? "";
+      const reportDate = recent.reportDate[index] || null;
+      const archiveUrl = buildArchiveUrl(identity.cik, accessionNumber, primaryDocument);
       rows.push({
         form,
-        filingDate: recent.filingDate[index] ?? "",
-        reportDate: recent.reportDate[index] || null,
+        filingDate,
+        reportDate,
         accessionNumber,
         primaryDocument,
-        archiveUrl: buildArchiveUrl(identity.cik, accessionNumber, primaryDocument),
+        archiveUrl,
+        recordHash: hashSecFiling({
+          cik: identity.cik,
+          ticker: identity.ticker,
+          form,
+          filingDate,
+          reportDate,
+          accessionNumber,
+          primaryDocument,
+          archiveUrl,
+        }),
       });
       if (rows.length >= limit) break;
     }
@@ -133,6 +149,22 @@ function buildArchiveUrl(cik: string, accessionNumber: string, primaryDocument: 
   const cikNumber = String(Number.parseInt(cik, 10));
   const accessionNoDashes = accessionNumber.replaceAll("-", "");
   return `https://www.sec.gov/Archives/edgar/data/${cikNumber}/${accessionNoDashes}/${primaryDocument}`;
+}
+
+function hashSecFiling(record: {
+  cik: string;
+  ticker: string | null;
+  form: string;
+  filingDate: string;
+  reportDate: string | null;
+  accessionNumber: string;
+  primaryDocument: string | null;
+  archiveUrl: string | null;
+}): string {
+  return sha256({
+    sourceId: "sec_edgar",
+    ...record,
+  });
 }
 
 function secHeaders(): HeadersInit {

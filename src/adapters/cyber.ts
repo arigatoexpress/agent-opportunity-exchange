@@ -1,3 +1,5 @@
+import { parseCyberInventory, type CyberAssetEvidence } from "../inputs/cyber-inventory.js";
+
 export interface KevEntry {
   cveID: string;
   vendorProject?: string;
@@ -58,6 +60,41 @@ export interface VulnPriorityReport {
   }>;
   findings: VulnPriorityFinding[];
   caveats: string[];
+}
+
+export interface CyberInventoryPriorityFinding extends VulnPriorityFinding {
+  buyerEvidence: {
+    affectedAssetCount: number;
+    affectedAssets: CyberAssetEvidence[];
+    exposureSignals: string[];
+    buyerPriorityReason: string;
+  };
+}
+
+export interface CyberInventoryPriorityPreview {
+  schemaVersion: "sapphirealpha.cyber_inventory_priority.preview.v1";
+  generatedAt: string;
+  input: {
+    buyer?: {
+      buyerId?: string;
+      name?: string;
+      useCase?: string;
+    };
+    cveCount: number;
+    assetRows: number;
+    authorizedInventoryRequired: true;
+  };
+  sources: VulnPriorityReport["sources"];
+  summary: {
+    fixToday: number;
+    fixThisWeek: number;
+    monitor: number;
+    needsReview: number;
+    affectedAssets: number;
+  };
+  findings: CyberInventoryPriorityFinding[];
+  caveats: string[];
+  outputPolicy: string[];
 }
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
@@ -207,6 +244,54 @@ export async function buildVulnPriorityReport(cves: string[], fetcher: FetchLike
   };
 }
 
+export async function buildCyberInventoryPriorityPreview(body: unknown, fetcher: FetchLike = fetch): Promise<CyberInventoryPriorityPreview> {
+  const inventory = parseCyberInventory(body);
+  const report = await buildVulnPriorityReport(inventory.cves, fetcher);
+  const findings = report.findings.map((finding): CyberInventoryPriorityFinding => {
+    const affectedAssets = dedupeAssets(inventory.assetsByCve.get(finding.cve) ?? []);
+    const exposureSignals = exposureSignalsForAssets(affectedAssets);
+    return {
+      ...finding,
+      buyerEvidence: {
+        affectedAssetCount: affectedAssets.length,
+        affectedAssets,
+        exposureSignals,
+        buyerPriorityReason: buyerPriorityReason(finding, affectedAssets, exposureSignals),
+      },
+    };
+  });
+
+  return {
+    schemaVersion: "sapphirealpha.cyber_inventory_priority.preview.v1",
+    generatedAt: report.generatedAt,
+    input: {
+      buyer: inventory.buyer,
+      cveCount: inventory.cves.length,
+      assetRows: inventory.assetRows,
+      authorizedInventoryRequired: true,
+    },
+    sources: report.sources,
+    summary: {
+      fixToday: findings.filter((finding) => finding.tier === "fix_today").length,
+      fixThisWeek: findings.filter((finding) => finding.tier === "fix_this_week").length,
+      monitor: findings.filter((finding) => finding.tier === "monitor").length,
+      needsReview: findings.filter((finding) => finding.tier === "needs_review").length,
+      affectedAssets: new Set(findings.flatMap((finding) => finding.buyerEvidence.affectedAssets.map((asset) => asset.label))).size,
+    },
+    findings,
+    caveats: [
+      ...report.caveats,
+      "Buyer asset evidence is derived only from the submitted inventory payload; this endpoint does not scan, fingerprint, or validate the environment.",
+      "Inventory must be supplied by an authorized buyer or operator for the affected systems.",
+    ],
+    outputPolicy: [
+      "Defensive prioritization only.",
+      "No exploit payloads, proof-of-concept instructions, credentials, unauthorized scanning, or weaponized reconnaissance.",
+      "Return derived prioritization, asset evidence, source ids, and remediation context rather than raw source resale.",
+    ],
+  };
+}
+
 function rankTier(knownExploited: boolean, epssScore: number | null, percentile: number | null, baseSeverity: string | null): VulnPriorityFinding["tier"] {
   if (knownExploited) return "fix_today";
   if ((epssScore ?? 0) >= 0.2 || (percentile ?? 0) >= 0.9) return "fix_this_week";
@@ -250,6 +335,30 @@ function compareFindings(left: VulnPriorityFinding, right: VulnPriorityFinding):
 function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 3).trim()}...`;
+}
+
+function dedupeAssets(assets: CyberAssetEvidence[]): CyberAssetEvidence[] {
+  const seen = new Set<string>();
+  return assets.filter((asset) => {
+    const key = `${asset.assetId ?? ""}|${asset.hostname ?? ""}|${asset.label}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function exposureSignalsForAssets(assets: CyberAssetEvidence[]): string[] {
+  const signals = new Set<string>();
+  if (assets.some((asset) => asset.internetFacing === true)) signals.add("internet_facing_asset");
+  if (assets.some((asset) => asset.criticality === "critical" || asset.criticality === "high")) signals.add("high_criticality_asset");
+  if (assets.some((asset) => asset.environment?.toLowerCase() === "prod" || asset.environment?.toLowerCase() === "production")) signals.add("production_environment");
+  return [...signals].sort();
+}
+
+function buyerPriorityReason(finding: VulnPriorityFinding, assets: CyberAssetEvidence[], exposureSignals: string[]): string {
+  const assetPhrase = assets.length === 0 ? "no submitted asset row matched this CVE" : `${assets.length} submitted asset row${assets.length === 1 ? "" : "s"} matched this CVE`;
+  const exposurePhrase = exposureSignals.length === 0 ? "no extra exposure signal was submitted" : `submitted exposure signals: ${exposureSignals.join(", ")}`;
+  return `${finding.reason} Buyer evidence: ${assetPhrase}; ${exposurePhrase}.`;
 }
 
 interface NvdApiResponse {

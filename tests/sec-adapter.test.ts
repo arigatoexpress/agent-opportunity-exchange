@@ -29,6 +29,7 @@ describe("SEC EDGAR adapter", () => {
     expect(report.company.ticker).toBe("TEST");
     expect(report.filings.map((filing) => filing.form)).toEqual(["8-K", "10-K"]);
     expect(report.filings[0].archiveUrl).toBe("https://www.sec.gov/Archives/edgar/data/12345/000001234526000009/test-8k.htm");
+    expect(report.filings[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(report.caveats.join(" ")).toContain("not investment advice");
   });
 });

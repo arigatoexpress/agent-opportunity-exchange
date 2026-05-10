@@ -35,6 +35,7 @@ Before live settlement:
 Allowed:
 
 - vulnerability prioritization;
+- buyer-provided inventory evidence for authorized assets;
 - KEV/EPSS/NVD/OSV enrichment;
 - defensive remediation checklists;
 - evidence packets for authorized systems;

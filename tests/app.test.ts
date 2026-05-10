@@ -100,12 +100,140 @@ describe("Agent Opportunity Exchange API", () => {
     expect(marketPreview.productIds).toEqual(["market_regime_evidence_pack"]);
     expect(marketPreview.freshnessSla.caveats.join(" ")).toContain("SEC");
 
+    const cyberInventoryPreview = body.routes.find((route: { routeId: string }) => route.routeId === "cyber_inventory_priority_preview");
+    expect(cyberInventoryPreview).toEqual(
+      expect.objectContaining({
+        route: "/v1/adapters/cyber/inventory-priority/preview",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "sapphirealpha.cyber_inventory_priority.preview.v1",
+      }),
+    );
+    expect(cyberInventoryPreview.caveats.join(" ")).toContain("No active scanning.");
+
     const wildfireRoute = body.routes.find((route: { routeId: string }) => route.routeId === "wildfire_alerts_preview");
     expect(wildfireRoute.x402Stream).toBe(false);
     expect(wildfireRoute.productIds).toEqual([]);
     expect(wildfireRoute.workstreamIds).toEqual(["wildfire_drone_readiness_lane"]);
 
     expect(productRoutes.map((route) => route.routeId)).toContain("access_preflight");
+  });
+
+  test("cyber inventory preview maps buyer assets to defensive priority evidence", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("cisa.gov")) {
+        return jsonResponse({
+          vulnerabilities: [
+            {
+              cveID: "CVE-2023-34362",
+              vendorProject: "Progress",
+              product: "MOVEit Transfer",
+              dateAdded: "2023-06-02",
+              dueDate: "2023-06-23",
+              requiredAction: "Apply vendor update.",
+            },
+          ],
+        });
+      }
+
+      if (url.includes("services.nvd.nist.gov")) {
+        const cve = new URL(url).searchParams.get("cveId");
+        return jsonResponse({
+          vulnerabilities: [
+            {
+              cve: {
+                id: cve,
+                published: "2023-06-02T00:00:00.000",
+                lastModified: "2023-06-03T00:00:00.000",
+                descriptions: [{ lang: "en", value: `${cve} synthetic defensive summary.` }],
+                metrics: {
+                  cvssMetricV31: [{ cvssData: { baseScore: 9.8, baseSeverity: "CRITICAL" } }],
+                },
+              },
+            },
+          ],
+        });
+      }
+
+      return jsonResponse({
+        data: [{ cve: "CVE-2023-34362", epss: "0.920000", percentile: "0.990000", date: "2026-05-09" }],
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const res = await app.request("/v1/adapters/cyber/inventory-priority/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyer: { buyerId: "msp-demo", useCase: "renewal proof packet" },
+          assets: [
+            {
+              assetId: "asset-1",
+              hostname: "vpn-1",
+              owner: "security",
+              environment: "production",
+              criticality: "critical",
+              internetFacing: true,
+              vulnerabilities: ["CVE-2023-34362"],
+            },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.mode).toBe("read_only_public_preview");
+      expect(body.sideEffects).toBe("none");
+      expect(body.report.schemaVersion).toBe("sapphirealpha.cyber_inventory_priority.preview.v1");
+      expect(body.report.input).toEqual(
+        expect.objectContaining({
+          cveCount: 1,
+          assetRows: 1,
+          authorizedInventoryRequired: true,
+        }),
+      );
+      expect(body.report.findings[0]).toEqual(
+        expect.objectContaining({
+          cve: "CVE-2023-34362",
+          tier: "fix_today",
+          buyerEvidence: expect.objectContaining({
+            affectedAssetCount: 1,
+            exposureSignals: ["high_criticality_asset", "internet_facing_asset", "production_environment"],
+          }),
+        }),
+      );
+      expect(body.report.findings[0].buyerEvidence.affectedAssets[0]).toEqual(
+        expect.objectContaining({
+          assetId: "asset-1",
+          hostname: "vpn-1",
+          internetFacing: true,
+        }),
+      );
+      expect(JSON.stringify(body)).not.toMatch(/payload:|run this exploit|proof-of-concept code|stolen credential/i);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("cyber inventory preview rejects empty inventory before source fetch", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const res = await app.request("/v1/adapters/cyber/inventory-priority/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assets: [{ hostname: "web-1", owner: "ops" }] }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe("empty_cyber_inventory");
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   test("keeps wildfire and drone work out of the x402 artifact catalog", async () => {
@@ -185,6 +313,9 @@ describe("Agent Opportunity Exchange API", () => {
       expect(body.x402Stream).toBe(true);
       expect(body.streamId).toBe("sec_macro_context");
       expect(body.report.schemaVersion).toBe("sapphirealpha.market_context.v1");
+      expect(body.report.filings[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+      expect(body.report.macro[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+      expect(body.report.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -224,6 +355,7 @@ describe("Agent Opportunity Exchange API", () => {
       expect(body.report.company).toBeNull();
       expect(body.report.filings).toEqual([]);
       expect(body.report.macro[0].seriesId).toBe("FEDFUNDS");
+      expect(body.report.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -275,6 +407,7 @@ describe("Agent Opportunity Exchange API", () => {
       expect(body.report.company.name).toBe("Apple Inc.");
       expect(body.report.filings).toHaveLength(1);
       expect(body.report.macro).toEqual([]);
+      expect(body.report.evidenceProof.reportHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     } finally {
       process.env.AOE_MARKET_FETCH_TIMEOUT_MS = originalTimeout;
       vi.unstubAllGlobals();

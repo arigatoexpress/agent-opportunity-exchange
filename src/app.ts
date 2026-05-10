@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { buildVulnPriorityReport } from "./adapters/cyber.js";
+import { buildCyberInventoryPriorityPreview, buildVulnPriorityReport } from "./adapters/cyber.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
-import { fetchMarketContextReport, withSourceTimeout } from "./adapters/market-context.js";
+import { attachMarketContextEvidenceProof, fetchMarketContextReport, withSourceTimeout } from "./adapters/market-context.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
 import { renderPublicFrontend } from "./frontend.js";
+import { parseCyberInventory } from "./inputs/cyber-inventory.js";
 import { appendReceipt } from "./ledger.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
@@ -16,6 +17,11 @@ import { createX402TestnetGate } from "./x402-testnet.js";
 const cvePrioritySchema = z.object({
   cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(100),
 });
+
+const cyberInventoryPreviewSchema = z.unknown().refine((body) => {
+  if (!body || typeof body !== "object") return false;
+  return JSON.stringify(body).length <= 200_000;
+}, "Provide a JSON inventory payload under 200KB.");
 
 const wildfireAlertsSchema = z
   .object({
@@ -289,6 +295,60 @@ export function createApp() {
     }
   });
 
+  app.post("/v1/adapters/cyber/inventory-priority/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberInventoryPreviewSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_inventory_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const inventory = parseCyberInventory(parsed.data);
+      if (inventory.cves.length === 0) {
+        return c.json(
+          {
+            error: "empty_cyber_inventory",
+            message: "Provide at least one CVE in cves, vulnerabilities, findings, assets, or asset rows.",
+          },
+          400,
+        );
+      }
+      if (inventory.cves.length > 100) {
+        return c.json(
+          {
+            error: "cyber_inventory_too_large",
+            message: "Inventory previews are limited to 100 unique CVEs.",
+          },
+          400,
+        );
+      }
+      const report = await buildCyberInventoryPriorityPreview(parsed.data);
+      return c.json({
+        mode: "read_only_public_preview",
+        x402Stream: true,
+        x402ProductId: "cyber_exploited_vuln_priority",
+        paidProductId: "cyber_exploited_vuln_priority",
+        readOnly: true,
+        sideEffects: "none",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
   app.post("/v1/adapters/wildfire/alerts/preview", async (c) => {
     const body = await c.req.json().catch(() => undefined);
     const parsed = wildfireAlertsSchema.safeParse(body);
@@ -484,7 +544,7 @@ export function createApp() {
             sec_edgar: { status: "degraded", message },
             fred_alfred: { status: "ok" },
           },
-          report: {
+          report: attachMarketContextEvidenceProof({
             schemaVersion: "sapphirealpha.market_context.v1",
             generatedAt: new Date().toISOString(),
             x402Stream: true,
@@ -515,7 +575,7 @@ export function createApp() {
               "This degraded preview is source-cited macro context only, not investment advice.",
               "No portfolio personalization, buy/sell/hold recommendation, price target, or trade execution is provided.",
             ],
-          },
+          }),
         });
       }
       if (message.startsWith("FRED ")) {
@@ -556,7 +616,7 @@ export function createApp() {
             sec_edgar: { status: "ok" },
             fred_alfred: { status: "degraded", message },
           },
-          report: {
+          report: attachMarketContextEvidenceProof({
             schemaVersion: "sapphirealpha.market_context.v1",
             generatedAt: new Date().toISOString(),
             x402Stream: true,
@@ -589,7 +649,7 @@ export function createApp() {
               "This degraded preview is source-cited SEC filing context only, not investment advice.",
               "No portfolio personalization, buy/sell/hold recommendation, price target, or trade execution is provided.",
             ],
-          },
+          }),
         });
       }
       return c.json(

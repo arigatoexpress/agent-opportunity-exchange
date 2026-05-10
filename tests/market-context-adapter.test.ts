@@ -41,9 +41,18 @@ describe("market context stream adapter", () => {
 
     expect(report.schemaVersion).toBe("sapphirealpha.market_context.v1");
     expect(report.x402Stream).toBe(true);
-    expect(report.company.ticker).toBe("TEST");
+    expect(report.company?.ticker).toBe("TEST");
     expect(report.filings[0].form).toBe("10-Q");
+    expect(report.filings[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(report.macro.map((series) => series.seriesId)).toEqual(["FEDFUNDS", "UNRATE"]);
+    expect(report.macro.every((series) => /^sha256:[a-f0-9]{64}$/.test(series.recordHash))).toBe(true);
+    expect(report.evidenceProof).toMatchObject({
+      algorithm: "sha256",
+      canonicalization: "stable-json-sorted-keys-v1",
+      reportHash: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
+      filingRecordHashes: [report.filings[0].recordHash],
+    });
+    expect(report.evidenceProof.macroObservationRecordHashes).toHaveLength(2);
     expect(report.highlights.map((highlight) => highlight.sourceId)).toContain("sec_edgar");
     expect(report.caveats.join(" ")).toContain("not investment advice");
   });

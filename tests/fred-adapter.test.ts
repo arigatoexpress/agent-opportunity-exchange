@@ -9,9 +9,13 @@ describe("FRED adapter", () => {
 `, "FEDFUNDS");
 
     expect(observations).toEqual([
-      { date: "2026-01-01", value: 4.33 },
-      { date: "2026-02-01", value: null },
+      { date: "2026-01-01", value: 4.33, recordHash: expect.stringMatching(/^sha256:[a-f0-9]{64}$/) },
+      { date: "2026-02-01", value: null, recordHash: expect.stringMatching(/^sha256:[a-f0-9]{64}$/) },
     ]);
+    expect(parseFredCsv(`observation_date,FEDFUNDS
+2026-01-01,4.33
+2026-02-01,.
+`, "FEDFUNDS")).toEqual(observations);
   });
 
   test("fetches a bounded report for multiple series", async () => {
@@ -24,7 +28,8 @@ describe("FRED adapter", () => {
     });
 
     expect(report.series).toHaveLength(2);
-    expect(report.series[0].observations).toEqual([{ date: "2026-02-01", value: 2 }]);
+    expect(report.series[0].observations).toEqual([{ date: "2026-02-01", value: 2, recordHash: expect.stringMatching(/^sha256:[a-f0-9]{64}$/) }]);
+    expect(report.series[0].recordHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(report.caveats.join(" ")).toContain("not investment advice");
   });
 });

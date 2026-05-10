@@ -1,3 +1,5 @@
+import { sha256 } from "../hash.js";
+
 export interface FredSeriesRequest {
   seriesIds: string[];
   limit?: number;
@@ -6,6 +8,7 @@ export interface FredSeriesRequest {
 export interface FredObservation {
   date: string;
   value: number | null;
+  recordHash: string;
 }
 
 export interface FredSeries {
@@ -13,6 +16,7 @@ export interface FredSeries {
   sourceUrl: string;
   observations: FredObservation[];
   latest: FredObservation | null;
+  recordHash: string;
 }
 
 export interface FredSeriesReport {
@@ -54,6 +58,7 @@ export async function fetchFredSeriesReport(request: FredSeriesRequest, fetcher:
         sourceUrl: url.toString(),
         observations,
         latest: observations.at(-1) ?? null,
+        recordHash: hashFredSeries(seriesId, url.toString(), observations),
       };
     }),
   );
@@ -87,14 +92,32 @@ export function parseFredCsv(text: string, expectedSeriesId: string): FredObserv
   const fallbackValueIndex = valueIndex === -1 ? header.findIndex((_, index) => index !== dateIndex) : valueIndex;
   if (dateIndex === -1 || fallbackValueIndex === -1) return [];
 
-  return rows.slice(1).map((row) => ({
-    date: row[dateIndex] ?? "",
-    value: parseFredValue(row[fallbackValueIndex]),
-  }));
+  return rows.slice(1).map((row) => hashFredObservation(expectedSeriesId, { date: row[dateIndex] ?? "", value: parseFredValue(row[fallbackValueIndex]) }));
 }
 
 function parseFredValue(raw: string | undefined): number | null {
   if (!raw || raw === ".") return null;
   const value = Number.parseFloat(raw);
   return Number.isFinite(value) ? value : null;
+}
+
+function hashFredObservation(seriesId: string, observation: Omit<FredObservation, "recordHash">): FredObservation {
+  return {
+    ...observation,
+    recordHash: sha256({
+      sourceId: "fred_alfred",
+      seriesId: seriesId.toUpperCase(),
+      date: observation.date,
+      value: observation.value,
+    }),
+  };
+}
+
+function hashFredSeries(seriesId: string, sourceUrl: string, observations: FredObservation[]): string {
+  return sha256({
+    sourceId: "fred_alfred",
+    seriesId: seriesId.toUpperCase(),
+    sourceUrl,
+    observationRecordHashes: observations.map((observation) => observation.recordHash),
+  });
 }
