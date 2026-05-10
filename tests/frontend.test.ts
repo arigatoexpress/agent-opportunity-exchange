@@ -32,6 +32,20 @@ describe("public frontend", () => {
     expect(html).toContain("Retail/customer-facing assets, wildfire operations, and live settlement remain outside this storefront.");
   });
 
+  test("renders the refactored buyer workbench shell", () => {
+    const html = renderPublicFrontend();
+    expect(html).toContain('class="workspace"');
+    expect(html).toContain('class="rail"');
+    expect(html).toContain('class="canvas"');
+    expect(html).toContain('class="inspector"');
+    expect(html).toContain('id="decisionLabel"');
+    expect(html).toContain('id="decisionRoute"');
+    expect(html).toContain("updateDecisionRail");
+    expect(html).toContain("Evidence Streams buyer workbench");
+    expect(html).not.toContain('class="first-screen"');
+    expect(html).not.toContain('class="below"');
+  });
+
   test("ignores stale preview responses so clicks cannot be overwritten", () => {
     const html = renderPublicFrontend();
     expect(html).toContain("activePreviewRequest");

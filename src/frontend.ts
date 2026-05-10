@@ -9,16 +9,18 @@ export function renderPublicFrontend(): string {
   <title>Agent Opportunity Exchange - Evidence Streams</title>
   <style>
     :root {
-      --paper: #f4f7f5;
+      --bg: #f4f7f5;
       --panel: #ffffff;
       --panel-soft: #f9fbfa;
+      --panel-strong: #eef4f0;
       --ink: #111817;
-      --muted: #5e6a65;
+      --muted: #5d6964;
       --line: #d8e0dc;
-      --line-strong: #acbab4;
+      --line-strong: #aebbb5;
       --green: #1f7a52;
       --teal: #08756f;
       --blue: #285da8;
+      --violet: #7257a5;
       --red: #b3261e;
       --amber: #8c6200;
       --code: #0f1514;
@@ -31,9 +33,9 @@ export function renderPublicFrontend(): string {
       min-height: 100%;
       color: var(--ink);
       background:
-        linear-gradient(90deg, rgba(17, 24, 23, 0.045) 1px, transparent 1px),
-        linear-gradient(180deg, rgba(17, 24, 23, 0.035) 1px, transparent 1px),
-        linear-gradient(135deg, #f7faf8 0%, #eef4f1 46%, #f7f8f4 100%);
+        linear-gradient(90deg, rgba(17, 24, 23, 0.04) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(17, 24, 23, 0.03) 1px, transparent 1px),
+        linear-gradient(135deg, #f7faf8 0%, #eef4f1 48%, #f7f8f4 100%);
       background-size: 48px 48px, 48px 48px, auto;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       letter-spacing: 0;
@@ -41,18 +43,18 @@ export function renderPublicFrontend(): string {
     button, input, select { font: inherit; }
     h1, h2, h3, p, dl, dd { margin: 0; }
     .shell {
-      width: min(1420px, calc(100vw - 40px));
+      width: min(1500px, calc(100vw - 32px));
       margin: 0 auto;
-      padding: 18px 0 34px;
+      padding: 16px 0 28px;
     }
     header {
       display: grid;
-      grid-template-columns: minmax(260px, 1fr) auto;
-      gap: 18px;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 16px;
       align-items: center;
       min-height: 64px;
       border-bottom: 1px solid var(--line);
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
     .brand {
       display: flex;
@@ -63,19 +65,33 @@ export function renderPublicFrontend(): string {
     .mark {
       width: 38px;
       height: 38px;
-      border: 1px solid rgba(255,255,255,.72);
+      border: 1px solid rgba(255, 255, 255, .72);
       border-radius: 8px;
       background:
-        linear-gradient(135deg, transparent 0 48%, rgba(255,255,255,.85) 49% 52%, transparent 53%),
+        linear-gradient(135deg, transparent 0 48%, rgba(255, 255, 255, .86) 49% 52%, transparent 53%),
         linear-gradient(145deg, var(--teal), var(--blue));
       box-shadow: 0 10px 24px rgba(8, 117, 111, 0.2);
       flex: 0 0 auto;
     }
-    .brand strong { display: block; font-size: 17px; line-height: 1.1; }
-    .brand span { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
-    .top-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .brand strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.1;
+    }
+    .brand span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
     .btn {
-      min-height: 40px;
+      min-height: 38px;
       border: 1px solid var(--line-strong);
       border-radius: 8px;
       background: var(--panel);
@@ -94,63 +110,46 @@ export function renderPublicFrontend(): string {
       border-color: var(--ink);
       color: white;
     }
-    .btn.primary:hover { background: var(--teal); border-color: var(--teal); }
-    .status-strip {
+    .btn.primary:hover {
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+    .workspace {
+      min-height: calc(100vh - 106px);
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1px;
-      overflow: hidden;
+      grid-template-columns: 292px minmax(520px, 1fr) 360px;
+      gap: 14px;
+      align-items: start;
+    }
+    .rail, .canvas, .inspector, .lane {
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--line);
-      margin-bottom: 18px;
-    }
-    .status-cell {
-      min-height: 74px;
-      background: rgba(255,255,255,.74);
-      padding: 13px 14px;
-    }
-    .status-cell dt {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .status-cell dd {
-      font-size: 22px;
-      font-weight: 820;
-      line-height: 1;
-    }
-    .ok { color: var(--green); }
-    .warn { color: var(--amber); }
-    .danger { color: var(--red); }
-    .blue { color: var(--blue); }
-    .first-screen {
-      min-height: calc(100vh - 120px);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(460px, .92fr);
-      gap: 18px;
-      align-items: stretch;
-    }
-    .storefront, .workbench-panel, .lane, .boundary {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255,255,255,.82);
+      background: rgba(255, 255, 255, .86);
       box-shadow: var(--shadow);
-    }
-    .storefront, .workbench-panel {
-      min-height: 640px;
-      display: flex;
-      flex-direction: column;
+      min-width: 0;
       overflow: hidden;
+    }
+    .rail {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      min-height: 0;
+    }
+    .inspector {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: 0;
+    }
+    .canvas {
+      display: grid;
+      grid-template-rows: auto auto auto auto minmax(420px, 620px) auto;
+      min-height: 0;
     }
     .panel-head {
       display: grid;
-      gap: 10px;
-      padding: 18px;
+      gap: 9px;
+      padding: 16px;
       border-bottom: 1px solid var(--line);
-      background: rgba(249, 251, 250, .88);
+      background: rgba(249, 251, 250, .9);
     }
     .eyebrow {
       color: var(--teal);
@@ -159,57 +158,147 @@ export function renderPublicFrontend(): string {
       text-transform: uppercase;
     }
     h1 {
+      font-size: 28px;
+      line-height: 1.05;
       max-width: 760px;
-      font-size: clamp(28px, 3.1vw, 40px);
-      line-height: 1.06;
     }
-    h2 { font-size: 21px; line-height: 1.2; }
-    h3 { font-size: 15px; line-height: 1.25; }
+    h2 {
+      font-size: 22px;
+      line-height: 1.15;
+    }
+    h3 {
+      font-size: 14px;
+      line-height: 1.25;
+    }
     .lead {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.48;
       max-width: 820px;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.55;
     }
-    .stream-spec {
+    .status-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(110px, .5fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
       border-bottom: 1px solid var(--line);
-      background: var(--panel);
     }
-    .spec-cell {
-      padding: 14px 16px;
-      min-width: 0;
-      border-right: 1px solid var(--line);
+    .status-cell {
+      min-height: 74px;
+      background: rgba(255, 255, 255, .78);
+      padding: 12px;
     }
-    .spec-cell:last-child { border-right: 0; }
-    .spec-cell span {
-      display: block;
+    .status-cell dt {
       color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
+      font-size: 10px;
+      font-weight: 850;
       text-transform: uppercase;
       margin-bottom: 7px;
     }
-    .route, .mono {
+    .status-cell dd {
+      font-size: 22px;
+      font-weight: 830;
+      line-height: 1;
+    }
+    .ok { color: var(--green); }
+    .warn { color: var(--amber); }
+    .danger { color: var(--red); }
+    .blue { color: var(--blue); }
+    .violet { color: var(--violet); }
+    .rail-body, .inspector-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .section-label {
+      display: grid;
+      gap: 4px;
+      padding: 3px 2px 0;
+    }
+    .section-label span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+    .section-label strong {
+      font-size: 13px;
+      line-height: 1.25;
+    }
+    .tagrow {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fbfdfc;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+      padding: 5px 7px;
+    }
+    #products {
+      display: grid;
+      gap: 8px;
+    }
+    .product-table.table-head {
+      display: none;
+    }
+    .product-row {
+      display: grid;
+      gap: 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .78);
+      padding: 11px;
+    }
+    .product-row > div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .product-title {
+      font-weight: 790;
+      line-height: 1.25;
+    }
+    .product-action {
+      width: 100%;
+      min-height: 34px;
+      padding: 0 9px;
+      font-size: 12px;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .price {
+      color: var(--green);
+      font-size: 20px;
+      font-weight: 850;
+      line-height: 1;
+    }
+    .mono, .route {
       font: 12px/1.45 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       overflow-wrap: anywhere;
     }
     .route { color: var(--blue); }
-    .price { font-size: 23px; font-weight: 850; line-height: 1; }
     .schema { color: var(--teal); }
     .proof-strip {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 1px;
-      overflow: hidden;
-      border-bottom: 1px solid var(--line);
       background: var(--line);
+      border-bottom: 1px solid var(--line);
     }
     .proof-cell {
       min-height: 104px;
       padding: 13px 14px;
-      background: rgba(255,255,255,.78);
+      background: rgba(255, 255, 255, .78);
     }
     .proof-cell span {
       display: block;
@@ -225,91 +314,34 @@ export function renderPublicFrontend(): string {
       line-height: 1.1;
       margin-bottom: 7px;
     }
-    .product-table {
+    .stream-spec {
       display: grid;
-      grid-template-columns: minmax(170px, .74fr) minmax(150px, .64fr) minmax(230px, 1fr) 96px 128px;
+      grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(118px, .5fr));
       border-bottom: 1px solid var(--line);
+      background: var(--panel);
     }
-    #products {
-      display: grid;
-      grid-template-columns: minmax(170px, .74fr) minmax(150px, .64fr) minmax(230px, 1fr) 96px 128px;
+    .spec-cell {
+      min-width: 0;
+      padding: 13px 14px;
+      border-right: 1px solid var(--line);
     }
-    .table-head {
+    .spec-cell:last-child { border-right: 0; }
+    .spec-cell span {
+      display: block;
       color: var(--muted);
-      background: var(--panel-soft);
       font-size: 11px;
       font-weight: 850;
       text-transform: uppercase;
-    }
-    .product-table > div {
-      padding: 10px 14px;
-      border-right: 1px solid var(--line);
-      min-width: 0;
-    }
-    .product-table > div:nth-child(5n) { border-right: 0; }
-    .product-row {
-      display: contents;
-    }
-    .product-row > div {
-      padding: 13px 14px;
-      border-right: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      background: rgba(255,255,255,.72);
-      min-width: 0;
-    }
-    .product-row > div:nth-child(5n) { border-right: 0; }
-    .product-row:last-child > div { border-bottom: 0; }
-    .product-title { font-weight: 760; }
-    .product-action {
-      width: 100%;
-      min-height: 34px;
-      padding: 0 9px;
-      font-size: 12px;
-    }
-    .small {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-    .tagrow {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 9px;
-    }
-    .tag {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: #fbfdfc;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1;
-      padding: 5px 7px;
-    }
-    .storefront-foot {
-      margin-top: auto;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 14px;
-      align-items: center;
-      padding: 14px 18px;
-      border-top: 1px solid var(--line);
-      background: rgba(249, 251, 250, .86);
-    }
-    .workbench-grid {
-      display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
-      gap: 0;
-      flex: 1;
-      min-height: 0;
+      margin-bottom: 7px;
     }
     .controls {
       display: grid;
-      gap: 11px;
-      align-content: start;
-      border-right: 1px solid var(--line);
-      padding: 16px;
-      background: rgba(249, 251, 250, .64);
+      grid-template-columns: minmax(170px, .85fr) minmax(130px, .55fr) minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: end;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(249, 251, 250, .72);
     }
     label {
       display: block;
@@ -335,6 +367,10 @@ export function renderPublicFrontend(): string {
       border-radius: 8px;
       overflow: hidden;
       background: var(--panel);
+      min-height: 40px;
+      height: 40px;
+      max-height: 40px;
+      align-self: end;
     }
     .request-line strong {
       display: grid;
@@ -352,6 +388,7 @@ export function renderPublicFrontend(): string {
       grid-template-rows: auto minmax(0, 1fr);
       min-width: 0;
       min-height: 0;
+      height: 100%;
     }
     .output-toolbar {
       display: grid;
@@ -378,7 +415,7 @@ export function renderPublicFrontend(): string {
       color: #a8dad2;
       padding: 5px 8px;
       font-size: 11px;
-      max-width: 210px;
+      max-width: 250px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -392,84 +429,113 @@ export function renderPublicFrontend(): string {
       color: #dce7e0;
       font: 12px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     }
-    .below {
-      display: grid;
-      grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
-      gap: 18px;
-      margin-top: 18px;
-    }
-    .lane, .boundary { padding: 18px; }
-    .lane-grid, .boundary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1px;
-      margin-top: 14px;
-      overflow: hidden;
+    .decision-card, .source-list, .boundary-box {
       border: 1px solid var(--line);
       border-radius: 8px;
+      background: rgba(255, 255, 255, .76);
+      overflow: hidden;
+    }
+    .decision-card {
+      display: grid;
+      gap: 1px;
       background: var(--line);
     }
-    .lane-cell, .boundary-cell {
-      min-height: 132px;
-      padding: 14px;
-      background: rgba(255,255,255,.78);
+    .decision-row {
+      display: grid;
+      gap: 5px;
+      padding: 11px;
+      background: rgba(255, 255, 255, .82);
+      min-width: 0;
+    }
+    .decision-row span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
     }
     .source-list {
       display: grid;
       gap: 1px;
-      margin-top: 14px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 8px;
       background: var(--line);
     }
     .source-row {
       display: grid;
-      grid-template-columns: minmax(130px, .7fr) minmax(140px, .72fr) minmax(0, 1fr);
-      gap: 12px;
-      padding: 12px 14px;
-      background: rgba(255,255,255,.78);
+      gap: 4px;
+      padding: 11px;
+      background: rgba(255, 255, 255, .82);
       min-width: 0;
     }
-    .source-row strong, .source-row span { min-width: 0; overflow-wrap: anywhere; }
-    .button-note {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255,255,255,.72);
-      padding: 10px;
+    .source-row strong, .source-row span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .boundary-box {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+    }
+    .lane-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border-top: 1px solid var(--line);
+    }
+    .lane-cell {
+      min-height: 108px;
+      padding: 12px;
+      background: rgba(255, 255, 255, .78);
     }
     .footer {
       color: var(--muted);
       font-size: 12px;
-      padding-top: 18px;
+      padding-top: 14px;
     }
-    @media (max-width: 1120px) {
-      .first-screen, .below { grid-template-columns: 1fr; }
-      .storefront, .workbench-panel { min-height: auto; }
+    @media (max-width: 1260px) {
+      .workspace {
+        grid-template-columns: 280px minmax(0, 1fr);
+      }
+      .inspector {
+        grid-column: 1 / -1;
+        min-height: auto;
+      }
+      .inspector-body {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+      }
     }
-    @media (max-width: 760px) {
-      .shell { width: min(100vw - 20px, 1420px); padding-top: 10px; }
-      header, .storefront-foot, .workbench-grid, .stream-spec, .status-strip, .proof-strip, .source-row { grid-template-columns: 1fr; }
-      .top-actions { justify-content: flex-start; }
-      .status-cell, .spec-cell { border-right: 0; border-bottom: 1px solid var(--line); }
-      .status-cell:last-child, .spec-cell:last-child { border-bottom: 0; }
-      #products, .product-table, .product-row { display: block; }
-      .product-table.table-head { display: none; }
-      .product-row > div {
+    @media (max-width: 920px) {
+      .workspace, header, .controls, .proof-strip, .stream-spec, .lane-strip {
+        grid-template-columns: 1fr;
+      }
+      .inspector-body {
+        grid-template-columns: 1fr;
+      }
+      .top-actions {
+        justify-content: flex-start;
+      }
+      .spec-cell {
         border-right: 0;
-        border-bottom: 0;
-        padding: 8px 14px;
-      }
-      .product-row {
-        display: grid;
         border-bottom: 1px solid var(--line);
-        padding: 8px 0;
-        background: rgba(255,255,255,.74);
       }
-      .product-row:last-child { border-bottom: 0; }
-      .controls { border-right: 0; border-bottom: 1px solid var(--line); }
-      .lane-grid, .boundary-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 31px; }
+      .spec-cell:last-child {
+        border-bottom: 0;
+      }
+      h1 {
+        font-size: 30px;
+      }
+    }
+    @media (max-width: 620px) {
+      .shell {
+        width: min(100vw - 18px, 1500px);
+        padding-top: 10px;
+      }
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+      .schema-pill {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -480,33 +546,58 @@ export function renderPublicFrontend(): string {
         <div class="mark" aria-hidden="true"></div>
         <div>
           <strong>Agent Opportunity Exchange</strong>
-          <span>Paid evidence streams for agents</span>
+          <span>Evidence Streams buyer workbench</span>
         </div>
       </div>
       <div class="top-actions">
         <button class="btn" id="refresh">Refresh Evidence</button>
+        <button class="btn" data-action="cyber">Run Cyber Preview</button>
         <button class="btn primary" data-action="markets">Run Market Preview</button>
       </div>
     </header>
 
-    <dl class="status-strip" aria-label="System readiness">
-      <div class="status-cell"><dt>Live adapters</dt><dd id="liveAdapters">-</dd></div>
-      <div class="status-cell"><dt>Source records</dt><dd id="sourceRecords">-</dd></div>
-      <div class="status-cell"><dt>Paid products</dt><dd id="paidProducts">-</dd></div>
-      <div class="status-cell"><dt>x402 rail</dt><dd class="ok" id="x402Rail">loading</dd></div>
-    </dl>
-
-    <main class="first-screen">
-      <section class="storefront" aria-labelledby="storefront-title">
+    <main class="workspace">
+      <aside class="rail" aria-labelledby="storefront-title">
         <div class="panel-head">
           <div class="eyebrow">Evidence storefront</div>
           <h1 id="storefront-title">Show buyers the proof before asking them to pay.</h1>
-          <p class="lead">Every product row is grounded in the live registry: buyer value, source IDs, rights posture, readiness, price, and an inspectable preview or quote. Simulated by default, official Base Sepolia x402 testnet when explicitly configured; no trading, no scans, no external sends.</p>
+          <p class="lead">A rights-cleared x402 storefront for paid artifacts, public previews, quotes, readiness, and source proof. Simulated by default; Base Sepolia x402 testnet only when explicitly configured.</p>
           <div class="tagrow">
-            <span class="tag">derived facts with citation</span>
-            <span class="tag">public preview before payment</span>
-            <span class="tag">buyer-specific value signals</span>
+            <span class="tag">Proof before purchase</span>
+            <span class="tag">No live settlement</span>
+            <span class="tag">No external sends</span>
           </div>
+        </div>
+
+        <dl class="status-grid" aria-label="System readiness">
+          <div class="status-cell"><dt>Live adapters</dt><dd id="liveAdapters">-</dd></div>
+          <div class="status-cell"><dt>Source records</dt><dd id="sourceRecords">-</dd></div>
+          <div class="status-cell"><dt>Paid products</dt><dd id="paidProducts">-</dd></div>
+          <div class="status-cell"><dt>x402 rail</dt><dd class="ok" id="x402Rail">loading</dd></div>
+        </dl>
+
+        <div class="rail-body">
+          <div class="section-label">
+            <span>Buyer segment</span>
+            <strong>Who has a reason to pay first</strong>
+          </div>
+          <div class="product-table table-head" aria-hidden="true">
+            <div>Product</div>
+            <div>Buyer segment</div>
+            <div>Evidence basis</div>
+            <div>Price</div>
+            <div>Button output</div>
+          </div>
+          <div id="products" aria-live="polite"></div>
+          <p class="small">Product buttons return source IDs, rights, preview, quote, route, and payment posture before any paid content is requested.</p>
+        </div>
+      </aside>
+
+      <section class="canvas" id="workbench" aria-labelledby="workbench-title">
+        <div class="panel-head">
+          <div class="eyebrow">Live stream workbench</div>
+          <h2 id="workbench-title">Run a route, inspect the exact proof.</h2>
+          <p class="lead">Every button output names the route, request body, value signal, evidence basis, and safety posture a buyer or agent receives.</p>
         </div>
 
         <div class="proof-strip" aria-label="Proof before purchase">
@@ -523,7 +614,7 @@ export function renderPublicFrontend(): string {
           <div class="proof-cell">
             <span>Value Signal</span>
             <strong>Preview plus quote</strong>
-            <p class="small">Inspect buttons return artifact preview, quote, rights, and source IDs without unlocking full paid content.</p>
+            <p class="small">Inspect proof before simulated or testnet access.</p>
           </div>
           <div class="proof-cell">
             <span>Payment Posture</span>
@@ -551,89 +642,86 @@ export function renderPublicFrontend(): string {
           </div>
         </div>
 
-        <div class="product-table table-head" aria-hidden="true">
-          <div>Product</div>
-          <div>Buyer segment</div>
-          <div>Evidence basis</div>
-          <div>Price</div>
-          <div>Button output</div>
-        </div>
-        <div id="products" aria-live="polite"></div>
-
-        <div class="storefront-foot">
-          <p class="small">Product buttons do not imply readiness. They show the exact preview/quote evidence available before payment, then the live preview buttons prove currently runnable routes.</p>
-          <button class="btn" data-action="cyber">Run Cyber Preview</button>
-        </div>
-      </section>
-
-      <section class="workbench-panel" id="workbench" aria-labelledby="workbench-title">
-        <div class="panel-head">
-          <div class="eyebrow">Live stream workbench</div>
-          <h2 id="workbench-title">Click a button, see exactly what it proved</h2>
-          <p class="lead">Preview actions show route, request body, value signal, source posture, safety boundary, and the raw JSON response a buyer or agent receives.</p>
-        </div>
-        <div class="workbench-grid">
-          <div class="controls">
-            <div>
-              <label for="previewKind">Route</label>
-              <select id="previewKind">
-                <option value="marketContext">SEC + Macro Context</option>
-                <option value="cyberInventory">Cyber Inventory Proof</option>
-                <option value="cyber">Cyber CVE List</option>
-                <option value="wildfire">Wildfire WFIGS Perimeters</option>
-                <option value="alerts">NWS Fire Weather Alerts</option>
-                <option value="sec">SEC Recent Filings</option>
-                <option value="fred">FRED Macro Series</option>
-              </select>
-            </div>
-            <div>
-              <label for="previewInput">Input</label>
-              <input id="previewInput" value="AAPL">
-            </div>
-            <div class="request-line">
-              <strong id="methodLabel">POST</strong>
-              <span class="route" id="routeLabel">/v1/streams/market-context/preview</span>
-            </div>
-            <button class="btn primary" id="runPreview">Run Preview</button>
-            <button class="btn" id="inspectFeatured">Inspect Featured Proof</button>
-            <button class="btn" data-action="wildfire">Check Separate Fire Signals</button>
-            <div class="button-note">
-              <p class="small" id="buttonResultNote">Run Preview calls a live read-only route. Inspect Featured Proof calls artifact preview and quote endpoints only.</p>
-            </div>
-            <p class="small">Wildfire routes are visible here only as a separate read-only public-safety research lane. They are not x402 stream products.</p>
+        <div class="controls">
+          <div>
+            <label for="previewKind">Route</label>
+            <select id="previewKind">
+              <option value="marketContext">SEC + Macro Context</option>
+              <option value="cyberInventory">Cyber Inventory Proof</option>
+              <option value="cyber">Cyber CVE List</option>
+              <option value="wildfire">Wildfire WFIGS Perimeters</option>
+              <option value="alerts">NWS Fire Weather Alerts</option>
+              <option value="sec">SEC Recent Filings</option>
+              <option value="fred">FRED Macro Series</option>
+            </select>
           </div>
-          <div class="output-wrap">
-            <div class="output-toolbar">
-              <span id="outputTitle">Market context response</span>
-              <span class="schema-pill" id="schemaLabel">sapphirealpha.market_context.v1</span>
-            </div>
-            <pre id="output" tabindex="-1">Loading readiness...</pre>
+          <div>
+            <label for="previewInput">Input</label>
+            <input id="previewInput" value="AAPL">
           </div>
+          <div class="request-line">
+            <strong id="methodLabel">POST</strong>
+            <span class="route" id="routeLabel">/v1/streams/market-context/preview</span>
+          </div>
+          <button class="btn primary" id="runPreview">Run Preview</button>
+          <button class="btn" id="inspectFeatured">Inspect Featured Proof</button>
         </div>
-      </section>
-    </main>
 
-    <div class="below">
-      <section class="lane">
-        <div class="eyebrow">Buyer framing</div>
-        <h2>Who has a reason to pay first</h2>
-        <p class="lead">The surface now frames each stream around a buyer job, not generic data access. The claims stay bounded to registry-backed previews, official/public sources, and readiness status.</p>
-        <div class="lane-grid">
+        <div class="output-wrap">
+          <div class="output-toolbar">
+            <span id="outputTitle">Market context response</span>
+            <span class="schema-pill" id="schemaLabel">sapphirealpha.market_context.v1</span>
+          </div>
+          <pre id="output" tabindex="-1">Loading readiness...</pre>
+        </div>
+
+        <div class="lane-strip" aria-label="Primary buyer lanes">
           <div class="lane-cell"><h3>MSPs and SMB security</h3><p class="small">Pay for a fix-today CVE packet backed by CISA KEV, EPSS, NVD, and remediation context.</p></div>
           <div class="lane-cell"><h3>Market research agents</h3><p class="small">Pay for explainable SEC plus macro evidence, with research-only caveats and no execution.</p></div>
           <div class="lane-cell"><h3>Agent builders</h3><p class="small">Pay for source-cited API change radar that separates tested contracts from stale generated code.</p></div>
         </div>
       </section>
 
-      <section class="boundary">
-        <div class="eyebrow">Provenance and readiness</div>
-        <h2>Visible evidence, visible limits</h2>
-        <p class="lead">Source names, owners, access patterns, rights risk, and adapter status are shown from public registry endpoints. Wildfire remains a separate read-only planning lane, not a paid incident surface.</p>
-        <div class="source-list" id="sourceRail" aria-live="polite">
-          <div class="source-row"><strong>Loading sources</strong><span class="small">/v1/sources</span><span class="small">Waiting for registry data.</span></div>
+      <aside class="inspector" aria-labelledby="inspector-title">
+        <div class="panel-head">
+          <div class="eyebrow">Provenance and readiness</div>
+          <h2 id="inspector-title">Visible evidence, visible limits</h2>
+          <p class="lead">The inspector follows the active button result and keeps rights, route, source, and boundary context beside the JSON.</p>
         </div>
-      </section>
-    </div>
+        <div class="inspector-body">
+          <section class="decision-card" aria-label="Active decision proof">
+            <div class="decision-row">
+              <span>Button output</span>
+              <strong id="decisionLabel">Awaiting preview</strong>
+            </div>
+            <div class="decision-row">
+              <span>Route</span>
+              <strong class="route" id="decisionRoute">/v1/streams/market-context/preview</strong>
+            </div>
+            <div class="decision-row">
+              <span>Evidence basis</span>
+              <p class="small" id="decisionProof">Run a preview or inspect proof to update this rail.</p>
+            </div>
+            <div class="decision-row">
+              <span>Value signal</span>
+              <p class="small" id="decisionValue">Preview plus quote.</p>
+            </div>
+          </section>
+
+          <section class="source-list" id="sourceRail" aria-live="polite">
+            <div class="source-row"><strong>Loading sources</strong><span class="small">/v1/sources</span><span class="small">Waiting for registry data.</span></div>
+          </section>
+
+          <section class="boundary-box">
+            <div class="eyebrow">Boundary</div>
+            <p class="small" id="buttonResultNote">Run Preview calls a live read-only route. Inspect Featured Proof calls artifact preview and quote endpoints only.</p>
+            <p class="small">Wildfire routes are visible here only as a separate read-only public-safety research lane. They are not x402 stream products.</p>
+            <p class="small">Retail/customer-facing assets, wildfire operations, and live settlement remain outside this storefront.</p>
+            <button class="btn" data-action="wildfire">Check Separate Fire Signals</button>
+          </section>
+        </div>
+      </aside>
+    </main>
 
     <div class="footer">Agent Opportunity Exchange public frontend. Retail/customer-facing assets, wildfire operations, and live settlement remain outside this storefront.</div>
   </div>
@@ -733,7 +821,17 @@ export function renderPublicFrontend(): string {
         .replace(/'/g, '&#39;');
     }
 
+    function updateDecisionRail(context) {
+      if (!context) return;
+      document.getElementById('decisionLabel').textContent = context.label;
+      document.getElementById('decisionRoute').textContent = context.path;
+      document.getElementById('decisionProof').textContent = context.proof;
+      document.getElementById('decisionValue').textContent = context.valueSignal;
+      document.getElementById('buttonResultNote').textContent = context.label + ' returned route, request, value, proof, safety, and response JSON.';
+    }
+
     function pretty(value, context) {
+      updateDecisionRail(context);
       if (!context) {
         output.textContent = JSON.stringify(value, null, 2);
         return;
