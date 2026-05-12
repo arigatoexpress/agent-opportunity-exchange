@@ -1,4 +1,4 @@
-import { parseCyberInventory, type CyberAssetEvidence } from "../inputs/cyber-inventory.js";
+import { parseCyberInventory, type CyberAssetEvidence, type CyberInventoryContext } from "../inputs/cyber-inventory.js";
 
 export interface KevEntry {
   cveID: string;
@@ -246,6 +246,13 @@ export async function buildVulnPriorityReport(cves: string[], fetcher: FetchLike
 
 export async function buildCyberInventoryPriorityPreview(body: unknown, fetcher: FetchLike = fetch): Promise<CyberInventoryPriorityPreview> {
   const inventory = parseCyberInventory(body);
+  return buildCyberInventoryPriorityPreviewFromContext(inventory, fetcher);
+}
+
+export async function buildCyberInventoryPriorityPreviewFromContext(
+  inventory: CyberInventoryContext,
+  fetcher: FetchLike = fetch,
+): Promise<CyberInventoryPriorityPreview> {
   const report = await buildVulnPriorityReport(inventory.cves, fetcher);
   const findings = report.findings.map((finding): CyberInventoryPriorityFinding => {
     const affectedAssets = dedupeAssets(inventory.assetsByCve.get(finding.cve) ?? []);

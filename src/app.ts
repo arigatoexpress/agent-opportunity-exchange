@@ -16,6 +16,7 @@ import { buildLiveMarketUpstreamProof } from "./live-market-proof.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
+import { renderCyberInventoryPriorityHtml } from "./reporting/cyber-html.js";
 import {
   buildTelegramRegistrationReceipt,
   buildTelegramStatus,
@@ -167,6 +168,7 @@ export function createApp() {
         "/v1/artifacts/:id/quote",
         "/v1/streams/market-context/live-proof",
         "/v1/streams/market-context/preview",
+        "/v1/adapters/cyber/inventory-priority/report",
         "/v1/adapters/opportunities/public-programs/preview",
       ],
       paidEndpoints: ["/v1/artifacts/:id/content"],
@@ -451,6 +453,64 @@ export function createApp() {
         readOnly: true,
         sideEffects: "none",
         report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown source adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/adapters/cyber/inventory-priority/report", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberInventoryPreviewSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_inventory_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const inventory = parseCyberInventory(parsed.data);
+      if (inventory.cves.length === 0) {
+        return c.json(
+          {
+            error: "empty_cyber_inventory",
+            message: "Provide at least one CVE in cves, vulnerabilities, findings, assets, or asset rows.",
+          },
+          400,
+        );
+      }
+      if (inventory.cves.length > 100) {
+        return c.json(
+          {
+            error: "cyber_inventory_too_large",
+            message: "Inventory reports are limited to 100 unique CVEs.",
+          },
+          400,
+        );
+      }
+      const report = await buildCyberInventoryPriorityPreview(parsed.data);
+      return c.json({
+        schemaId: "aoe.adapter.cyber_inventory_priority.report.v1",
+        mode: "read_only_public_preview",
+        x402Stream: true,
+        x402ProductId: "cyber_exploited_vuln_priority",
+        paidProductId: "cyber_exploited_vuln_priority",
+        contentType: "text/html",
+        readOnly: true,
+        sideEffects: "none",
+        report,
+        reportHtml: renderCyberInventoryPriorityHtml(report),
+        outputPolicy: report.outputPolicy,
       });
     } catch (error) {
       return c.json(

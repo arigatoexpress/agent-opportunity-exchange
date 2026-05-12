@@ -68,6 +68,8 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`
 - `POST /v1/adapters/cyber/vuln-priority/preview`
+- `POST /v1/adapters/cyber/inventory-priority/preview`
+- `POST /v1/adapters/cyber/inventory-priority/report`
 - `POST /v1/adapters/wildfire/alerts/preview`
 - `POST /v1/adapters/wildfire/wfigs-perimeters/preview`
 - `POST /v1/streams/market-context/live-proof`
@@ -147,6 +149,16 @@ The same adapter is available as a CLI:
 npm run cyber:priority -- CVE-2021-44228 CVE-2023-34362
 npm run cyber:priority -- --input ./asset-inventory.csv --output ./cyber-priority.json
 npm run cyber:priority -- --format html --output ./cyber-priority.html CVE-2021-44228
+```
+
+Authorized buyer inventory can also produce a derived HTML proof packet through
+the API:
+
+```bash
+curl -s \
+  -X POST http://127.0.0.1:4402/v1/adapters/cyber/inventory-priority/report \
+  -H 'Content-Type: application/json' \
+  -d '{"buyer":{"name":"MSP Demo","useCase":"client remediation proof packet"},"assets":[{"hostname":"vpn-1","environment":"production","criticality":"critical","internetFacing":true,"cves":["CVE-2023-34362"]}]}'
 ```
 
 The separate wildfire/regional lane previews public NWS alerts by state or point:

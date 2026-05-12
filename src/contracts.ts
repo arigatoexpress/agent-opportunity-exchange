@@ -428,6 +428,16 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       sideEffects: { const: "none" },
       report: objectSchema("Authorized inventory priority report", {}),
     }),
+    "aoe.adapter.cyber_inventory_priority.report.v1": objectSchema("Cyber inventory priority HTML report", {
+      schemaId: { const: "aoe.adapter.cyber_inventory_priority.report.v1" },
+      mode: { const: "read_only_public_preview" },
+      x402Stream: { const: true },
+      contentType: { const: "text/html" },
+      sideEffects: { const: "none" },
+      report: objectSchema("Authorized inventory priority report", {}),
+      reportHtml: { type: "string" },
+      outputPolicy: arrayOf({ type: "string" }),
+    }),
     "sapphirealpha.market_context.v1": objectSchema("Market context preview", {
       mode: { const: "read_only_public_preview" },
       x402Stream: { const: true },
