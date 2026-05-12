@@ -141,7 +141,7 @@ export function renderPublicFrontend(): string {
     }
     .canvas {
       display: grid;
-      grid-template-rows: auto auto auto auto minmax(420px, 620px) auto;
+      grid-template-rows: auto auto auto auto auto minmax(420px, 620px) auto;
       min-height: 0;
     }
     .panel-head {
@@ -385,10 +385,38 @@ export function renderPublicFrontend(): string {
     }
     .output-wrap {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
       min-width: 0;
       min-height: 0;
       height: 100%;
+    }
+    .proof-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .summary-cell {
+      min-height: 86px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, .82);
+      min-width: 0;
+    }
+    .summary-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .summary-cell strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.15;
+      margin-bottom: 6px;
+      overflow-wrap: anywhere;
     }
     .output-toolbar {
       display: grid;
@@ -529,7 +557,7 @@ export function renderPublicFrontend(): string {
       }
     }
     @media (max-width: 920px) {
-      .workspace, header, .controls, .proof-strip, .stream-spec, .lane-strip {
+      .workspace, header, .controls, .proof-strip, .stream-spec, .proof-summary, .lane-strip {
         grid-template-columns: 1fr;
       }
       .inspector-body {
@@ -650,16 +678,16 @@ export function renderPublicFrontend(): string {
 
         <div class="stream-spec" aria-label="Featured stream contract">
           <div class="spec-cell">
-            <span>Featured live preview route</span>
-            <div class="route">POST /v1/streams/market-context/preview</div>
+            <span>Featured live proof route</span>
+            <div class="route">POST /v1/streams/market-context/live-proof</div>
           </div>
           <div class="spec-cell">
-            <span>Preview price signal</span>
-            <div class="price">$1.0000</div>
+            <span>Mock data posture</span>
+            <div class="price">false</div>
           </div>
           <div class="spec-cell">
             <span>Schema</span>
-            <div class="mono schema">sapphirealpha.market_context.v1</div>
+            <div class="mono schema">aoe.market_live_upstream_proof.v1</div>
           </div>
           <div class="spec-cell">
             <span>Sources</span>
@@ -671,6 +699,7 @@ export function renderPublicFrontend(): string {
           <div>
             <label for="previewKind">Route</label>
             <select id="previewKind">
+              <option value="liveMarketProof">Live SEC/FRED Upstream Proof</option>
               <option value="marketContext">SEC + Macro Context</option>
               <option value="cyberInventory">Cyber Inventory Proof</option>
               <option value="cyber">Cyber CVE List</option>
@@ -686,16 +715,38 @@ export function renderPublicFrontend(): string {
           </div>
           <div class="request-line">
             <strong id="methodLabel">POST</strong>
-            <span class="route" id="routeLabel">/v1/streams/market-context/preview</span>
+            <span class="route" id="routeLabel">/v1/streams/market-context/live-proof</span>
           </div>
           <button class="btn primary" id="runPreview">Run Preview</button>
           <button class="btn" id="inspectFeatured">Inspect Featured Proof</button>
         </div>
 
         <div class="output-wrap">
+          <div class="proof-summary" id="proofSummary" aria-live="polite">
+            <div class="summary-cell">
+              <span>Live Proof</span>
+              <strong>Awaiting preview</strong>
+              <p class="small">Run the market route to read current upstream proof.</p>
+            </div>
+            <div class="summary-cell">
+              <span>Mock Data</span>
+              <strong>Unknown</strong>
+              <p class="small">Live proof must return false.</p>
+            </div>
+            <div class="summary-cell">
+              <span>Upstreams</span>
+              <strong>SEC + FRED</strong>
+              <p class="small">Status appears here after the route returns.</p>
+            </div>
+            <div class="summary-cell">
+              <span>Evidence Hash</span>
+              <strong>Pending</strong>
+              <p class="small">SHA-256 report hash binds normalized records.</p>
+            </div>
+          </div>
           <div class="output-toolbar">
-            <span id="outputTitle">Market context response</span>
-            <span class="schema-pill" id="schemaLabel">sapphirealpha.market_context.v1</span>
+            <span id="outputTitle">Live SEC/FRED proof response</span>
+            <span class="schema-pill" id="schemaLabel">aoe.market_live_upstream_proof.v1</span>
           </div>
           <pre id="output" tabindex="-1">Loading readiness...</pre>
         </div>
@@ -721,7 +772,7 @@ export function renderPublicFrontend(): string {
             </div>
             <div class="decision-row">
               <span>Route</span>
-              <strong class="route" id="decisionRoute">/v1/streams/market-context/preview</strong>
+              <strong class="route" id="decisionRoute">/v1/streams/market-context/live-proof</strong>
             </div>
             <div class="decision-row">
               <span>Evidence basis</span>
@@ -769,6 +820,7 @@ export function renderPublicFrontend(): string {
     const methodLabel = document.getElementById('methodLabel');
     const outputTitle = document.getElementById('outputTitle');
     const schemaLabel = document.getElementById('schemaLabel');
+    const proofSummary = document.getElementById('proofSummary');
     let activePreviewRequest = 0;
     let userStartedPreview = false;
     let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null, contracts: null };
@@ -776,6 +828,7 @@ export function renderPublicFrontend(): string {
     const examples = {
       cyberInventory: 'demo-inventory',
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
+      liveMarketProof: 'AAPL',
       marketContext: 'AAPL',
       wildfire: 'CO',
       alerts: 'CO',
@@ -785,6 +838,7 @@ export function renderPublicFrontend(): string {
     const labels = {
       cyberInventory: 'Cyber Inventory Proof',
       cyber: 'Cyber CVE Priority',
+      liveMarketProof: 'Live SEC/FRED Upstream Proof',
       marketContext: 'SEC + Macro Context',
       wildfire: 'Separate Wildfire WFIGS Preview',
       alerts: 'NWS Fire Weather Alerts',
@@ -794,6 +848,7 @@ export function renderPublicFrontend(): string {
     const routes = {
       cyberInventory: '/v1/adapters/cyber/inventory-priority/preview',
       cyber: '/v1/adapters/cyber/vuln-priority/preview',
+      liveMarketProof: '/v1/streams/market-context/live-proof',
       marketContext: '/v1/streams/market-context/preview',
       wildfire: '/v1/adapters/wildfire/wfigs-perimeters/preview',
       alerts: '/v1/adapters/wildfire/alerts/preview',
@@ -803,6 +858,7 @@ export function renderPublicFrontend(): string {
     const schemas = {
       cyberInventory: 'sapphirealpha.cyber_inventory_priority.preview.v1',
       cyber: 'sapphirealpha.cyber_priority.v1',
+      liveMarketProof: 'aoe.market_live_upstream_proof.v1',
       marketContext: 'sapphirealpha.market_context.v1',
       wildfire: 'separate.wfigs_public_preview.v1',
       alerts: 'separate.nws_fire_weather.v1',
@@ -812,7 +868,7 @@ export function renderPublicFrontend(): string {
     const heroActions = {
       cyber: 'cyberInventory',
       wildfire: 'wildfire',
-      markets: 'marketContext'
+      markets: 'liveMarketProof'
     };
     const buyerSegments = {
       opportunity_intel_pack: 'Grant writers, founders, public-sector consultants',
@@ -822,11 +878,12 @@ export function renderPublicFrontend(): string {
     };
     const productPreviewMap = {
       cyber_exploited_vuln_priority: 'cyberInventory',
-      market_regime_evidence_pack: 'marketContext'
+      market_regime_evidence_pack: 'liveMarketProof'
     };
     const proofNotes = {
       cyberInventory: 'Maps a buyer-provided authorized asset inventory to live KEV, EPSS, and NVD priority evidence; no scans or exploit content.',
       cyber: 'Checks a buyer-provided CVE list against live read-only defensive sources; no scanning or exploit content.',
+      liveMarketProof: 'Proves current SEC and FRED upstream reachability, freshness, latency, source URLs, hashes, and mockDataUsed=false.',
       marketContext: 'Combines SEC and FRED public-source context for research only; no advice or execution.',
       wildfire: 'Reads public WFIGS perimeter data for planning context only; separate from paid x402 streams.',
       alerts: 'Reads public NWS alert data for fire-weather context only; no alert sends.',
@@ -838,6 +895,7 @@ export function renderPublicFrontend(): string {
     const valueSignals = {
       cyberInventory: 'An MSP can show which client assets make each CVE urgent before paying for the full remediation proof packet.',
       cyber: 'A buyer can verify fix-today prioritization logic before paying for a full remediation packet.',
+      liveMarketProof: 'A buyer can see that this is real SEC/FRED source data, when it was reached, and what evidence hashes bind the packet.',
       marketContext: 'A buyer can inspect filing/macro evidence shape before paying for the full market evidence pack.',
       wildfire: 'An operator can verify the separate read-only planning lane without treating it as a paid incident product.',
       alerts: 'An operator can verify source freshness and boundary language before using the preview for situational awareness.',
@@ -865,8 +923,50 @@ export function renderPublicFrontend(): string {
       document.getElementById('buttonResultNote').textContent = context.label + ' returned route, request, value, proof, safety, and response JSON.';
     }
 
+    function shortHash(value) {
+      if (!value) return 'Pending';
+      return String(value).replace('sha256:', '').slice(0, 12);
+    }
+
+    function renderProofSummary(value, context) {
+      const safeLabel = context ? context.label : 'Awaiting preview';
+      if (value && value.schemaId === 'aoe.market_live_upstream_proof.v1') {
+        const sec = value.upstream && value.upstream.sec_edgar ? value.upstream.sec_edgar : {};
+        const fred = value.upstream && value.upstream.fred_alfred ? value.upstream.fred_alfred : {};
+        const hash = value.reportSummary && value.reportSummary.evidenceProof ? value.reportSummary.evidenceProof.reportHash : null;
+        const historicalClaims = value.historicalClaimsPolicy || {};
+        const vintageLabel = historicalClaims.revisionAware ? 'Revision aware' : 'ALFRED required';
+        const vintageNote = historicalClaims.productionHistoricalClaimsRequire === 'alfred_vintages'
+          ? 'Historical claims require ALFRED vintages.'
+          : 'Review macro source posture in JSON.';
+        proofSummary.innerHTML =
+          '<div class="summary-cell"><span>Live Proof</span><strong class="' + (value.overall === 'pass' ? 'ok' : value.overall === 'warn' ? 'warn' : 'danger') + '">' + escapeHtml(value.overall || 'unknown') + '</strong><p class="small">' + escapeHtml(value.query ? value.query.ticker + ' | ' + value.durationMs + 'ms' : safeLabel) + '</p></div>' +
+          '<div class="summary-cell"><span>Mock Data</span><strong class="' + (value.mockDataUsed ? 'danger' : 'ok') + '">' + escapeHtml(String(value.mockDataUsed)) + '</strong><p class="small">Live buyer proof must stay false.</p></div>' +
+          '<div class="summary-cell"><span>Upstreams</span><strong>' + escapeHtml('SEC ' + (sec.status || '?') + ' / FRED ' + (fred.status || '?')) + '</strong><p class="small">' + escapeHtml((sec.observedRecords || 0) + ' filings, ' + (fred.observedRecords || 0) + ' macro observations') + '</p></div>' +
+          '<div class="summary-cell"><span>Evidence Hash</span><strong class="mono">' + escapeHtml(shortHash(hash)) + '</strong><p class="small">Latest SEC ' + escapeHtml(sec.latestRecordDate || 'none') + ' | FRED ' + escapeHtml(fred.latestRecordDate || 'none') + '</p></div>' +
+          '<div class="summary-cell"><span>Historical Claims</span><strong>' + escapeHtml(vintageLabel) + '</strong><p class="small">' + escapeHtml(vintageNote) + '</p></div>';
+        return;
+      }
+      if (value && value.error) {
+        proofSummary.innerHTML =
+          '<div class="summary-cell"><span>Route Result</span><strong class="danger">Failed</strong><p class="small">' + escapeHtml(safeLabel) + '</p></div>' +
+          '<div class="summary-cell"><span>Mock Data</span><strong>Unknown</strong><p class="small">The route did not return a proof packet.</p></div>' +
+          '<div class="summary-cell"><span>Upstreams</span><strong>Check JSON</strong><p class="small">Failure details remain visible below.</p></div>' +
+          '<div class="summary-cell"><span>Evidence Hash</span><strong>None</strong><p class="small">No proof hash was returned.</p></div>' +
+          '<div class="summary-cell"><span>Historical Claims</span><strong>Unknown</strong><p class="small">No vintage posture was returned.</p></div>';
+        return;
+      }
+      proofSummary.innerHTML =
+        '<div class="summary-cell"><span>Route Result</span><strong>' + escapeHtml(safeLabel) + '</strong><p class="small">See JSON for detailed proof.</p></div>' +
+        '<div class="summary-cell"><span>Mock Data</span><strong>Not applicable</strong><p class="small">Only the live market proof route asserts this field.</p></div>' +
+        '<div class="summary-cell"><span>Upstreams</span><strong>Source cited</strong><p class="small">Registry and response data stay visible below.</p></div>' +
+        '<div class="summary-cell"><span>Evidence Hash</span><strong>See JSON</strong><p class="small">Hash availability depends on the route.</p></div>' +
+        '<div class="summary-cell"><span>Historical Claims</span><strong>Route specific</strong><p class="small">Vintage posture is surfaced on the live proof route.</p></div>';
+    }
+
     function pretty(value, context) {
       updateDecisionRail(context);
+      renderProofSummary(value, context);
       if (!context) {
         output.textContent = JSON.stringify(value, null, 2);
         return;
@@ -1039,7 +1139,10 @@ export function renderPublicFrontend(): string {
       }
       let path = '';
       let body = {};
-      if (selected === 'marketContext') {
+      if (selected === 'liveMarketProof') {
+        path = '/v1/streams/market-context/live-proof';
+        body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
+      } else if (selected === 'marketContext') {
         path = '/v1/streams/market-context/preview';
         body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
       } else if (selected === 'cyberInventory') {

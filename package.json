@@ -12,6 +12,7 @@
     "x402:testnet:fetch": "tsx scripts/x402-testnet-fetch.ts",
     "monitor": "tsx scripts/monitor-runtime.ts",
     "market:quality": "tsx scripts/market-stream-quality.ts",
+    "market:live-smoke": "tsx scripts/market-live-smoke.ts",
     "sellability": "tsx scripts/sellability-scorecard.ts",
     "serve:smoke": "tsx src/server.ts",
     "browser:smoke": "playwright test",

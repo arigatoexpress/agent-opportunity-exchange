@@ -10,6 +10,7 @@ import { buildContractBundle, CONTRACT_BUNDLE_SCHEMA_ID } from "./contracts.js";
 import { renderPublicFrontend } from "./frontend.js";
 import { parseCyberInventory } from "./inputs/cyber-inventory.js";
 import { appendReceipt } from "./ledger.js";
+import { buildLiveMarketUpstreamProof } from "./live-market-proof.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
@@ -112,7 +113,7 @@ export function createApp() {
       qualityMetadata: "Products include schemaId, quality, buyerValueMetrics, sourceFreshnessSla, and caveats.",
       separateWorkstreams: ["/v1/separate-workstreams"],
       streams: "/v1/streams",
-      featuredStream: "/v1/streams/market-context/preview",
+      featuredStream: "/v1/streams/market-context/live-proof",
       freeEndpoints: [
         "/v1/contracts",
         "/v1/products",
@@ -123,6 +124,7 @@ export function createApp() {
         "/v1/artifacts",
         "/v1/artifacts/:id/preview",
         "/v1/artifacts/:id/quote",
+        "/v1/streams/market-context/live-proof",
         "/v1/streams/market-context/preview",
       ],
       paidEndpoints: ["/v1/artifacts/:id/content"],
@@ -662,6 +664,44 @@ export function createApp() {
         {
           error: "source_adapter_failed",
           message,
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/streams/market-context/live-proof", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = marketContextSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_market_live_proof_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const proof = await buildLiveMarketUpstreamProof({
+        ticker: parsed.data.ticker,
+        seriesIds: parsed.data.seriesIds ?? ["FEDFUNDS", "UNRATE", "CPIAUCSL"],
+        filingForms: parsed.data.filingForms,
+        filingLimit: parsed.data.filingLimit ?? 3,
+        seriesLimit: parsed.data.seriesLimit ?? 2,
+        timeoutMs: marketFetchTimeoutMs(),
+      });
+      return c.json(proof);
+    } catch (error) {
+      return c.json(
+        {
+          error: "live_market_upstream_probe_failed",
+          message: error instanceof Error ? error.message : "Unknown live market upstream probe error",
+          mode: "read_only_live_source_probe",
+          mockDataUsed: false,
+          liveSettlementAllowed: false,
+          externalSideEffectsAllowed: false,
         },
         502,
       );

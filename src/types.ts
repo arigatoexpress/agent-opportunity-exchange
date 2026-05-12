@@ -94,6 +94,12 @@ export interface StreamDefinition {
   tags: string[];
   inputSchema: Record<string, unknown>;
   outputSummary: string;
+  historicalClaimsPolicy?: {
+    revisionAware: boolean;
+    liveMacroReadMode: string;
+    productionHistoricalClaimsRequire: string;
+    notes: string[];
+  };
   caveats: string[];
 }
 

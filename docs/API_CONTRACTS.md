@@ -12,6 +12,8 @@ artifact content unlocks. The contract surface is intentionally small:
   ids, quality metadata, buyer value metrics, and source freshness/SLA caveats.
 - `GET /v1/routes` returns `aoe.discovery.routes.v1` with public preview,
   quote, preflight, simulated paid-content, and separate read-only lane routes.
+- `GET /v1/streams` returns `aoe.streams.discovery.v1` for the current
+  x402-shaped live streams, including any explicit historical-claims posture.
 - `GET /v1/readiness` returns `aoe.readiness.v1` with adapter status and
   contract coverage checks.
 - `GET /v1/x402/status` returns `aoe.x402.status.v1` with payment mode,
@@ -44,6 +46,9 @@ frontends. It includes:
 - `pathContracts`: route ids, paths, methods, schema ids, source ids, product or
   workstream ids, access mode, readiness, caveats, and disabled side-effect
   flags;
+- `schemaCatalog["aoe.streams.discovery.v1"]`: typed stream discovery with
+  route, source ids, settlement posture, and optional historical-claims policy
+  such as `productionHistoricalClaimsRequire: "alfred_vintages"`;
 - `schemaCatalog`: reusable JSON Schemas keyed by existing schema ids;
 - `openapi`: an OpenAPI 3.1 document with `x-aoe` extensions that repeat the
   route-level access, readiness, x402, source, and safety posture;
@@ -76,6 +81,14 @@ Route discovery entries include:
 
 Wildfire and drone-readiness routes can appear in route discovery only as
 `x402Stream: false` separate read-only lanes. They are not paid x402 products.
+
+For the market live-proof stream specifically, discovery should make the
+historical-claims boundary visible before runtime: the current live macro read
+mode is FRED graph CSV, `revisionAware=false`, and resale of historical or
+revision-sensitive macro claims requires explicit ALFRED vintages.
+The exported schema should also make freshness and provenance fail closed with
+explicit `generatedAt`, `durationMs`, `sourceEvidence`, and
+`reportSummary.evidenceProof` fields.
 
 ## Current Contract Gaps
 

@@ -77,6 +77,27 @@ describe("buyer contract bundle", () => {
     expect(schemas["aoe.discovery.routes.v1"]).toBeTruthy();
     expect(schemas["aoe.x402.status.v1"]).toBeTruthy();
     expect(schemas["sapphirealpha.market_context.v1"]).toBeTruthy();
+    expect(schemas["aoe.market_live_upstream_proof.v1"]).toBeTruthy();
+
+    const liveProof = schemas["aoe.market_live_upstream_proof.v1"] as {
+      properties: Record<string, unknown>;
+      required: string[];
+    };
+    expect(liveProof.required).toEqual(
+      expect.arrayContaining([
+        "generatedAt",
+        "durationMs",
+        "query",
+        "upstream",
+        "reportSummary",
+        "sourceEvidence",
+        "historicalClaimsPolicy",
+        "boundaries",
+        "caveats",
+      ]),
+    );
+    expect(liveProof.properties.generatedAt).toEqual({ type: "string" });
+    expect(liveProof.properties.durationMs).toEqual({ type: "integer", minimum: 0 });
   });
 
   test("contract endpoint is public and listed in well-known discovery", async () => {

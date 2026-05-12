@@ -39,5 +39,6 @@ in CI and can run without live upstream access.
 
 - It does not prove live SEC/FRED uptime, latency, or rate-limit posture.
 - FRED graph CSV checks are not revision-aware ALFRED vintage checks yet.
-- The broader market product catalog still includes future yellow/licensed
-  sources; this harness certifies only the active SEC/FRED stream.
+- Future licensed/onchain/narrative market expansions still need separate
+  source-terms review and should land as distinct contracts instead of widening
+  the active public-source market proof.
