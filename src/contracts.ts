@@ -507,6 +507,20 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       x402Stream: { const: true },
       report: objectSchema("FRED series report", {}),
     }),
+    "aoe.adapter.opportunity_public_programs.preview.v1": objectSchema("Opportunity public programs preview", {
+      mode: { const: "read_only_public_preview" },
+      x402Stream: { const: true },
+      x402ProductId: { const: "opportunity_intel_pack" },
+      sideEffects: { const: "none" },
+      report: objectSchema("Official public program metadata report", {
+        schemaVersion: { const: "aoe.adapter.opportunity_public_programs.preview.v1" },
+        productId: { const: "opportunity_intel_pack" },
+        sources: arrayOf(objectSchema("Opportunity source status", {})),
+        summary: objectSchema("Opportunity preview summary", {}),
+        matches: arrayOf(objectSchema("Opportunity public program match", {})),
+        outputPolicy: arrayOf({ type: "string" }),
+      }),
+    }),
     "aoe.workstream.wildfire_alerts.preview.v1": objectSchema("Wildfire alerts preview", {
       mode: { const: "read_only_public_preview" },
       x402Stream: { const: false },

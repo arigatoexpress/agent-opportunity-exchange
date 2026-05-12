@@ -48,6 +48,16 @@ describe("adapter readiness", () => {
     expect(body.contracts.routes.discoveryEndpoint).toBe("/v1/routes");
     expect(body.adapters.map((adapter: { adapterId: string }) => adapter.adapterId)).toContain("cyber_vuln_priority");
     expect(body.adapters.map((adapter: { adapterId: string }) => adapter.adapterId)).toContain("market_sec_macro_context");
+    const opportunity = body.adapters.find((adapter: { adapterId: string }) => adapter.adapterId === "opportunity_public_programs");
+    expect(opportunity).toEqual(
+      expect.objectContaining({
+        productId: "opportunity_intel_pack",
+        x402Stream: true,
+        status: "live_read_only",
+        endpoint: "/v1/adapters/opportunities/public-programs/preview",
+      }),
+    );
+    expect(opportunity.notes.join(" ")).toContain("SAM.gov opportunities remain key-required");
     const telegram = body.adapters.find((adapter: { adapterId: string }) => adapter.adapterId === "telegram_mini_app_registration");
     expect(telegram).toEqual(
       expect.objectContaining({

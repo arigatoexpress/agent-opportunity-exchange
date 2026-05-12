@@ -31,6 +31,12 @@ artifact content unlocks. The contract surface is intentionally small:
   `sapphirealpha.cyber_inventory_priority.preview.v1` for authorized buyer JSON
   inventories. It maps submitted CVEs/assets to live KEV/EPSS/NVD defensive
   priority evidence without scans, exploit content, or credential material.
+- `POST /v1/adapters/opportunities/public-programs/preview` returns
+  `aoe.adapter.opportunity_public_programs.preview.v1` for a no-secret
+  opportunity-discovery preview. It searches unauthenticated Grants.gov
+  opportunity metadata and Data.gov Catalog metadata, marks SAM.gov as
+  key-required, and returns derived fit signals and source links without raw
+  package resale or eligibility claims.
 
 ## Product Metadata
 
@@ -92,6 +98,12 @@ Telegram routes can appear only as opt-in distribution and registration
 surfaces. They must keep `outboundTelegramSendsAllowed=false`, avoid webhook
 registration by default, and must not claim chat-reading, production sends, or
 official Mira API integration.
+
+Opportunity public-program routes are paid-stream previews, but they must keep
+the source-rights boundary visible: Grants.gov and Data.gov results are
+metadata and source-link discovery, SAM.gov is key-required until explicitly
+configured, and the output is not a legal eligibility determination or an
+official agency endorsement.
 
 For the market live-proof stream specifically, discovery should make the
 historical-claims boundary visible before runtime: the current live macro read

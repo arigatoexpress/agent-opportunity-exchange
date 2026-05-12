@@ -154,12 +154,16 @@ export function buildReadiness() {
       productId: "opportunity_intel_pack",
       x402Stream: true,
       sourceIds: ["sam_gov_opportunities", "grants_gov", "regulations_gov", "data_gov_catalog"],
-      status: "key_required",
-      endpoint: null,
-      inputMode: "Future buyer profile, geography, eligibility, and keywords",
+      status: "live_read_only",
+      endpoint: "/v1/adapters/opportunities/public-programs/preview",
+      inputMode: "Keyword, optional agency hints, and result limit",
       sideEffects: "none",
       liveSettlementAllowed: false,
-      notes: ["SAM.gov and some grants/regulatory workflows can require API keys.", "Do not scrape authenticated portals.", "Use official APIs and exports."],
+      notes: [
+        "Uses unauthenticated Grants.gov search and Data.gov Catalog metadata.",
+        "SAM.gov opportunities remain key-required and are reported without being called.",
+        "Do not scrape authenticated portals or resell raw opportunity packages.",
+      ],
     },
   ];
 

@@ -6,6 +6,7 @@ describe("public frontend", () => {
     const html = renderPublicFrontend();
     expect(html).toContain('id="workbench"');
     expect(html).toContain('data-action="cyber"');
+    expect(html).toContain('data-action="opportunity"');
     expect(html).toContain('data-action="wildfire"');
     expect(html).toContain('data-action="markets"');
     expect(html).toContain("scrollIntoView");
@@ -44,6 +45,10 @@ describe("public frontend", () => {
     expect(html).toContain("SEC + Macro Context");
     expect(html).toContain("/v1/streams/market-context/preview");
     expect(html).toContain("sapphirealpha.market_context.v1");
+    expect(html).toContain("Opportunity Public Programs");
+    expect(html).toContain("/v1/adapters/opportunities/public-programs/preview");
+    expect(html).toContain("aoe.adapter.opportunity_public_programs.preview.v1");
+    expect(html).toContain("SAM.gov is reported as key-required");
     expect(html).toContain("MSPs and SMB security");
     expect(html).toContain("Wildfire routes are visible here only as a separate read-only public-safety research lane.");
     expect(html).toContain("Retail/customer-facing assets, wildfire operations, and live settlement remain outside this storefront.");

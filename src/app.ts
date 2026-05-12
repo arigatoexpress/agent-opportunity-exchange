@@ -3,6 +3,7 @@ import { z } from "zod";
 import { buildCyberInventoryPriorityPreview, buildVulnPriorityReport } from "./adapters/cyber.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { attachMarketContextEvidenceProof, fetchMarketContextReport, withSourceTimeout } from "./adapters/market-context.js";
+import { buildOpportunityPublicProgramsPreview } from "./adapters/opportunity.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
@@ -72,6 +73,14 @@ const marketContextSchema = z.object({
   filingForms: z.array(z.string().regex(/^[A-Z0-9-]{1,12}$/i)).max(8).optional(),
   filingLimit: z.number().int().min(1).max(25).optional(),
   seriesLimit: z.number().int().min(1).max(24).optional(),
+});
+
+const opportunityPublicProgramsSchema = z.object({
+  keyword: z.string().trim().min(2).max(80),
+  agencies: z.array(z.string().trim().min(1).max(80)).max(10).optional(),
+  limit: z.number().int().min(1).max(25).optional(),
+  includeGrants: z.boolean().optional(),
+  includeDataGov: z.boolean().optional(),
 });
 
 function publicOrigin(request: Request): string {
@@ -158,6 +167,7 @@ export function createApp() {
         "/v1/artifacts/:id/quote",
         "/v1/streams/market-context/live-proof",
         "/v1/streams/market-context/preview",
+        "/v1/adapters/opportunities/public-programs/preview",
       ],
       paidEndpoints: ["/v1/artifacts/:id/content"],
       safety: ["/docs/SAFETY_BOUNDARIES.md"],
@@ -583,6 +593,31 @@ export function createApp() {
         502,
       );
     }
+  });
+
+  app.post("/v1/adapters/opportunities/public-programs/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = opportunityPublicProgramsSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_opportunity_public_programs_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    const report = await buildOpportunityPublicProgramsPreview(parsed.data);
+    return c.json({
+      mode: "read_only_public_preview",
+      x402Stream: true,
+      x402ProductId: "opportunity_intel_pack",
+      paidProductId: "opportunity_intel_pack",
+      readOnly: true,
+      sideEffects: "none",
+      report,
+    });
   });
 
   app.post("/v1/streams/market-context/preview", async (c) => {
