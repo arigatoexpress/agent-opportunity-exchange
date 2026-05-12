@@ -163,6 +163,15 @@ curl -fsS -X POST "$AOE_BASE_URL/v1/adapters/cyber/inventory-priority/preview" \
   | jq .
 ```
 
+Cyber inventory HTML report packet:
+
+```bash
+curl -fsS -X POST "$AOE_BASE_URL/v1/adapters/cyber/inventory-priority/report" \
+  -H 'content-type: application/json' \
+  -d '{"buyer":{"name":"MSP Demo","useCase":"client remediation proof packet"},"assets":[{"hostname":"demo-app","environment":"production","criticality":"critical","internetFacing":true,"cves":["CVE-2023-34362"]}]}' \
+  | jq -r .reportHtml > cyber-inventory-priority.html
+```
+
 Wildfire read-only lane, outside paid x402 products:
 
 ```bash

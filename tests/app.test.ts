@@ -172,6 +172,17 @@ describe("Agent Opportunity Exchange API", () => {
     );
     expect(cyberInventoryPreview.caveats.join(" ")).toContain("No active scanning.");
 
+    const cyberInventoryReport = body.routes.find((route: { routeId: string }) => route.routeId === "cyber_inventory_priority_report");
+    expect(cyberInventoryReport).toEqual(
+      expect.objectContaining({
+        route: "/v1/adapters/cyber/inventory-priority/report",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.adapter.cyber_inventory_priority.report.v1",
+      }),
+    );
+    expect(cyberInventoryReport.caveats.join(" ")).toContain("HTML is a derived report");
+
     const opportunityPreview = body.routes.find((route: { routeId: string }) => route.routeId === "opportunity_public_programs_preview");
     expect(opportunityPreview).toEqual(
       expect.objectContaining({
@@ -417,6 +428,81 @@ describe("Agent Opportunity Exchange API", () => {
         }),
       );
       expect(JSON.stringify(body)).not.toMatch(/payload:|run this exploit|proof-of-concept code|stolen credential/i);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("cyber inventory report returns a derived HTML proof packet", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("cisa.gov")) {
+        return jsonResponse({
+          vulnerabilities: [
+            {
+              cveID: "CVE-2023-34362",
+              vendorProject: "Progress",
+              product: "MOVEit Transfer",
+              dateAdded: "2023-06-02",
+              dueDate: "2023-06-23",
+              requiredAction: "Apply vendor update.",
+            },
+          ],
+        });
+      }
+
+      if (url.includes("services.nvd.nist.gov")) {
+        const cve = new URL(url).searchParams.get("cveId");
+        return jsonResponse({
+          vulnerabilities: [
+            {
+              cve: {
+                id: cve,
+                published: "2023-06-02T00:00:00.000",
+                lastModified: "2023-06-03T00:00:00.000",
+                descriptions: [{ lang: "en", value: `${cve} synthetic defensive summary.` }],
+                metrics: {
+                  cvssMetricV31: [{ cvssData: { baseScore: 9.8, baseSeverity: "CRITICAL" } }],
+                },
+              },
+            },
+          ],
+        });
+      }
+
+      return jsonResponse({
+        data: [{ cve: "CVE-2023-34362", epss: "0.920000", percentile: "0.990000", date: "2026-05-09" }],
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const res = await app.request("/v1/adapters/cyber/inventory-priority/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyer: { buyerId: "msp-demo", name: "MSP Demo", useCase: "client remediation proof packet" },
+          assets: [
+            {
+              hostname: "vpn-1",
+              environment: "production",
+              criticality: "critical",
+              internetFacing: true,
+              vulnerabilities: ["CVE-2023-34362"],
+            },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.schemaId).toBe("aoe.adapter.cyber_inventory_priority.report.v1");
+      expect(body.contentType).toBe("text/html");
+      expect(body.sideEffects).toBe("none");
+      expect(body.report.schemaVersion).toBe("sapphirealpha.cyber_inventory_priority.preview.v1");
+      expect(body.reportHtml).toContain("Authorized Cyber Inventory Priority Report");
+      expect(body.reportHtml).toContain("vpn-1");
+      expect(body.reportHtml).toContain("internet-facing");
+      expect(body.reportHtml).not.toMatch(/payload:|run this exploit|proof-of-concept code|stolen credential/i);
     } finally {
       vi.unstubAllGlobals();
     }

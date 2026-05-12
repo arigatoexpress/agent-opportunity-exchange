@@ -31,6 +31,11 @@ artifact content unlocks. The contract surface is intentionally small:
   `sapphirealpha.cyber_inventory_priority.preview.v1` for authorized buyer JSON
   inventories. It maps submitted CVEs/assets to live KEV/EPSS/NVD defensive
   priority evidence without scans, exploit content, or credential material.
+- `POST /v1/adapters/cyber/inventory-priority/report` returns
+  `aoe.adapter.cyber_inventory_priority.report.v1`, wrapping the same
+  authorized-inventory evidence with a derived `text/html` proof packet for
+  buyer review. The HTML is generated from source-linked metadata and must not
+  contain exploit instructions, credentials, scans, or raw source resale.
 - `POST /v1/adapters/opportunities/public-programs/preview` returns
   `aoe.adapter.opportunity_public_programs.preview.v1` for a no-secret
   opportunity-discovery preview. It searches unauthenticated Grants.gov

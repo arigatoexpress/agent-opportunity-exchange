@@ -1,4 +1,4 @@
-import { extractCvesFromJson } from "./cve-input.js";
+import { extractCvesFromJson, extractCvesFromText, parseCsvRows } from "./cve-input.js";
 
 export interface CyberAssetEvidence {
   assetId?: string;
@@ -24,9 +24,9 @@ export interface CyberInventoryContext {
 }
 
 const ASSET_COLLECTION_KEYS = ["assets", "assetRows", "rows", "inventory", "hosts", "devices"];
-const CVE_FIELD_KEYS = ["cve", "cveId", "cveID", "cves", "vulnerabilities", "vulnerabilityIds", "findings"];
+const CVE_FIELD_KEYS = ["cve", "cveId", "cveID", "cve_id", "cves", "vulnerabilities", "vulnerabilityIds", "vulnerability_ids", "findings"];
 const ASSET_ID_KEYS = ["assetId", "asset_id", "id", "deviceId", "device_id"];
-const HOSTNAME_KEYS = ["hostname", "host", "name", "assetName", "asset_name", "fqdn"];
+const HOSTNAME_KEYS = ["hostname", "host", "name", "asset", "assetName", "asset_name", "fqdn"];
 
 export function parseCyberInventory(body: unknown): CyberInventoryContext {
   const assetRows = collectAssetRows(body);
@@ -50,6 +50,26 @@ export function parseCyberInventory(body: unknown): CyberInventoryContext {
     assetsByCve,
     assetRows: assetRows.length,
   };
+}
+
+export function parseCyberInventoryInput(text: string, filename?: string): CyberInventoryContext {
+  const trimmed = text.trim();
+  if (!trimmed) return parseCyberInventory({});
+
+  const lowerName = filename?.toLowerCase() ?? "";
+  if (lowerName.endsWith(".json") || trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      return parseCyberInventory(JSON.parse(trimmed));
+    } catch {
+      return parseCyberInventory({ cves: extractCvesFromText(trimmed) });
+    }
+  }
+
+  if (lowerName.endsWith(".csv") || looksLikeCsv(trimmed)) {
+    return parseCyberInventory({ assets: csvRowsToObjects(trimmed) });
+  }
+
+  return parseCyberInventory({ cves: extractCvesFromText(trimmed) });
 }
 
 function collectAssetRows(value: unknown): Record<string, unknown>[] {
@@ -141,4 +161,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.toUpperCase()))].sort();
+}
+
+function looksLikeCsv(text: string): boolean {
+  const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
+  return firstLine.includes(",") && /asset|host|device|cve|vulnerab/i.test(firstLine);
+}
+
+function csvRowsToObjects(text: string): Record<string, unknown>[] {
+  const rows = parseCsvRows(text);
+  if (rows.length < 2) return [];
+
+  const headers = rows[0].map(normalizeHeader);
+  return rows.slice(1).map((row) =>
+    Object.fromEntries(
+      headers.map((header, index) => [header, row[index] ?? ""]).filter(([header, value]) => header && typeof value === "string" && value.trim()),
+    ),
+  );
+}
+
+function normalizeHeader(value: string): string {
+  return value
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[\s-]+/g, "_")
+    .toLowerCase();
 }
