@@ -311,6 +311,20 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       schemaId: { const: "aoe.discovery.routes.v1" },
       routes: arrayOf(routeDiscoverySchema),
     }),
+    "aoe.demo_guide.v1": objectSchema("Demo guide response", {
+      schemaId: { const: "aoe.demo_guide.v1" },
+      title: { type: "string" },
+      recommendedBaseUrl: { type: "string" },
+      oneLine: { type: "string" },
+      videoFlow: arrayOf(objectSchema("Demo step", {})),
+      curlExamples: arrayOf({ type: "string" }),
+      say: arrayOf({ type: "string" }),
+      avoidClaims: arrayOf({ type: "string" }),
+      safety: objectSchema("Demo safety posture", {
+        liveSettlementAllowed: { const: false },
+        externalSideEffectsAllowed: { const: false },
+      }),
+    }),
     "aoe.discovery.sources.v1": objectSchema("Sources response", {
       sources: arrayOf(sourceRecordSchema),
     }),

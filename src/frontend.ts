@@ -40,7 +40,8 @@ export function renderPublicFrontend(): string {
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       letter-spacing: 0;
     }
-    button, input, select { font: inherit; }
+    button, input, select, a { font: inherit; }
+    a { text-decoration: none; }
     h1, h2, h3, p, dl, dd { margin: 0; }
     .shell {
       width: min(1500px, calc(100vw - 32px));
@@ -602,6 +603,7 @@ export function renderPublicFrontend(): string {
         </div>
       </div>
       <div class="top-actions">
+        <a class="btn" href="/demo">Demo Guide</a>
         <button class="btn" id="refresh">Refresh Evidence</button>
         <button class="btn" id="showContracts">Show Contracts</button>
         <button class="btn" data-action="cyber">Run Cyber Preview</button>

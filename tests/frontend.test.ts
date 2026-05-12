@@ -10,6 +10,8 @@ describe("public frontend", () => {
     expect(html).toContain('data-action="markets"');
     expect(html).toContain("scrollIntoView");
     expect(html).toContain("Evidence Streams");
+    expect(html).toContain("Demo Guide");
+    expect(html).toContain('href="/demo"');
     expect(html).toContain("Evidence storefront");
     expect(html).toContain("Live stream workbench");
     expect(html).toContain("Show buyers the proof before asking them to pay.");

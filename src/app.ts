@@ -7,6 +7,7 @@ import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
 import { buildContractBundle, CONTRACT_BUNDLE_SCHEMA_ID } from "./contracts.js";
+import { buildDemoGuide, DEMO_GUIDE_SCHEMA_ID, renderDemoGuideHtml } from "./demo-guide.js";
 import { renderPublicFrontend } from "./frontend.js";
 import { parseCyberInventory } from "./inputs/cyber-inventory.js";
 import { appendReceipt } from "./ledger.js";
@@ -75,6 +76,8 @@ export function createApp() {
 
   app.get("/", (c) => c.html(renderPublicFrontend()));
 
+  app.get("/demo", (c) => c.html(renderDemoGuideHtml(new URL(c.req.url).origin)));
+
   app.get("/health", (c) =>
     c.json({
       ok: true,
@@ -99,6 +102,7 @@ export function createApp() {
       x402Scope: "market_and_relevant_data_streams_only",
       schemaIds: {
         contractBundle: CONTRACT_BUNDLE_SCHEMA_ID,
+        demoGuide: DEMO_GUIDE_SCHEMA_ID,
         productDiscovery: "aoe.discovery.products.v1",
         routeDiscovery: "aoe.discovery.routes.v1",
         readiness: "aoe.readiness.v1",
@@ -106,6 +110,7 @@ export function createApp() {
         x402Status: "aoe.x402.status.v1",
       },
       contractBundle: "/v1/contracts",
+      demoGuide: "/v1/demo-guide",
       productDiscovery: "/v1/products",
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
@@ -116,6 +121,7 @@ export function createApp() {
       featuredStream: "/v1/streams/market-context/live-proof",
       freeEndpoints: [
         "/v1/contracts",
+        "/v1/demo-guide",
         "/v1/products",
         "/v1/routes",
         "/v1/streams",
@@ -135,6 +141,8 @@ export function createApp() {
   app.get("/v1/products", (c) => c.json({ schemaId: "aoe.discovery.products.v1", products }));
 
   app.get("/v1/contracts", (c) => c.json(buildContractBundle()));
+
+  app.get("/v1/demo-guide", (c) => c.json(buildDemoGuide(new URL(c.req.url).origin)));
 
   app.get("/v1/routes", (c) => c.json({ schemaId: "aoe.discovery.routes.v1", routes: productRoutes }));
 

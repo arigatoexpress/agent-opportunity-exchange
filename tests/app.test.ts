@@ -72,12 +72,36 @@ describe("Agent Opportunity Exchange API", () => {
     const body = await res.json();
     expect(body.productDiscovery).toBe("/v1/products");
     expect(body.routeDiscovery).toBe("/v1/routes");
+    expect(body.demoGuide).toBe("/v1/demo-guide");
     expect(body.readiness).toBe("/v1/readiness");
     expect(body.x402Status).toBe("/v1/x402/status");
+    expect(body.schemaIds.demoGuide).toBe("aoe.demo_guide.v1");
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
     expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
+    expect(body.freeEndpoints).toContain("/v1/demo-guide");
     expect(body.freeEndpoints).toContain("/v1/routes");
     expect(body.qualityMetadata).toContain("sourceFreshnessSla");
+  });
+
+  test("demo guide is public, machine-readable, and safety-bounded", async () => {
+    const jsonRes = await app.request("https://aoe.test/v1/demo-guide");
+    expect(jsonRes.status).toBe(200);
+    const body = await jsonRes.json();
+    expect(body.schemaId).toBe("aoe.demo_guide.v1");
+    expect(body.recommendedBaseUrl).toBe("https://aoe.test");
+    expect(body.videoFlow).toContainEqual(expect.objectContaining({ path: "/v1/streams/market-context/live-proof" }));
+    expect(body.curlExamples.join(" ")).toContain("X-AOE-Payment: simulated:<workOrderId>");
+    expect(body.say.join(" ")).toContain("mockDataUsed=false");
+    expect(body.avoidClaims).toContain("live settlement");
+    expect(body.safety.liveSettlementAllowed).toBe(false);
+    expect(body.safety.externalSideEffectsAllowed).toBe(false);
+
+    const htmlRes = await app.request("https://aoe.test/demo");
+    expect(htmlRes.status).toBe(200);
+    const html = await htmlRes.text();
+    expect(html).toContain("Agent Opportunity Exchange - Demo Guide");
+    expect(html).toContain("/v1/demo-guide");
+    expect(html).toContain("Avoid These Claims");
   });
 
   test("route discovery covers public previews, simulated paid content, and separate lanes", async () => {
@@ -110,6 +134,16 @@ describe("Agent Opportunity Exchange API", () => {
       }),
     );
     expect(marketLiveProof.caveats.join(" ")).toContain("not investment advice");
+
+    const demoGuide = body.routes.find((route: { routeId: string }) => route.routeId === "demo_guide");
+    expect(demoGuide).toEqual(
+      expect.objectContaining({
+        route: "/v1/demo-guide",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.demo_guide.v1",
+      }),
+    );
 
     const cyberInventoryPreview = body.routes.find((route: { routeId: string }) => route.routeId === "cyber_inventory_priority_preview");
     expect(cyberInventoryPreview).toEqual(

@@ -75,6 +75,7 @@ describe("buyer contract bundle", () => {
     expect(schemas[CONTRACT_BUNDLE_SCHEMA_ID]).toBeTruthy();
     expect(schemas["aoe.discovery.products.v1"]).toBeTruthy();
     expect(schemas["aoe.discovery.routes.v1"]).toBeTruthy();
+    expect(schemas["aoe.demo_guide.v1"]).toBeTruthy();
     expect(schemas["aoe.x402.status.v1"]).toBeTruthy();
     expect(schemas["sapphirealpha.market_context.v1"]).toBeTruthy();
     expect(schemas["aoe.market_live_upstream_proof.v1"]).toBeTruthy();
@@ -113,7 +114,9 @@ describe("buyer contract bundle", () => {
     const wellKnownRes = await app.request("/.well-known/agent-opportunity-exchange.json");
     const wellKnown = await wellKnownRes.json();
     expect(wellKnown.contractBundle).toBe("/v1/contracts");
+    expect(wellKnown.demoGuide).toBe("/v1/demo-guide");
     expect(wellKnown.freeEndpoints).toContain("/v1/contracts");
+    expect(wellKnown.freeEndpoints).toContain("/v1/demo-guide");
     expect(wellKnown.schemaIds.contractBundle).toBe(CONTRACT_BUNDLE_SCHEMA_ID);
   });
 });
