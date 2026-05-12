@@ -102,6 +102,16 @@ describe("Agent Opportunity Exchange API", () => {
     expect(html).toContain("Agent Opportunity Exchange - Demo Guide");
     expect(html).toContain("/v1/demo-guide");
     expect(html).toContain("Avoid These Claims");
+
+    const forwardedRes = await app.request("http://internal/v1/demo-guide", {
+      headers: {
+        host: "internal",
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "agent-opportunity-exchange-trgi34bxuq-uc.a.run.app",
+      },
+    });
+    const forwardedBody = await forwardedRes.json();
+    expect(forwardedBody.recommendedBaseUrl).toBe("https://agent-opportunity-exchange-trgi34bxuq-uc.a.run.app");
   });
 
   test("route discovery covers public previews, simulated paid content, and separate lanes", async () => {

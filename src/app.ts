@@ -65,6 +65,15 @@ const marketContextSchema = z.object({
   seriesLimit: z.number().int().min(1).max(24).optional(),
 });
 
+function publicOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const proto = forwardedProto || url.protocol.replace(":", "");
+  const host = forwardedHost || request.headers.get("host") || url.host;
+  return `${proto}://${host}`;
+}
+
 export function createApp() {
   const app = new Hono();
   const x402Gate = createX402TestnetGate();
@@ -76,7 +85,7 @@ export function createApp() {
 
   app.get("/", (c) => c.html(renderPublicFrontend()));
 
-  app.get("/demo", (c) => c.html(renderDemoGuideHtml(new URL(c.req.url).origin)));
+  app.get("/demo", (c) => c.html(renderDemoGuideHtml(publicOrigin(c.req.raw))));
 
   app.get("/health", (c) =>
     c.json({
@@ -142,7 +151,7 @@ export function createApp() {
 
   app.get("/v1/contracts", (c) => c.json(buildContractBundle()));
 
-  app.get("/v1/demo-guide", (c) => c.json(buildDemoGuide(new URL(c.req.url).origin)));
+  app.get("/v1/demo-guide", (c) => c.json(buildDemoGuide(publicOrigin(c.req.raw))));
 
   app.get("/v1/routes", (c) => c.json({ schemaId: "aoe.discovery.routes.v1", routes: productRoutes }));
 
