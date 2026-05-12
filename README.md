@@ -54,6 +54,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /health`
 - `GET /.well-known/agent-opportunity-exchange.json`
 - `GET /v1/contracts`
+- `GET /v1/buyer-proof`
 - `GET /v1/products`
 - `GET /v1/routes`
 - `GET /v1/streams`

@@ -311,6 +311,17 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       schemaId: { const: "aoe.discovery.routes.v1" },
       routes: arrayOf(routeDiscoverySchema),
     }),
+    "aoe.buyer_proof.v1": objectSchema("Buyer proof response", {
+      schemaId: { const: "aoe.buyer_proof.v1" },
+      generatedAt: { type: "string" },
+      headline: { type: "string" },
+      counts: objectSchema("Buyer proof counts", {}),
+      sellability: objectSchema("Sellability summary", {}),
+      featuredProof: arrayOf(objectSchema("Featured proof route", {})),
+      buyerValue: arrayOf({ type: "string" }),
+      readiness: objectSchema("Readiness summary", {}),
+      safety: objectSchema("Hard safety posture", {}),
+    }),
     "aoe.demo_guide.v1": objectSchema("Demo guide response", {
       schemaId: { const: "aoe.demo_guide.v1" },
       title: { type: "string" },

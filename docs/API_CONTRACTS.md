@@ -8,6 +8,9 @@ artifact content unlocks. The contract surface is intentionally small:
 - `GET /v1/contracts` returns `aoe.contract_bundle.v1`, a buyer-facing
   OpenAPI 3.1 and JSON Schema bundle generated from the current product, route,
   readiness, x402, and source-rights registries.
+- `GET /v1/buyer-proof` returns `aoe.buyer_proof.v1`, a compact public
+  "why pay" proof surface with sellability score, source risk counts, live
+  route posture, featured proof routes, and hard no-side-effect boundaries.
 - `GET /v1/products` returns `aoe.discovery.products.v1` with product schema
   ids, quality metadata, buyer value metrics, and source freshness/SLA caveats.
 - `GET /v1/routes` returns `aoe.discovery.routes.v1` with public preview,
