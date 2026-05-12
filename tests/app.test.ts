@@ -172,12 +172,24 @@ describe("Agent Opportunity Exchange API", () => {
     );
     expect(cyberInventoryPreview.caveats.join(" ")).toContain("No active scanning.");
 
+    const opportunityPreview = body.routes.find((route: { routeId: string }) => route.routeId === "opportunity_public_programs_preview");
+    expect(opportunityPreview).toEqual(
+      expect.objectContaining({
+        route: "/v1/adapters/opportunities/public-programs/preview",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.adapter.opportunity_public_programs.preview.v1",
+      }),
+    );
+    expect(opportunityPreview.caveats.join(" ")).toContain("SAM.gov opportunities require a public API key");
+
     const wildfireRoute = body.routes.find((route: { routeId: string }) => route.routeId === "wildfire_alerts_preview");
     expect(wildfireRoute.x402Stream).toBe(false);
     expect(wildfireRoute.productIds).toEqual([]);
     expect(wildfireRoute.workstreamIds).toEqual(["wildfire_drone_readiness_lane"]);
 
     expect(productRoutes.map((route) => route.routeId)).toContain("access_preflight");
+    expect(productRoutes.map((route) => route.routeId)).toContain("opportunity_public_programs_preview");
     expect(productRoutes.map((route) => route.routeId)).toContain("telegram_status");
     expect(productRoutes.map((route) => route.routeId)).toContain("telegram_registration");
   });
@@ -425,6 +437,71 @@ describe("Agent Opportunity Exchange API", () => {
       const body = await res.json();
       expect(body.error).toBe("empty_cyber_inventory");
       expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("opportunity public programs preview is read-only and source-rights bounded", async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "https://api.grants.gov/v1/api/search2") {
+        expect(init?.method).toBe("POST");
+        return jsonResponse({
+          data: {
+            oppHits: [
+              {
+                id: "361818",
+                number: "G26AS00010",
+                title: "USGS Cooperative Landslide Hazard Mapping and Assessment Program",
+                agency: "Geological Survey",
+                openDate: "04/08/2026",
+                closeDate: "06/08/2026",
+                oppStatus: "posted",
+                cfdaList: ["15.821"],
+              },
+            ],
+          },
+        });
+      }
+
+      expect(url).toContain("catalog.data.gov/search");
+      return jsonResponse({
+        results: [
+          {
+            title: "Wildfire Probabilities and Mortality Raster Maps",
+            description: "ArcGIS raster maps for wildfire risk and tree loss probability.",
+            identifier: "https://doi.org/10.23719/1532290",
+            publisher: "U.S. Environmental Protection Agency",
+            last_harvested_date: "2026-04-21T20:07:24.320772",
+            keyword: ["Wildfire Risk"],
+            distribution_titles: ["ArcGIS raster maps"],
+            dcat: {
+              accessLevel: "public",
+              landingPage: "https://www.canr.msu.edu/FERM/Tools/Wildfire-Probability-and-Mortality/",
+            },
+          },
+        ],
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const res = await app.request("/v1/adapters/opportunities/public-programs/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword: "wildfire", limit: 4 }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.mode).toBe("read_only_public_preview");
+      expect(body.x402ProductId).toBe("opportunity_intel_pack");
+      expect(body.sideEffects).toBe("none");
+      expect(body.report.schemaVersion).toBe("aoe.adapter.opportunity_public_programs.preview.v1");
+      expect(body.report.summary.keyRequiredSources).toEqual(["sam_gov_opportunities"]);
+      expect(body.report.matches).toHaveLength(2);
+      expect(body.report.outputPolicy.join(" ")).toContain("Do not resell raw opportunity packages");
+      expect(JSON.stringify(body)).not.toMatch(/raw source resale allowed|secret|credential/i);
     } finally {
       vi.unstubAllGlobals();
     }

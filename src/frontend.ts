@@ -607,6 +607,7 @@ export function renderPublicFrontend(): string {
         <a class="btn" href="/telegram">Telegram App</a>
         <button class="btn" id="refresh">Refresh Evidence</button>
         <button class="btn" id="showContracts">Show Contracts</button>
+        <button class="btn" data-action="opportunity">Run Opportunity Preview</button>
         <button class="btn" data-action="cyber">Run Cyber Preview</button>
         <button class="btn primary" data-action="markets">Run Market Preview</button>
       </div>
@@ -704,6 +705,7 @@ export function renderPublicFrontend(): string {
             <select id="previewKind">
               <option value="liveMarketProof">Live SEC/FRED Upstream Proof</option>
               <option value="marketContext">SEC + Macro Context</option>
+              <option value="opportunity">Opportunity Public Programs</option>
               <option value="cyberInventory">Cyber Inventory Proof</option>
               <option value="cyber">Cyber CVE List</option>
               <option value="wildfire">Wildfire WFIGS Perimeters</option>
@@ -842,6 +844,7 @@ export function renderPublicFrontend(): string {
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
       liveMarketProof: 'AAPL',
       marketContext: 'AAPL',
+      opportunity: 'wildfire resilience',
       wildfire: 'CO',
       alerts: 'CO',
       sec: 'AAPL',
@@ -852,6 +855,7 @@ export function renderPublicFrontend(): string {
       cyber: 'Cyber CVE Priority',
       liveMarketProof: 'Live SEC/FRED Upstream Proof',
       marketContext: 'SEC + Macro Context',
+      opportunity: 'Opportunity Public Programs',
       wildfire: 'Separate Wildfire WFIGS Preview',
       alerts: 'NWS Fire Weather Alerts',
       sec: 'SEC Recent Filings',
@@ -862,6 +866,7 @@ export function renderPublicFrontend(): string {
       cyber: '/v1/adapters/cyber/vuln-priority/preview',
       liveMarketProof: '/v1/streams/market-context/live-proof',
       marketContext: '/v1/streams/market-context/preview',
+      opportunity: '/v1/adapters/opportunities/public-programs/preview',
       wildfire: '/v1/adapters/wildfire/wfigs-perimeters/preview',
       alerts: '/v1/adapters/wildfire/alerts/preview',
       sec: '/v1/adapters/markets/sec-filings/preview',
@@ -872,6 +877,7 @@ export function renderPublicFrontend(): string {
       cyber: 'sapphirealpha.cyber_priority.v1',
       liveMarketProof: 'aoe.market_live_upstream_proof.v1',
       marketContext: 'sapphirealpha.market_context.v1',
+      opportunity: 'aoe.adapter.opportunity_public_programs.preview.v1',
       wildfire: 'separate.wfigs_public_preview.v1',
       alerts: 'separate.nws_fire_weather.v1',
       sec: 'sapphirealpha.sec_filings.v1',
@@ -879,6 +885,7 @@ export function renderPublicFrontend(): string {
     };
     const heroActions = {
       cyber: 'cyberInventory',
+      opportunity: 'opportunity',
       wildfire: 'wildfire',
       markets: 'liveMarketProof'
     };
@@ -890,13 +897,15 @@ export function renderPublicFrontend(): string {
     };
     const productPreviewMap = {
       cyber_exploited_vuln_priority: 'cyberInventory',
-      market_regime_evidence_pack: 'liveMarketProof'
+      market_regime_evidence_pack: 'liveMarketProof',
+      opportunity_intel_pack: 'opportunity'
     };
     const proofNotes = {
       cyberInventory: 'Maps a buyer-provided authorized asset inventory to live KEV, EPSS, and NVD priority evidence; no scans or exploit content.',
       cyber: 'Checks a buyer-provided CVE list against live read-only defensive sources; no scanning or exploit content.',
       liveMarketProof: 'Proves current SEC and FRED upstream reachability, freshness, latency, source URLs, hashes, and mockDataUsed=false.',
       marketContext: 'Combines SEC and FRED public-source context for research only; no advice or execution.',
+      opportunity: 'Searches official Grants.gov opportunities and Data.gov dataset metadata; SAM.gov is reported as key-required without a secret.',
       wildfire: 'Reads public WFIGS perimeter data for planning context only; separate from paid x402 streams.',
       alerts: 'Reads public NWS alert data for fire-weather context only; no alert sends.',
       sec: 'Reads SEC filing metadata and links; no recommendations or trading actions.',
@@ -909,6 +918,7 @@ export function renderPublicFrontend(): string {
       cyber: 'A buyer can verify fix-today prioritization logic before paying for a full remediation packet.',
       liveMarketProof: 'A buyer can see that this is real SEC/FRED source data, when it was reached, and what evidence hashes bind the packet.',
       marketContext: 'A buyer can inspect filing/macro evidence shape before paying for the full market evidence pack.',
+      opportunity: 'A founder or public-sector consultant can inspect source-linked public-program matches before paying for a bid/no-bid packet.',
       wildfire: 'An operator can verify the separate read-only planning lane without treating it as a paid incident product.',
       alerts: 'An operator can verify source freshness and boundary language before using the preview for situational awareness.',
       sec: 'A research buyer can confirm public filing coverage and response shape before buying derived analysis.',
@@ -1173,6 +1183,9 @@ export function renderPublicFrontend(): string {
       } else if (selected === 'marketContext') {
         path = '/v1/streams/market-context/preview';
         body = { ticker: raw || 'AAPL', seriesIds: ['FEDFUNDS', 'UNRATE', 'CPIAUCSL'], filingLimit: 3, seriesLimit: 2 };
+      } else if (selected === 'opportunity') {
+        path = '/v1/adapters/opportunities/public-programs/preview';
+        body = { keyword: raw || 'wildfire resilience', limit: 5 };
       } else if (selected === 'cyberInventory') {
         path = '/v1/adapters/cyber/inventory-priority/preview';
         body = {
