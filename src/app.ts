@@ -6,6 +6,7 @@ import { attachMarketContextEvidenceProof, fetchMarketContextReport, withSourceT
 import { buildOpportunityPublicProgramsPreview } from "./adapters/opportunity.js";
 import { fetchSecRecentFilings } from "./adapters/sec.js";
 import { fetchWfigsCurrentPerimeters, fetchWildfireAlerts } from "./adapters/wildfire.js";
+import { buildBuyerProof, BUYER_PROOF_SCHEMA_ID } from "./buyer-proof.js";
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams, getArtifact, getProduct } from "./catalog.js";
 import { buildContractBundle, CONTRACT_BUNDLE_SCHEMA_ID } from "./contracts.js";
 import { buildDemoGuide, DEMO_GUIDE_SCHEMA_ID, renderDemoGuideHtml } from "./demo-guide.js";
@@ -132,6 +133,7 @@ export function createApp() {
       x402Scope: "market_and_relevant_data_streams_only",
       schemaIds: {
         contractBundle: CONTRACT_BUNDLE_SCHEMA_ID,
+        buyerProof: BUYER_PROOF_SCHEMA_ID,
         demoGuide: DEMO_GUIDE_SCHEMA_ID,
         productDiscovery: "aoe.discovery.products.v1",
         routeDiscovery: "aoe.discovery.routes.v1",
@@ -142,6 +144,7 @@ export function createApp() {
         telegramRegistration: TELEGRAM_REGISTRATION_SCHEMA_ID,
       },
       contractBundle: "/v1/contracts",
+      buyerProof: "/v1/buyer-proof",
       demoGuide: "/v1/demo-guide",
       telegramMiniApp: "/telegram",
       telegramStatus: "/v1/telegram/status",
@@ -155,6 +158,7 @@ export function createApp() {
       featuredStream: "/v1/streams/market-context/live-proof",
       freeEndpoints: [
         "/v1/contracts",
+        "/v1/buyer-proof",
         "/v1/demo-guide",
         "/telegram",
         "/v1/telegram/status",
@@ -179,6 +183,8 @@ export function createApp() {
   app.get("/v1/products", (c) => c.json({ schemaId: "aoe.discovery.products.v1", products }));
 
   app.get("/v1/contracts", (c) => c.json(buildContractBundle()));
+
+  app.get("/v1/buyer-proof", (c) => c.json(buildBuyerProof()));
 
   app.get("/v1/demo-guide", (c) => c.json(buildDemoGuide(publicOrigin(c.req.raw))));
 

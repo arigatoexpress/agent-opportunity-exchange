@@ -73,13 +73,16 @@ describe("Agent Opportunity Exchange API", () => {
     const body = await res.json();
     expect(body.productDiscovery).toBe("/v1/products");
     expect(body.routeDiscovery).toBe("/v1/routes");
+    expect(body.buyerProof).toBe("/v1/buyer-proof");
     expect(body.demoGuide).toBe("/v1/demo-guide");
     expect(body.readiness).toBe("/v1/readiness");
     expect(body.x402Status).toBe("/v1/x402/status");
     expect(body.schemaIds.demoGuide).toBe("aoe.demo_guide.v1");
+    expect(body.schemaIds.buyerProof).toBe("aoe.buyer_proof.v1");
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
     expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
     expect(body.freeEndpoints).toContain("/v1/demo-guide");
+    expect(body.freeEndpoints).toContain("/v1/buyer-proof");
     expect(body.freeEndpoints).toContain("/telegram");
     expect(body.freeEndpoints).toContain("/v1/telegram/status");
     expect(body.freeEndpoints).toContain("/v1/routes");
@@ -118,6 +121,24 @@ describe("Agent Opportunity Exchange API", () => {
     });
     const forwardedBody = await forwardedRes.json();
     expect(forwardedBody.recommendedBaseUrl).toBe("https://agent-opportunity-exchange-trgi34bxuq-uc.a.run.app");
+  });
+
+  test("buyer proof exposes current public value and safety posture", async () => {
+    const res = await app.request("/v1/buyer-proof");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.buyer_proof.v1");
+    expect(body.counts.products).toBeGreaterThan(0);
+    expect(body.sellability.criticalIssueCount).toBe(0);
+    expect(body.featuredProof.map((row: { route: string }) => row.route)).toContain("/v1/adapters/cyber/inventory-priority/report");
+    expect(body.buyerValue.join(" ")).toContain("simulated or testnet payment");
+    expect(body.safety).toEqual(
+      expect.objectContaining({
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+        rawSourceResaleAllowed: false,
+      }),
+    );
   });
 
   test("route discovery covers public previews, simulated paid content, and separate lanes", async () => {
@@ -160,6 +181,17 @@ describe("Agent Opportunity Exchange API", () => {
         schemaId: "aoe.demo_guide.v1",
       }),
     );
+
+    const buyerProof = body.routes.find((route: { routeId: string }) => route.routeId === "buyer_proof");
+    expect(buyerProof).toEqual(
+      expect.objectContaining({
+        route: "/v1/buyer-proof",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.buyer_proof.v1",
+      }),
+    );
+    expect(buyerProof.caveats.join(" ")).toContain("registry-derived proof");
 
     const cyberInventoryPreview = body.routes.find((route: { routeId: string }) => route.routeId === "cyber_inventory_priority_preview");
     expect(cyberInventoryPreview).toEqual(
