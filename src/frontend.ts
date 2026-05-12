@@ -604,6 +604,7 @@ export function renderPublicFrontend(): string {
       </div>
       <div class="top-actions">
         <a class="btn" href="/demo">Demo Guide</a>
+        <a class="btn" href="/telegram">Telegram App</a>
         <button class="btn" id="refresh">Refresh Evidence</button>
         <button class="btn" id="showContracts">Show Contracts</button>
         <button class="btn" data-action="cyber">Run Cyber Preview</button>
@@ -798,9 +799,18 @@ export function renderPublicFrontend(): string {
             </div>
           </section>
 
+          <section class="rail-map" id="telegramRail" aria-label="Telegram opt-in posture" aria-live="polite">
+            <div class="rail-row">
+              <strong>Loading Telegram opt-in</strong>
+              <span>/v1/telegram/status</span>
+              <span>Mini App registration checks will render here. Outbound Telegram sends stay disabled.</span>
+            </div>
+          </section>
+
           <section class="boundary-box">
             <div class="eyebrow">Boundary</div>
             <p class="small" id="buttonResultNote">Run Preview calls a live read-only route. Inspect Featured Proof calls artifact preview and quote endpoints only.</p>
+            <p class="small">Telegram is an opt-in distribution surface: signed Mini App initData is verified server-side; no production messages are sent.</p>
             <p class="small">Wildfire routes are visible here only as a separate read-only public-safety research lane. They are not x402 stream products.</p>
             <p class="small">Retail/customer-facing assets, wildfire operations, and live settlement remain outside this storefront.</p>
             <button class="btn" data-action="wildfire">Check Separate Fire Signals</button>
@@ -825,7 +835,7 @@ export function renderPublicFrontend(): string {
     const proofSummary = document.getElementById('proofSummary');
     let activePreviewRequest = 0;
     let userStartedPreview = false;
-    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null, contracts: null };
+    let catalogState = { products: [], sources: [], artifacts: [], readiness: null, x402: null, contracts: null, telegram: null };
 
     const examples = {
       cyberInventory: 'demo-inventory',
@@ -1047,6 +1057,12 @@ export function renderPublicFrontend(): string {
       renderPaymentRailMap(status);
     }
 
+    async function loadTelegramStatus() {
+      const status = await getJson('/v1/telegram/status');
+      catalogState.telegram = status;
+      renderTelegramRail(status);
+    }
+
     async function loadContracts() {
       const contracts = await getJson('/v1/contracts');
       catalogState.contracts = contracts;
@@ -1063,8 +1079,8 @@ export function renderPublicFrontend(): string {
       document.getElementById('sourceQuality').textContent = sources.length ? green + '/' + sources.length + ' green source-rights' : 'Loading source rights';
       document.getElementById('sourceQualityNote').textContent = sources.length ? official + ' official API/download sources; yellow entries stay terms-review gated.' : 'Official owners, access modes, and rights envelopes come from /v1/sources.';
       const featured = sources
-        .filter(source => ['cisa_kev', 'first_epss', 'nvd_cve', 'sec_edgar', 'fred_alfred', 'developer_docs_public'].includes(source.sourceId))
-        .slice(0, 6);
+        .filter(source => ['cisa_kev', 'first_epss', 'nvd_cve', 'sec_edgar', 'fred_alfred', 'developer_docs_public', 'telegram_mini_apps_docs'].includes(source.sourceId))
+        .slice(0, 7);
       document.getElementById('sourceRail').innerHTML = featured.map(source => {
         return '<div class="source-row">' +
           '<strong>' + escapeHtml(source.name) + '</strong>' +
@@ -1095,6 +1111,16 @@ export function renderPublicFrontend(): string {
         );
       }
       document.getElementById('paymentRailMap').innerHTML = rows.join('');
+    }
+
+    function renderTelegramRail(status) {
+      const state = status.tokenConfigured ? 'configured for verified initData' : 'bot token required';
+      document.getElementById('telegramRail').innerHTML =
+        '<div class="rail-row">' +
+          '<strong>Telegram Mini App opt-in</strong>' +
+          '<span>' + escapeHtml(state + ' | sends=' + status.outboundTelegramSendsAllowed + ' | webhooks=' + status.webhookRegistrationAllowed) + '</span>' +
+          '<span>' + escapeHtml('Mini App: ' + status.endpoints.miniApp + ' | registration: ' + status.endpoints.register) + '</span>' +
+        '</div>';
     }
 
     function renderProducts() {
@@ -1378,7 +1404,7 @@ export function renderPublicFrontend(): string {
       inspectProduct(productId, { scroll: true });
     });
     document.getElementById('refresh').addEventListener('click', async () => {
-      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadContracts()]);
+      await Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadContracts(), loadTelegramStatus()]);
       renderProducts();
       await runPreview();
     });
@@ -1392,7 +1418,7 @@ export function renderPublicFrontend(): string {
     });
 
     updateRouteChrome();
-    Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadContracts()])
+    Promise.all([loadReadiness(), loadCatalog(), loadX402Status(), loadContracts(), loadTelegramStatus()])
       .then(() => {
         renderProducts();
         if (!userStartedPreview) return runPreview({ system: true });

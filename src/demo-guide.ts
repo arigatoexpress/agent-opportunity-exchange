@@ -15,6 +15,8 @@ export function buildDemoGuide(baseUrl = "") {
       { label: "Buyer product contracts", method: "GET", path: "/v1/products" },
       { label: "Adapter and contract readiness", method: "GET", path: "/v1/readiness" },
       { label: "x402 rail posture", method: "GET", path: "/v1/x402/status" },
+      { label: "Telegram Mini App opt-in posture", method: "GET", path: "/v1/telegram/status" },
+      { label: "Telegram opt-in frontend", method: "GET", path: "/telegram" },
       { label: "Live SEC/FRED upstream proof", method: "POST", path: "/v1/streams/market-context/live-proof" },
       { label: "Defensive cyber preview", method: "POST", path: "/v1/adapters/cyber/vuln-priority/preview" },
       { label: "Separate WFIGS wildfire lane", method: "POST", path: "/v1/adapters/wildfire/wfigs-perimeters/preview" },
@@ -24,6 +26,7 @@ export function buildDemoGuide(baseUrl = "") {
       `curl -fsS ${origin}/health`,
       `curl -fsS ${origin}/v1/readiness`,
       `curl -fsS ${origin}/v1/x402/status`,
+      `curl -fsS ${origin}/v1/telegram/status`,
       `curl -fsS -X POST ${origin}/v1/streams/market-context/live-proof -H 'content-type: application/json' -d '{"ticker":"AAPL","seriesIds":["FEDFUNDS","UNRATE","CPIAUCSL"],"filingLimit":3,"seriesLimit":2}'`,
       `curl -fsS -X POST ${origin}/v1/adapters/cyber/vuln-priority/preview -H 'content-type: application/json' -d '{"cves":["CVE-2023-34362","CVE-2024-3094"]}'`,
       `curl -sS ${origin}/v1/artifacts/aoe_cyber_kev_epss_priority/content`,
@@ -35,6 +38,7 @@ export function buildDemoGuide(baseUrl = "") {
       "The cyber preview ranks buyer-provided CVEs defensively from CISA KEV, EPSS, and NVD.",
       "Wildfire/WFIGS is separate read-only situational awareness, not an x402 emergency command product.",
       "The x402 flow is simulated by default and Base Sepolia testnet only when explicitly configured.",
+      "Telegram is an opt-in Mini App surface: server-side initData validation, no webhook registration, and no outbound sends tonight.",
     ],
     avoidClaims: [
       "live settlement",
@@ -42,6 +46,7 @@ export function buildDemoGuide(baseUrl = "") {
       "investment advice, price targets, or trade execution",
       "unauthorized scanning or exploit output",
       "incident command, dispatch, alert sending, flight authorization, or drone action",
+      "silent Telegram chat reading, production Telegram sends, or an official Mira API dependency",
       "payment grants raw-source redistribution rights",
       "first or only unless separately proven",
     ],
@@ -51,6 +56,7 @@ export function buildDemoGuide(baseUrl = "") {
       marketOutput: "research_only_no_advice_no_execution",
       cyberOutput: "defensive_only_no_exploit_payloads_no_scans",
       wildfireOutput: "separate_read_only_no_dispatch_no_flight_authorization",
+      telegramOutput: "opt_in_only_init_data_verified_no_outbound_sends",
     },
   };
 }
@@ -114,6 +120,7 @@ export function renderDemoGuideHtml(baseUrl = ""): string {
         <span class="pill">mockDataUsed=false proof</span>
         <span class="pill">simulated x402 by default</span>
         <span class="pill">source-rights first</span>
+        <span class="pill">Telegram opt-in only</span>
         <span class="pill">no live settlement</span>
       </div>
     </header>

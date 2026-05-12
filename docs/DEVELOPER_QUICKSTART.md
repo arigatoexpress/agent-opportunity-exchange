@@ -46,6 +46,7 @@ curl -fsS "$AOE_BASE_URL/health" | jq .
 curl -fsS "$AOE_BASE_URL/v1/contracts" | jq '.schemaId, .coverage, .paymentBoundary'
 curl -fsS "$AOE_BASE_URL/v1/readiness" | jq '.counts, .contracts.buyerDiscoveryReady'
 curl -fsS "$AOE_BASE_URL/v1/x402/status" | jq .
+curl -fsS "$AOE_BASE_URL/v1/telegram/status" | jq .
 ```
 
 Only describe a deployment as demo-ready when these commands confirm
@@ -58,7 +59,7 @@ contract/readiness coverage.
 curl -fsS "$AOE_BASE_URL/.well-known/agent-opportunity-exchange.json" | jq .
 curl -fsS "$AOE_BASE_URL/v1/products" | jq '.products[] | {productId,title,priceUsd,sourceIds}'
 curl -fsS "$AOE_BASE_URL/v1/routes" | jq '.routes[] | {routeId,method,route,access,x402Stream}'
-curl -fsS "$AOE_BASE_URL/v1/sources" | jq '.sources[] | {sourceId,name,url,retrievalMode,rights}'
+curl -fsS "$AOE_BASE_URL/v1/sources" | jq '.sources[] | {sourceId,name,url,accessPattern,rights}'
 curl -fsS "$AOE_BASE_URL/v1/artifacts" | jq '.artifacts[] | {artifactId,productId,title,sourceIds}'
 ```
 
@@ -99,6 +100,30 @@ curl -fsS "$AOE_BASE_URL/v1/artifacts/aoe_cyber_kev_epss_priority/content" \
 
 The receipt is non-secret and the payment rail remains simulated unless the
 explicit Base Sepolia testnet gate is configured.
+
+## Telegram Mini App Opt-In
+
+The Telegram surface is a secure registration/opt-in lane, not a production
+message sender. Open the Mini App frontend at:
+
+```bash
+open "$AOE_BASE_URL/telegram"
+curl -fsS "$AOE_BASE_URL/v1/telegram/status" | jq .
+```
+
+Real registration requires a BotFather-created bot and
+`AOE_TELEGRAM_BOT_TOKEN` in the service environment. The backend verifies
+`Telegram.WebApp.initData` server-side before returning a non-secret receipt:
+
+```bash
+curl -i -X POST "$AOE_BASE_URL/v1/telegram/register" \
+  -H 'content-type: application/json' \
+  -d '{"initData":"<Telegram.WebApp.initData>","consent":{"telegramUpdates":true,"privacyAcknowledged":true,"noFinancialAdviceAcknowledged":true}}'
+```
+
+Without `AOE_TELEGRAM_BOT_TOKEN`, registration fails closed with
+`telegram_bot_token_not_configured`. This slice does not register webhooks,
+persist opt-ins, read chats, or send Telegram messages.
 
 ## Live Read-Only Adapter Examples
 

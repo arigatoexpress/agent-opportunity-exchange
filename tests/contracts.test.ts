@@ -76,6 +76,8 @@ describe("buyer contract bundle", () => {
     expect(schemas["aoe.discovery.products.v1"]).toBeTruthy();
     expect(schemas["aoe.discovery.routes.v1"]).toBeTruthy();
     expect(schemas["aoe.demo_guide.v1"]).toBeTruthy();
+    expect(schemas["aoe.telegram.status.v1"]).toBeTruthy();
+    expect(schemas["aoe.telegram.registration.v1"]).toBeTruthy();
     expect(schemas["aoe.x402.status.v1"]).toBeTruthy();
     expect(schemas["sapphirealpha.market_context.v1"]).toBeTruthy();
     expect(schemas["aoe.market_live_upstream_proof.v1"]).toBeTruthy();

@@ -1,4 +1,5 @@
 import { productRoutes, products } from "./catalog.js";
+import { getTelegramBotToken } from "./telegram.js";
 
 export interface AdapterReadiness {
   adapterId: string;
@@ -117,6 +118,23 @@ export function buildReadiness() {
       sideEffects: "none",
       liveSettlementAllowed: false,
       notes: ["Public graph CSV preview.", "Use ALFRED vintages for production revision-aware research.", "No trading signal."],
+    },
+    {
+      adapterId: "telegram_mini_app_registration",
+      productId: null,
+      workstreamId: "telegram_mini_app_opt_in",
+      x402Stream: false,
+      sourceIds: ["telegram_mini_apps_docs"],
+      status: getTelegramBotToken() ? "configured_stub" : "key_required",
+      endpoint: "/v1/telegram/register",
+      inputMode: "Telegram Mini App initData plus explicit opt-in consent",
+      sideEffects: "none",
+      liveSettlementAllowed: false,
+      notes: [
+        "Verifies Telegram initData before registration.",
+        "No Telegram sends or webhook registration.",
+        "Persistent opt-in storage is intentionally disabled in the demo slice.",
+      ],
     },
     {
       adapterId: "wildfire_nasa_firms",

@@ -15,6 +15,15 @@ import { buildLiveMarketUpstreamProof } from "./live-market-proof.js";
 import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
+import {
+  buildTelegramRegistrationReceipt,
+  buildTelegramStatus,
+  getTelegramBotToken,
+  renderTelegramMiniAppHtml,
+  TELEGRAM_REGISTRATION_SCHEMA_ID,
+  telegramRegistrationRequestSchema,
+  validateTelegramInitData,
+} from "./telegram.js";
 import { createX402TestnetGate } from "./x402-testnet.js";
 
 const cvePrioritySchema = z.object({
@@ -87,6 +96,8 @@ export function createApp() {
 
   app.get("/demo", (c) => c.html(renderDemoGuideHtml(publicOrigin(c.req.raw))));
 
+  app.get("/telegram", (c) => c.html(renderTelegramMiniAppHtml(publicOrigin(c.req.raw))));
+
   app.get("/health", (c) =>
     c.json({
       ok: true,
@@ -117,9 +128,13 @@ export function createApp() {
         readiness: "aoe.readiness.v1",
         preflight: "aoe.access.preflight.v1",
         x402Status: "aoe.x402.status.v1",
+        telegramStatus: "aoe.telegram.status.v1",
+        telegramRegistration: TELEGRAM_REGISTRATION_SCHEMA_ID,
       },
       contractBundle: "/v1/contracts",
       demoGuide: "/v1/demo-guide",
+      telegramMiniApp: "/telegram",
+      telegramStatus: "/v1/telegram/status",
       productDiscovery: "/v1/products",
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
@@ -131,6 +146,8 @@ export function createApp() {
       freeEndpoints: [
         "/v1/contracts",
         "/v1/demo-guide",
+        "/telegram",
+        "/v1/telegram/status",
         "/v1/products",
         "/v1/routes",
         "/v1/streams",
@@ -152,6 +169,68 @@ export function createApp() {
   app.get("/v1/contracts", (c) => c.json(buildContractBundle()));
 
   app.get("/v1/demo-guide", (c) => c.json(buildDemoGuide(publicOrigin(c.req.raw))));
+
+  app.get("/v1/telegram/status", (c) => c.json(buildTelegramStatus(publicOrigin(c.req.raw))));
+
+  app.post("/v1/telegram/register", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = telegramRegistrationRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          schemaId: TELEGRAM_REGISTRATION_SCHEMA_ID,
+          registered: false,
+          error: "invalid_registration_request",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })),
+          outboundTelegramSendsAllowed: false,
+          webhookRegistrationAllowed: false,
+          messagesSent: 0,
+          liveSettlementAllowed: false,
+          externalSideEffectsAllowed: false,
+        },
+        400,
+      );
+    }
+
+    const botToken = getTelegramBotToken();
+    if (!botToken) {
+      return c.json(
+        {
+          schemaId: TELEGRAM_REGISTRATION_SCHEMA_ID,
+          registered: false,
+          error: "telegram_bot_token_not_configured",
+          reason: "AOE_TELEGRAM_BOT_TOKEN must be configured before trusting Telegram Mini App initData.",
+          outboundTelegramSendsAllowed: false,
+          webhookRegistrationAllowed: false,
+          messagesSent: 0,
+          liveSettlementAllowed: false,
+          externalSideEffectsAllowed: false,
+        },
+        503,
+      );
+    }
+
+    const validation = validateTelegramInitData(parsed.data.initData, botToken);
+    if (!validation.ok) {
+      return c.json(
+        {
+          schemaId: TELEGRAM_REGISTRATION_SCHEMA_ID,
+          registered: false,
+          error: "telegram_init_data_invalid",
+          reason: validation.reason,
+          rawInitDataEchoed: false,
+          outboundTelegramSendsAllowed: false,
+          webhookRegistrationAllowed: false,
+          messagesSent: 0,
+          liveSettlementAllowed: false,
+          externalSideEffectsAllowed: false,
+        },
+        401,
+      );
+    }
+
+    return c.json(buildTelegramRegistrationReceipt(parsed.data, validation));
+  });
 
   app.get("/v1/routes", (c) => c.json({ schemaId: "aoe.discovery.routes.v1", routes: productRoutes }));
 

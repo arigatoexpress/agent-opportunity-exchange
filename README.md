@@ -31,6 +31,8 @@ The API is discoverable before purchase:
   before invoking a proof route.
 - `GET /v1/readiness` reports whether product and route contract coverage is
   buyer-discovery ready.
+- `GET /v1/telegram/status` reports the Telegram Mini App opt-in posture,
+  including required bot-token setup and disabled send/webhook boundaries.
 - `POST /v1/access/preflight` returns the product contract alongside price and
   source checks when the artifact exists.
 
@@ -60,6 +62,8 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/artifacts`
 - `GET /v1/readiness`
 - `GET /v1/x402/status`
+- `GET /v1/telegram/status`
+- `GET /telegram`
 - `GET /v1/artifacts/:id/preview`
 - `GET /v1/artifacts/:id/quote`
 - `POST /v1/access/preflight`
@@ -70,6 +74,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `POST /v1/streams/market-context/preview`
 - `POST /v1/adapters/markets/sec-filings/preview`
 - `POST /v1/adapters/markets/fred-series/preview`
+- `POST /v1/telegram/register`
 - `GET /v1/artifacts/:id/content`
 
 x402 artifact content returns `402 Payment Required` until the caller presents a simulated payment header:
@@ -89,6 +94,17 @@ curl -s \
 This is deliberately simulated/testnet-only. No live settlement, trading, Telegram send, production data write, or external scan is enabled.
 
 Simulated paid access appends non-secret receipt records to `data/receipts/receipts.jsonl`, which is ignored by git.
+
+## Telegram Mini App Opt-In
+
+`GET /telegram` is a Telegram Mini App registration surface. It reads
+`Telegram.WebApp.initData` in the client and sends only that signed payload plus
+explicit preferences/consent to `POST /v1/telegram/register`.
+
+Real registration requires `AOE_TELEGRAM_BOT_TOKEN`. Without it, the register
+route fails closed. With it, the backend verifies the Telegram signature and
+returns a non-secret opt-in receipt. This slice does not persist opt-ins, read
+chats, register webhooks, or send Telegram messages.
 
 ## Official x402 Testnet
 

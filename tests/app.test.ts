@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { decodePaymentRequiredHeader } from "@x402/core/http";
+import { createHmac } from "node:crypto";
 import { createApp } from "../src/app.js";
 import { artifacts, productRoutes, products } from "../src/catalog.js";
 import { buildQuote, expectedSimulatedPayment } from "../src/payments.js";
@@ -79,7 +80,12 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
     expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
     expect(body.freeEndpoints).toContain("/v1/demo-guide");
+    expect(body.freeEndpoints).toContain("/telegram");
+    expect(body.freeEndpoints).toContain("/v1/telegram/status");
     expect(body.freeEndpoints).toContain("/v1/routes");
+    expect(body.telegramMiniApp).toBe("/telegram");
+    expect(body.telegramStatus).toBe("/v1/telegram/status");
+    expect(body.schemaIds.telegramRegistration).toBe("aoe.telegram.registration.v1");
     expect(body.qualityMetadata).toContain("sourceFreshnessSla");
   });
 
@@ -172,6 +178,139 @@ describe("Agent Opportunity Exchange API", () => {
     expect(wildfireRoute.workstreamIds).toEqual(["wildfire_drone_readiness_lane"]);
 
     expect(productRoutes.map((route) => route.routeId)).toContain("access_preflight");
+    expect(productRoutes.map((route) => route.routeId)).toContain("telegram_status");
+    expect(productRoutes.map((route) => route.routeId)).toContain("telegram_registration");
+  });
+
+  test("telegram status and mini app are public but no-send by default", async () => {
+    const snapshot = snapshotTelegramEnv();
+    delete process.env.AOE_TELEGRAM_BOT_TOKEN;
+    delete process.env.TELEGRAM_BOT_TOKEN;
+
+    try {
+      const statusRes = await app.request("https://aoe.test/v1/telegram/status");
+      expect(statusRes.status).toBe(200);
+      const status = await statusRes.json();
+      expect(status.schemaId).toBe("aoe.telegram.status.v1");
+      expect(status.status).toBe("bot_token_required");
+      expect(status.tokenConfigured).toBe(false);
+      expect(status.outboundTelegramSendsAllowed).toBe(false);
+      expect(status.webhookRegistrationAllowed).toBe(false);
+      expect(status.endpoints.miniApp).toBe("https://aoe.test/telegram");
+
+      const htmlRes = await app.request("https://aoe.test/telegram");
+      expect(htmlRes.status).toBe(200);
+      const html = await htmlRes.text();
+      expect(html).toContain("Agent Opportunity Exchange");
+      expect(html).toContain("/v1/telegram/register");
+      expect(html).toContain("Telegram sends");
+    } finally {
+      restoreTelegramEnv(snapshot);
+    }
+  });
+
+  test("telegram registration fails closed when bot token is not configured", async () => {
+    const snapshot = snapshotTelegramEnv();
+    delete process.env.AOE_TELEGRAM_BOT_TOKEN;
+    delete process.env.TELEGRAM_BOT_TOKEN;
+
+    try {
+      const res = await app.request("/v1/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: signedTelegramInitData("test-token", {
+            query_id: "query-1",
+            auth_date: String(Math.floor(Date.now() / 1000)),
+            user: JSON.stringify({ id: 12345, username: "aoe_user", first_name: "Ari", allows_write_to_pm: true }),
+          }),
+          consent: {
+            telegramUpdates: true,
+            privacyAcknowledged: true,
+            noFinancialAdviceAcknowledged: true,
+          },
+        }),
+      });
+      expect(res.status).toBe(503);
+      const body = await res.json();
+      expect(body.registered).toBe(false);
+      expect(body.error).toBe("telegram_bot_token_not_configured");
+      expect(body.outboundTelegramSendsAllowed).toBe(false);
+      expect(body.messagesSent).toBe(0);
+    } finally {
+      restoreTelegramEnv(snapshot);
+    }
+  });
+
+  test("telegram registration verifies initData and returns non-secret receipt", async () => {
+    const snapshot = snapshotTelegramEnv();
+    process.env.AOE_TELEGRAM_BOT_TOKEN = "test-token";
+    delete process.env.TELEGRAM_BOT_TOKEN;
+
+    try {
+      const initData = signedTelegramInitData("test-token", {
+        query_id: "query-2",
+        auth_date: String(Math.floor(Date.now() / 1000)),
+        start_param: "demo",
+        user: JSON.stringify({ id: 67890, username: "verified_user", language_code: "en", allows_write_to_pm: true }),
+      });
+
+      const res = await app.request("/v1/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData,
+          preferences: {
+            productUpdates: true,
+            marketProofs: true,
+            cyberAlerts: true,
+            wildfireReadOnly: false,
+            developerRadar: true,
+            cadence: "daily",
+          },
+          consent: {
+            telegramUpdates: true,
+            privacyAcknowledged: true,
+            noFinancialAdviceAcknowledged: true,
+          },
+        }),
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.schemaId).toBe("aoe.telegram.registration.v1");
+      expect(body.registered).toBe(true);
+      expect(body.mode).toBe("verified_telegram_mini_app_init_data");
+      expect(body.registrationId).toMatch(/^tg_reg_[a-f0-9]{20}$/);
+      expect(body.telegramUserHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+      expect(body.auth.verifiedWithBotToken).toBe(true);
+      expect(body.auth.rawInitDataEchoed).toBe(false);
+      expect(body.userPreview.usernamePresent).toBe(true);
+      expect(body.optIn.topics).toContain("market_proofs");
+      expect(body.outboundTelegramSendsAllowed).toBe(false);
+      expect(body.webhookRegistrationAllowed).toBe(false);
+      expect(body.messagesSent).toBe(0);
+      expect(JSON.stringify(body)).not.toContain(initData);
+
+      const tampered = initData.replace("verified_user", "other_user");
+      const badRes = await app.request("/v1/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: tampered,
+          consent: {
+            telegramUpdates: true,
+            privacyAcknowledged: true,
+            noFinancialAdviceAcknowledged: true,
+          },
+        }),
+      });
+      expect(badRes.status).toBe(401);
+      const badBody = await badRes.json();
+      expect(badBody.reason).toBe("signature_mismatch");
+      expect(badBody.rawInitDataEchoed).toBe(false);
+    } finally {
+      restoreTelegramEnv(snapshot);
+    }
   });
 
   test("cyber inventory preview maps buyer assets to defensive priority evidence", async () => {
@@ -724,6 +863,35 @@ function snapshotPaymentEnv(): Record<string, string | undefined> {
 }
 
 function restorePaymentEnv(snapshot: Record<string, string | undefined>): void {
+  for (const [key, value] of Object.entries(snapshot)) {
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+}
+
+function signedTelegramInitData(botToken: string, fields: Record<string, string>): string {
+  const params = new URLSearchParams(fields);
+  const dataCheckString = [...params.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+  const secretKey = createHmac("sha256", "WebAppData").update(botToken).digest();
+  const hash = createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+  params.set("hash", hash);
+  return params.toString();
+}
+
+function snapshotTelegramEnv(): Record<string, string | undefined> {
+  return {
+    AOE_TELEGRAM_BOT_TOKEN: process.env.AOE_TELEGRAM_BOT_TOKEN,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  };
+}
+
+function restoreTelegramEnv(snapshot: Record<string, string | undefined>): void {
   for (const [key, value] of Object.entries(snapshot)) {
     if (value === undefined) {
       delete process.env[key];

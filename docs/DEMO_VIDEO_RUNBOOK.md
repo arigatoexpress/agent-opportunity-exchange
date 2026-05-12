@@ -44,6 +44,7 @@ For a deployed host:
 export AOE_BASE_URL=https://agent-opportunity-exchange-trgi34bxuq-uc.a.run.app
 curl -fsS "$AOE_BASE_URL/health" | jq .
 curl -fsS "$AOE_BASE_URL/v1/x402/status" | jq .
+curl -fsS "$AOE_BASE_URL/v1/telegram/status" | jq .
 curl -fsS "$AOE_BASE_URL/v1/readiness" | jq '.counts, .contracts.buyerDiscoveryReady'
 ```
 
@@ -58,8 +59,17 @@ curl -fsS "$AOE_BASE_URL/.well-known/agent-opportunity-exchange.json" | jq .
 curl -fsS "$AOE_BASE_URL/v1/contracts" | jq '.schemaId, .paymentBoundary, .rightsBoundary'
 curl -fsS "$AOE_BASE_URL/v1/products" | jq '.products[] | {productId,title,priceUsd,settlementMode,liveSettlementAllowed,sourceIds}'
 curl -fsS "$AOE_BASE_URL/v1/routes" | jq '.routes[] | {routeId,method,route,access,x402Stream,readiness}'
-curl -fsS "$AOE_BASE_URL/v1/sources" | jq '.sources[] | {sourceId,name,url,retrievalMode,rights}'
+curl -fsS "$AOE_BASE_URL/v1/sources" | jq '.sources[] | {sourceId,name,url,accessPattern,rights}'
 curl -fsS "$AOE_BASE_URL/v1/x402/status" | jq .
+curl -fsS "$AOE_BASE_URL/v1/telegram/status" | jq .
+```
+
+Show Telegram opt-in as a Mini App surface, not as a production sender:
+
+```bash
+open "$AOE_BASE_URL/telegram"
+curl -fsS "$AOE_BASE_URL/v1/telegram/status" \
+  | jq '{schemaId,status,tokenConfigured,outboundTelegramSendsAllowed,webhookRegistrationAllowed,endpoints}'
 ```
 
 Show the featured live upstream proof:
@@ -133,6 +143,8 @@ curl -fsS -X POST "$AOE_BASE_URL/v1/access/preflight" \
 - Wildfire and WFIGS routes are separate read-only situational previews: no
   dispatch, alerts, incident command, flight authorization, or drone action.
 - Public previews and paid artifacts return source IDs, caveats, and provenance.
+- Telegram is an opt-in Mini App entry point: server-verified initData,
+  disabled sends/webhooks, and no silent chat reading.
 
 ## Source And Provenance Story
 
@@ -148,6 +160,9 @@ Live/read-only sources currently demonstrated:
 - CISA KEV, FIRST EPSS, and NVD for defensive vulnerability prioritization.
 - NWS alerts and NIFC/WFIGS public ArcGIS perimeters as separate non-x402
   wildfire planning context.
+- Telegram Mini Apps documentation for launch modes and signed initData
+  validation. Mira is a benchmark/market reference, not an official Telegram API
+  dependency.
 
 ## 60-Second Narrative
 
@@ -164,7 +179,10 @@ Live/read-only sources currently demonstrated:
 5. "Now the x402 shape: preview and quote are public; full artifact content
    returns 402 until a simulated payment header unlocks a derived packet and a
    non-secret receipt."
-6. "The core claim is not that public data is free to resell. The product is
+6. "Telegram is the opt-in front door: signed Mini App initData can register a
+   user securely, but this demo does not send Telegram messages or register
+   webhooks."
+7. "The core claim is not that public data is free to resell. The product is
    provenance, synthesis, readiness, and machine-readable proof behind a payment
    rail that stays simulated or testnet tonight."
 
@@ -173,8 +191,10 @@ Live/read-only sources currently demonstrated:
 - Start from a clean terminal at `/Users/aribs/Code/agent-opportunity-exchange`.
 - Show `npm run dev` and `AOE_BASE_URL=http://127.0.0.1:4402`.
 - Show `/health`, `/v1/products`, `/v1/readiness`, and `/v1/x402/status`.
+- Show `/telegram` and `/v1/telegram/status` as opt-in/no-send surfaces.
 - Show the SEC/FRED live proof and one cyber preview.
 - Show a wildfire preview only as `x402Stream: false`.
 - Show 402 payment required, then simulated unlock with receipt.
-- Do not say mainnet, live settlement, trading, scanning, Telegram sending, or
-  drone action is enabled.
+- Do not say mainnet, live settlement, trading, scanning, Telegram sending,
+  silent chat reading, an official Mira API dependency, or drone action is
+  enabled.

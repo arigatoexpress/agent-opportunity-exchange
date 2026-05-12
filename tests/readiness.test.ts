@@ -26,6 +26,7 @@ describe("adapter readiness", () => {
     expect(readiness.contracts.routes.count).toBeGreaterThanOrEqual(10);
     expect(readiness.contracts.routes.missingSchemaIds).toEqual([]);
     expect(readiness.contracts.routes.paidContentRouteIds).toContain("artifact_paid_content");
+    expect(readiness.contracts.routes.publicCount).toBeGreaterThanOrEqual(12);
   });
 
   test("marks wildfire adapters as separate from x402 streams", () => {
@@ -47,5 +48,15 @@ describe("adapter readiness", () => {
     expect(body.contracts.routes.discoveryEndpoint).toBe("/v1/routes");
     expect(body.adapters.map((adapter: { adapterId: string }) => adapter.adapterId)).toContain("cyber_vuln_priority");
     expect(body.adapters.map((adapter: { adapterId: string }) => adapter.adapterId)).toContain("market_sec_macro_context");
+    const telegram = body.adapters.find((adapter: { adapterId: string }) => adapter.adapterId === "telegram_mini_app_registration");
+    expect(telegram).toEqual(
+      expect.objectContaining({
+        workstreamId: "telegram_mini_app_opt_in",
+        x402Stream: false,
+        endpoint: "/v1/telegram/register",
+      }),
+    );
+    expect(["key_required", "configured_stub"]).toContain(telegram.status);
+    expect(telegram.notes.join(" ")).toContain("No Telegram sends");
   });
 });

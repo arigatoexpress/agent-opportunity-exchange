@@ -19,6 +19,9 @@ test("buyer workbench proves x402 posture before paid access", async ({ page }) 
   await expect(page.locator("#paymentRailMap")).toContainText("solana-pay-sh-svm-candidate");
   await expect(page.locator("#paymentRailMap")).toContainText("Pay.sh / Solana provider catalog");
   await expect(page.locator("#paymentRailMap")).toContainText("liveProviderCredentialsAllowed=false");
+  await expect(page.locator('a[href="/telegram"]')).toBeVisible();
+  await expect(page.locator("#telegramRail")).toContainText("sends=false");
+  await expect(page.locator("#telegramRail")).toContainText("webhooks=false");
 
   await page.getByRole("button", { name: "Show Contracts" }).click();
   await expect(page.locator("#output")).toContainText("Buyer contract bundle");
@@ -49,6 +52,21 @@ test("buyer workbench proves x402 posture before paid access", async ({ page }) 
   expect(paymentRequired.protocol).toBe("x402");
   expect(paymentRequired.liveSettlementAllowed).toBe(false);
   expect(paymentRequired.instructions.join(" ")).toContain("X-AOE-Payment");
+
+  const telegramResponse = await page.request.get("/v1/telegram/status");
+  expect(telegramResponse.ok()).toBe(true);
+  const telegramStatus = (await telegramResponse.json()) as {
+    schemaId: string;
+    outboundTelegramSendsAllowed: boolean;
+    webhookRegistrationAllowed: boolean;
+  };
+  expect(telegramStatus.schemaId).toBe("aoe.telegram.status.v1");
+  expect(telegramStatus.outboundTelegramSendsAllowed).toBe(false);
+  expect(telegramStatus.webhookRegistrationAllowed).toBe(false);
+
+  await page.goto("/telegram");
+  await expect(page.locator("#contextState")).toContainText("open inside Telegram");
+  await expect(page.locator("#register")).toBeDisabled();
 
   expect(consoleErrors).toEqual([]);
 });

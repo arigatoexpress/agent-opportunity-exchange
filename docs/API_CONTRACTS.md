@@ -19,8 +19,14 @@ artifact content unlocks. The contract surface is intentionally small:
 - `GET /v1/x402/status` returns `aoe.x402.status.v1` with payment mode,
   Base Sepolia readiness, facilitator URL, redacted pay-to address, and
   no-mainnet safety posture.
+- `GET /v1/telegram/status` returns `aoe.telegram.status.v1` with Telegram
+  Mini App registration posture, BotFather setup hints, and no-send/no-webhook
+  boundaries.
 - `POST /v1/access/preflight` returns `aoe.access.preflight.v1`-shaped access
   decisions with the buyer-visible product contract when the product exists.
+- `POST /v1/telegram/register` returns `aoe.telegram.registration.v1` after
+  server-side `Telegram.WebApp.initData` validation. Without
+  `AOE_TELEGRAM_BOT_TOKEN`, it fails closed.
 - `POST /v1/adapters/cyber/inventory-priority/preview` returns
   `sapphirealpha.cyber_inventory_priority.preview.v1` for authorized buyer JSON
   inventories. It maps submitted CVEs/assets to live KEV/EPSS/NVD defensive
@@ -81,6 +87,11 @@ Route discovery entries include:
 
 Wildfire and drone-readiness routes can appear in route discovery only as
 `x402Stream: false` separate read-only lanes. They are not paid x402 products.
+
+Telegram routes can appear only as opt-in distribution and registration
+surfaces. They must keep `outboundTelegramSendsAllowed=false`, avoid webhook
+registration by default, and must not claim chat-reading, production sends, or
+official Mira API integration.
 
 For the market live-proof stream specifically, discovery should make the
 historical-claims boundary visible before runtime: the current live macro read
