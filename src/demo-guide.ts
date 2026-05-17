@@ -15,6 +15,7 @@ export function buildDemoGuide(baseUrl = "") {
       { label: "Buyer product contracts", method: "GET", path: "/v1/products" },
       { label: "Adapter and contract readiness", method: "GET", path: "/v1/readiness" },
       { label: "x402 rail posture", method: "GET", path: "/v1/x402/status" },
+      { label: "Judge fast path: 0G proof passport", method: "GET", path: "/v1/hackathon/0g-proof" },
       { label: "Telegram Mini App opt-in posture", method: "GET", path: "/v1/telegram/status" },
       { label: "Telegram opt-in frontend", method: "GET", path: "/telegram" },
       { label: "Live SEC/FRED upstream proof", method: "POST", path: "/v1/streams/market-context/live-proof" },
@@ -27,6 +28,7 @@ export function buildDemoGuide(baseUrl = "") {
       `curl -fsS ${origin}/health`,
       `curl -fsS ${origin}/v1/readiness`,
       `curl -fsS ${origin}/v1/x402/status`,
+      `curl -fsS ${origin}/v1/hackathon/0g-proof`,
       `curl -fsS ${origin}/v1/telegram/status`,
       `curl -fsS -X POST ${origin}/v1/streams/market-context/live-proof -H 'content-type: application/json' -d '{"ticker":"AAPL","seriesIds":["FEDFUNDS","UNRATE","CPIAUCSL"],"filingLimit":3,"seriesLimit":2}'`,
       `curl -fsS -X POST ${origin}/v1/adapters/cyber/vuln-priority/preview -H 'content-type: application/json' -d '{"cves":["CVE-2023-34362","CVE-2024-3094"]}'`,
@@ -41,11 +43,13 @@ export function buildDemoGuide(baseUrl = "") {
       "The opportunity preview searches official Grants.gov and Data.gov metadata while marking SAM.gov as key-required.",
       "Wildfire/WFIGS is separate read-only situational awareness, not an x402 emergency command product.",
       "The x402 flow is simulated by default and Base Sepolia testnet only when explicitly configured.",
+      "The 0G proof passport reads an existing public 0guard anchor receipt and keeps signing, broadcast, proof posting, and private-subject publication disabled.",
       "Telegram is an opt-in Mini App surface: server-side initData validation, no webhook registration, and no outbound sends tonight.",
     ],
     avoidClaims: [
       "live settlement",
       "mainnet payments",
+      "new 0G proof writes, wallet signing, node operation, or sanctions clearance",
       "investment advice, price targets, or trade execution",
       "unauthorized scanning or exploit output",
       "incident command, dispatch, alert sending, flight authorization, or drone action",
@@ -60,6 +64,7 @@ export function buildDemoGuide(baseUrl = "") {
       cyberOutput: "defensive_only_no_exploit_payloads_no_scans",
       wildfireOutput: "separate_read_only_no_dispatch_no_flight_authorization",
       opportunityOutput: "derived_public_metadata_only_not_legal_eligibility",
+      zeroGOutput: "public_receipt_readback_only_no_signing_no_proof_posting_no_private_subjects",
       telegramOutput: "opt_in_only_init_data_verified_no_outbound_sends",
     },
   };
@@ -122,6 +127,7 @@ export function renderDemoGuideHtml(baseUrl = ""): string {
       <p>Production base URL: <a href="${escapeHtml(guide.recommendedBaseUrl)}">${escapeHtml(guide.recommendedBaseUrl)}</a></p>
       <div class="pillrow">
         <span class="pill">mockDataUsed=false proof</span>
+        <span class="pill">0G proof passport</span>
         <span class="pill">simulated x402 by default</span>
         <span class="pill">source-rights first</span>
         <span class="pill">Telegram opt-in only</span>

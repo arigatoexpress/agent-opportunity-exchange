@@ -26,7 +26,7 @@ export interface SourceRecord {
   name: string;
   owner: string;
   url: string;
-  accessPattern: "official_api" | "official_download" | "open_data" | "public_docs" | "partner_api";
+  accessPattern: "official_api" | "official_download" | "open_data" | "public_docs" | "public_rss" | "optional_mcp_server" | "partner_api";
   cadence: Cadence;
   risk: SourceRisk;
   rights: RightsEnvelope;

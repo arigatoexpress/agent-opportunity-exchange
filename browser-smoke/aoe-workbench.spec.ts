@@ -28,6 +28,27 @@ test("buyer workbench proves x402 posture before paid access", async ({ page }) 
   await expect(page.locator("#output")).toContainText("paySh");
   await expect(page.locator("#output")).toContainText("liveSettlementAllowed");
 
+  await page.selectOption("#previewKind", "cyberExpertBrief");
+  await page.getByRole("button", { name: "Run Preview" }).click();
+  await expect(page.locator("#output")).toContainText("Cyber Expert Case Brief public preview");
+  await expect(page.locator("#output")).toContainText("includePublicCveRefresh");
+  await expect(page.locator("#output")).toContainText("blockedActions");
+  await expect(page.locator("#output")).toContainText("activeScanningAllowed");
+
+  await page.selectOption("#previewKind", "complianceDecision");
+  await page.getByRole("button", { name: "Run Preview" }).click();
+  await expect(page.locator("#output")).toContainText("Commitment Compliance Proof public preview");
+  await expect(page.locator("#output")).toContainText("rawWalletAddressAccepted");
+  await expect(page.locator("#output")).toContainText("onChainProofPosted");
+  await expect(page.locator("#output")).not.toContainText("0x1111111111111111111111111111111111111111");
+
+  await page.getByRole("button", { name: "Run 0G Proof" }).click();
+  await expect(page.locator("#output")).toContainText("0G Proof Passport public preview");
+  await expect(page.locator("#output")).toContainText("aoe.zero_g_proof_readiness.v1");
+  await expect(page.locator("#output")).toContainText("zero_g_hackathon_proof_pack");
+  await expect(page.locator("#output")).toContainText("walletSigningAllowed");
+  await expect(page.locator("#output")).toContainText("transactionBroadcastAllowed");
+
   await page.getByRole("button", { name: "Inspect Featured Proof" }).click();
   await expect(page.locator("#output")).toContainText("Product proof:");
   await expect(page.locator("#output")).toContainText("market_regime_evidence_pack");

@@ -1,0 +1,29 @@
+substitutions:
+  _REGION: us-central1
+  _SERVICE: aoe-hackathon-preview
+  _IMAGE_URI: gcr.io/$PROJECT_ID/aoe-hackathon-preview:$SHORT_SHA
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_IMAGE_URI}", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_IMAGE_URI}"]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "${_SERVICE}"
+      - "--image=${_IMAGE_URI}"
+      - "--region=${_REGION}"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--set-env-vars=NODE_ENV=production,AOE_PAYMENT_MODE=simulated"
+      - "--labels=app=agent-opportunity-exchange,preview=hackathon-0g"
+      - "--quiet"
+
+images:
+  - "${_IMAGE_URI}"
+
+options:
+  logging: CLOUD_LOGGING_ONLY

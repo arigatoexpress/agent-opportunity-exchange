@@ -1,6 +1,23 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { buildCyberExpertCaseBrief, CYBER_EXPERT_CASE_BRIEF_SCHEMA_ID } from "./adapters/cyber-case-brief.js";
+import { buildCyberExpertCaseStorePreview, CYBER_EXPERT_CASE_STORE_SCHEMA_ID } from "./adapters/cyber-case-store.js";
+import { buildCyberExpertHarnessBlueprint, CYBER_EXPERT_HARNESS_SCHEMA_ID } from "./adapters/cyber-expert.js";
+import { buildCyberExpertEvalReport, CYBER_EXPERT_EVAL_REPORT_SCHEMA_ID } from "./adapters/cyber-evals.js";
+import { buildCyberExpertModelPreview, CYBER_EXPERT_MODEL_PREVIEW_SCHEMA_ID } from "./adapters/cyber-model-preview.js";
+import { resolveCyberModelProvider } from "./adapters/cyber-model-provider.js";
+import { buildCyberOllamaModelPreview, CYBER_OLLAMA_MODEL_PREVIEW_SCHEMA_ID } from "./adapters/cyber-ollama-model.js";
+import { fetchCyberPublicCveRefresh, CYBER_PUBLIC_CVE_REFRESH_SCHEMA_ID } from "./adapters/cyber-public-cve.js";
+import { fetchCyberWindowsOllamaStatus, CYBER_WINDOWS_OLLAMA_STATUS_SCHEMA_ID } from "./adapters/cyber-windows-ollama.js";
+import { buildComplianceDecisionPreview, COMPLIANCE_DECISION_PREVIEW_SCHEMA_ID } from "./adapters/compliance-decision-preview.js";
+import { fetchZeroGProofReadiness, ZERO_G_PROOF_READINESS_SCHEMA_ID } from "./adapters/zero-g-proof.js";
 import { buildCyberInventoryPriorityPreview, buildVulnPriorityReport } from "./adapters/cyber.js";
+import {
+  buildBanklessMcpManifest,
+  buildCryptoResearchThesisReport,
+  buildDefiReportInventory,
+  fetchBanklessPodcastDigest,
+} from "./adapters/crypto-research.js";
 import { fetchFredSeriesReport } from "./adapters/fred.js";
 import { attachMarketContextEvidenceProof, fetchMarketContextReport, withSourceTimeout } from "./adapters/market-context.js";
 import { buildOpportunityPublicProgramsPreview } from "./adapters/opportunity.js";
@@ -14,10 +31,17 @@ import { renderPublicFrontend } from "./frontend.js";
 import { parseCyberInventory } from "./inputs/cyber-inventory.js";
 import { appendReceipt } from "./ledger.js";
 import { buildLiveMarketUpstreamProof } from "./live-market-proof.js";
-import { buildQuote, buildReceipt, hasValidSimulatedPayment, paymentRequiredHeader, paymentRequiredPayload } from "./payments.js";
+import {
+  buildQuote,
+  buildReceipt,
+  buildRoutePreviewQuote,
+  hasValidSimulatedPayment,
+  paymentRequiredHeader,
+  paymentRequiredPayload,
+} from "./payments.js";
 import { preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
-import { renderCyberInventoryPriorityHtml } from "./reporting/cyber-html.js";
+import { renderCyberExpertCaseBriefHtml, renderCyberInventoryPriorityHtml } from "./reporting/cyber-html.js";
 import {
   buildTelegramRegistrationReceipt,
   buildTelegramStatus,
@@ -30,7 +54,7 @@ import {
 import { createX402TestnetGate } from "./x402-testnet.js";
 
 const cvePrioritySchema = z.object({
-  cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(100),
+  cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).min(1).max(50),
 });
 
 const cyberInventoryPreviewSchema = z.unknown().refine((body) => {
@@ -77,6 +101,109 @@ const marketContextSchema = z.object({
   seriesLimit: z.number().int().min(1).max(24).optional(),
 });
 
+const banklessPodcastSchema = z.object({
+  query: z.string().trim().min(1).max(80).optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+});
+
+const cryptoThesisSchema = z.object({
+  assetSymbol: z.string().trim().regex(/^[A-Z0-9.-]{1,16}$/i),
+  coingeckoId: z.string().trim().regex(/^[a-z0-9-]{1,80}$/i),
+  protocolSlug: z.string().trim().regex(/^[a-z0-9-]{1,100}$/i).optional(),
+  banklessQuery: z.string().trim().min(1).max(80).optional(),
+  days: z.number().int().min(30).max(365).optional(),
+  includeLandscape: z.boolean().optional(),
+});
+
+const cyberExpertHarnessSchema = z.object({
+  focus: z.enum(["all", "vulnerability_research", "crypto_exploit_intel", "msp_triage", "compliance_proofs"]).optional(),
+  localGpu: z.boolean().optional(),
+  includeMicrosoftPattern: z.boolean().optional(),
+  includeOpenSourceCrs: z.boolean().optional(),
+  includeComplianceProofs: z.boolean().optional(),
+});
+
+const cryptoIncidentInputSchema = z
+  .object({
+    incidentId: z.string().trim().max(80).optional(),
+    protocol: z.string().trim().max(80).optional(),
+    chain: z.string().trim().max(80).optional(),
+    occurredAt: z.string().trim().max(40).optional(),
+    lossUsd: z.number().nonnegative().finite().optional(),
+    rootCause: z.string().trim().max(120).optional(),
+    controlsFailed: z.array(z.string().trim().max(80)).max(10).optional(),
+    publicSummary: z.string().trim().max(500).optional(),
+    sourceUrls: z.array(z.string().url().startsWith("https://")).max(10).optional(),
+  })
+  .strict();
+
+const complianceProofInputSchema = z
+  .object({
+    subjectCommitment: z.string().trim().max(160).optional(),
+    decision: z.enum(["pass", "deny", "review", "expired", "unknown"]).optional(),
+    policyVersion: z.string().trim().max(80).optional(),
+    sourceMerkleRoot: z.string().trim().max(160).optional(),
+    issuedAt: z.string().trim().max(40).optional(),
+    expiresAt: z.string().trim().max(40).optional(),
+    sourceIds: z.array(z.enum(["ofac_sanctions_lists", "trm_sanctions_docs", "buyer_authorized_inventory"])).max(5).optional(),
+  })
+  .strict();
+
+const rawEvmAddressPattern = /\b0x[a-fA-F0-9]{40}\b/;
+const commitmentStringSchema = z
+  .string()
+  .trim()
+  .min(20)
+  .max(180)
+  .regex(/^(sha256|hmac|hmac-sha256|commitment|merkle):[A-Za-z0-9:_-]{16,150}$/)
+  .refine((value) => !rawEvmAddressPattern.test(value), "Raw wallet addresses are not accepted; submit a commitment instead.");
+
+const complianceDecisionPreviewSchema = z
+  .object({
+    subjectCommitment: commitmentStringSchema,
+    decision: z.enum(["pass", "deny", "review", "expired", "unknown"]).optional(),
+    policyVersion: z.string().trim().min(1).max(80).optional(),
+    sourceMerkleRoot: commitmentStringSchema.optional(),
+    issuedAt: z.string().trim().max(40).optional(),
+    expiresAt: z.string().trim().max(40).optional(),
+    sourceIds: z.array(z.enum(["ofac_sanctions_lists", "trm_sanctions_docs"])).max(2).optional(),
+  })
+  .strict()
+  .refine((value) => JSON.stringify(value).length <= 20_000, "Compliance decision previews must be under 20KB.");
+
+const cyberExpertCaseStoreShape = {
+  caseTitle: z.string().trim().min(1).max(120).optional(),
+  inventory: z.unknown().optional(),
+  cves: z.array(z.string().regex(/^CVE-\d{4}-\d{4,}$/i)).max(100).optional(),
+  cryptoIncidents: z.array(cryptoIncidentInputSchema).max(50).optional(),
+  complianceProofs: z.array(complianceProofInputSchema).max(50).optional(),
+  notes: z.array(z.string().trim().max(500)).max(20).optional(),
+};
+
+const cyberExpertCaseStoreObject = z.object(cyberExpertCaseStoreShape);
+
+const hasCyberExpertCaseInput = (value: z.infer<typeof cyberExpertCaseStoreObject>) =>
+  Boolean(value.inventory) ||
+  Boolean(value.cves?.length) ||
+  Boolean(value.cryptoIncidents?.length) ||
+  Boolean(value.complianceProofs?.length) ||
+  Boolean(value.notes?.length);
+
+const cyberExpertCaseStoreSchema = cyberExpertCaseStoreObject
+  .strict()
+  .refine((value) => JSON.stringify(value).length <= 200_000, "Case-store preview payload must be under 200KB.")
+  .refine(hasCyberExpertCaseInput, "Provide inventory, cves, cryptoIncidents, complianceProofs, or notes.");
+
+const cyberExpertCaseBriefSchema = z
+  .object({
+    ...cyberExpertCaseStoreShape,
+    includePublicCveRefresh: z.boolean().optional(),
+    includeLocalModel: z.boolean().optional(),
+  })
+  .strict()
+  .refine((value) => JSON.stringify(value).length <= 200_000, "Case-brief payload must be under 200KB.")
+  .refine(hasCyberExpertCaseInput, "Provide inventory, cves, cryptoIncidents, complianceProofs, or notes.");
+
 const opportunityPublicProgramsSchema = z.object({
   keyword: z.string().trim().min(2).max(80),
   agencies: z.array(z.string().trim().min(1).max(80)).max(10).optional(),
@@ -92,6 +219,52 @@ function publicOrigin(request: Request): string {
   const proto = forwardedProto || url.protocol.replace(":", "");
   const host = forwardedHost || request.headers.get("host") || url.host;
   return `${proto}://${host}`;
+}
+
+const CYBER_CASE_BRIEF_ROUTE_QUOTE = {
+  routeId: "cyber_expert_case_brief",
+  productId: "cyber_expert_model_preview_pack",
+  priceUsd: "1.2500",
+  sourceIds: [
+    "buyer_authorized_inventory",
+    "cisa_kev",
+    "nvd_cve",
+    "first_epss",
+    "osv",
+    "crypto_incident_public_metadata",
+    "defillama",
+    "trm_sanctions_docs",
+    "ofac_sanctions_lists",
+  ],
+};
+
+const CYBER_OLLAMA_ROUTE_QUOTE = {
+  routeId: "cyber_ollama_model_preview",
+  productId: "cyber_expert_model_preview_pack",
+  priceUsd: "1.0000",
+  sourceIds: [
+    "buyer_authorized_inventory",
+    "cisa_kev",
+    "nvd_cve",
+    "first_epss",
+    "osv",
+    "crypto_incident_public_metadata",
+    "trm_sanctions_docs",
+    "ofac_sanctions_lists",
+  ],
+};
+
+function routePreviewPaymentRequiredPayload(input: Parameters<typeof buildRoutePreviewQuote>[0], headers: Headers) {
+  const quote = buildRoutePreviewQuote(input);
+  if (hasValidSimulatedPayment(headers, quote)) return null;
+  return {
+    quote,
+    body: paymentRequiredPayload(quote),
+    headers: {
+      "Payment-Required": paymentRequiredHeader(quote),
+      "X-AOE-Work-Order": quote.workOrderId,
+    },
+  };
 }
 
 export function createApp() {
@@ -140,6 +313,22 @@ export function createApp() {
         readiness: "aoe.readiness.v1",
         preflight: "aoe.access.preflight.v1",
         x402Status: "aoe.x402.status.v1",
+        banklessMcpManifest: "aoe.bankless_mcp.manifest.v1",
+        banklessPodcastDigest: "aoe.bankless.podcast_digest.v1",
+        defiReportInventory: "aoe.defi_report.public_inventory.v1",
+        cryptoResearchThesis: "aoe.crypto_research_thesis.v1",
+        cyberExpertHarness: CYBER_EXPERT_HARNESS_SCHEMA_ID,
+        cyberExpertCaseBrief: CYBER_EXPERT_CASE_BRIEF_SCHEMA_ID,
+        cyberExpertCaseBriefReport: "aoe.cyber_expert_case_brief.report.v1",
+        cyberExpertCaseStore: CYBER_EXPERT_CASE_STORE_SCHEMA_ID,
+        cyberExpertModelPreview: CYBER_EXPERT_MODEL_PREVIEW_SCHEMA_ID,
+        cyberExpertEvalReport: CYBER_EXPERT_EVAL_REPORT_SCHEMA_ID,
+        cyberExpertProviderStatus: "aoe.cyber_expert_provider_status.v1",
+        cyberWindowsOllamaStatus: CYBER_WINDOWS_OLLAMA_STATUS_SCHEMA_ID,
+        cyberOllamaModelPreview: CYBER_OLLAMA_MODEL_PREVIEW_SCHEMA_ID,
+        cyberPublicCveRefresh: CYBER_PUBLIC_CVE_REFRESH_SCHEMA_ID,
+        complianceDecisionPreview: COMPLIANCE_DECISION_PREVIEW_SCHEMA_ID,
+        zeroGProofReadiness: ZERO_G_PROOF_READINESS_SCHEMA_ID,
         telegramStatus: "aoe.telegram.status.v1",
         telegramRegistration: TELEGRAM_REGISTRATION_SCHEMA_ID,
       },
@@ -152,6 +341,22 @@ export function createApp() {
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
       x402Status: "/v1/x402/status",
+      banklessMcpManifest: "/v1/mcp/bankless/manifest",
+      banklessPodcastDigest: "/v1/adapters/bankless/podcast/recent",
+      defiReportInventory: "/v1/research/defi-report/inventory",
+      cryptoResearchThesis: "/v1/streams/crypto-thesis/preview",
+      cyberExpertHarness: "/v1/streams/cyber-expert-harness/blueprint",
+      cyberExpertCaseBrief: "/v1/streams/cyber-expert/case-brief",
+      cyberExpertCaseBriefReport: "/v1/streams/cyber-expert/case-brief/report",
+      cyberExpertCaseStore: "/v1/streams/cyber-expert/case-store",
+      cyberExpertModelPreview: "/v1/streams/cyber-expert/model-preview",
+      cyberExpertEvalReport: "/v1/streams/cyber-expert/evals",
+      cyberExpertProviderStatus: "/v1/streams/cyber-expert/provider-status",
+      cyberWindowsOllamaStatus: "/v1/streams/cyber-expert/windows-ollama/status",
+      cyberOllamaModelPreview: "/v1/streams/cyber-expert/windows-ollama/preview",
+      cyberPublicCveRefresh: "/v1/streams/cyber-expert/public-cve-refresh",
+      complianceDecisionPreview: "/v1/compliance/screening/decision-preview",
+      zeroGProofReadiness: "/v1/hackathon/0g-proof",
       qualityMetadata: "Products include schemaId, quality, buyerValueMetrics, sourceFreshnessSla, and caveats.",
       separateWorkstreams: ["/v1/separate-workstreams"],
       streams: "/v1/streams",
@@ -166,6 +371,8 @@ export function createApp() {
         "/v1/routes",
         "/v1/streams",
         "/v1/sources",
+        "/v1/mcp/bankless/manifest",
+        "/v1/research/defi-report/inventory",
         "/v1/x402/status",
         "/v1/artifacts",
         "/v1/artifacts/:id/preview",
@@ -173,9 +380,25 @@ export function createApp() {
         "/v1/streams/market-context/live-proof",
         "/v1/streams/market-context/preview",
         "/v1/adapters/cyber/inventory-priority/report",
+        "/v1/adapters/bankless/podcast/recent",
+        "/v1/streams/crypto-thesis/preview",
+        "/v1/streams/cyber-expert-harness/blueprint",
+        "/v1/streams/cyber-expert/case-store",
+        "/v1/streams/cyber-expert/model-preview",
+        "/v1/streams/cyber-expert/evals",
+        "/v1/streams/cyber-expert/provider-status",
+        "/v1/streams/cyber-expert/windows-ollama/status",
+        "/v1/streams/cyber-expert/public-cve-refresh",
+        "/v1/compliance/screening/decision-preview",
+        "/v1/hackathon/0g-proof",
         "/v1/adapters/opportunities/public-programs/preview",
       ],
-      paidEndpoints: ["/v1/artifacts/:id/content"],
+      paidEndpoints: [
+        "/v1/artifacts/:id/content",
+        "/v1/streams/cyber-expert/case-brief when includePublicCveRefresh or includeLocalModel is requested",
+        "/v1/streams/cyber-expert/case-brief/report when includePublicCveRefresh or includeLocalModel is requested",
+        "/v1/streams/cyber-expert/windows-ollama/preview",
+      ],
       safety: ["/docs/SAFETY_BOUNDARIES.md"],
     }),
   );
@@ -258,6 +481,10 @@ export function createApp() {
 
   app.get("/v1/separate-workstreams", (c) => c.json({ workstreams: separateWorkstreams }));
 
+  app.get("/v1/mcp/bankless/manifest", (c) => c.json(buildBanklessMcpManifest()));
+
+  app.get("/v1/research/defi-report/inventory", (c) => c.json(buildDefiReportInventory()));
+
   app.get("/v1/artifacts", (c) => {
     const q = c.req.query("q")?.toLowerCase();
     const category = c.req.query("category");
@@ -289,6 +516,141 @@ export function createApp() {
   });
 
   app.get("/v1/readiness", (c) => c.json(buildReadiness()));
+
+  app.get("/v1/streams/cyber-expert/evals", (c) =>
+    c.json({
+      mode: "deterministic_eval_fixture_report",
+      x402Stream: false,
+      readOnly: true,
+      sideEffects: "none",
+      report: buildCyberExpertEvalReport(),
+    }),
+  );
+
+  app.get("/v1/streams/cyber-expert/provider-status", (c) => {
+    const evalReport = buildCyberExpertEvalReport();
+    return c.json({
+      schemaId: "aoe.cyber_expert_provider_status.v1",
+      mode: "read_only_provider_gate_status",
+      x402Stream: false,
+      readOnly: true,
+      sideEffects: "none",
+      provider: resolveCyberModelProvider(process.env, evalReport.evidenceProof.evalSuiteHash),
+      evalSuiteHash: evalReport.evidenceProof.evalSuiteHash,
+      secretValuesEchoed: false,
+      modelCallsMade: 0,
+      localGpuUsed: false,
+      paidApiUsed: false,
+      caveats: [
+        "Provider status reports gate posture only; it never echoes environment variable values.",
+        "Windows/Ollama preview requires explicit enablement, eval pass acknowledgement, provider config, model name, and a separate chat-allowed switch.",
+        "OpenAI and Vertex/vLLM providers remain blocked until reviewed adapter implementation.",
+      ],
+    });
+  });
+
+  app.get("/v1/streams/cyber-expert/windows-ollama/status", async (c) =>
+    c.json({
+      mode: "read_only_windows_ollama_status",
+      x402Stream: false,
+      readOnly: true,
+      sideEffects: "none",
+      report: await fetchCyberWindowsOllamaStatus(),
+    }),
+  );
+
+  app.post("/v1/streams/cyber-expert/windows-ollama/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberExpertCaseStoreSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_ollama_model_preview_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    const paymentRequired = routePreviewPaymentRequiredPayload(CYBER_OLLAMA_ROUTE_QUOTE, c.req.raw.headers);
+    if (paymentRequired) {
+      return c.json(paymentRequired.body, 402, paymentRequired.headers);
+    }
+
+    return c.json({
+      mode: "gated_windows_ollama_model_preview",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_model_preview_pack",
+      paidProductId: "cyber_expert_model_preview_pack",
+      previewPriceUsd: "1.0000",
+      readOnly: true,
+      sideEffects: "local_model_inference_only",
+      report: await buildCyberOllamaModelPreview(parsed.data, process.env, fetch, buildCyberExpertEvalReport().evidenceProof.evalSuiteHash),
+    });
+  });
+
+  app.post("/v1/streams/cyber-expert/public-cve-refresh", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cvePrioritySchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_public_cve_refresh_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    return c.json({
+      mode: "read_only_public_cve_refresh",
+      x402Stream: false,
+      readOnly: true,
+      sideEffects: "public_cve_source_fetch_only",
+      report: await fetchCyberPublicCveRefresh(parsed.data.cves),
+    });
+  });
+
+  app.post("/v1/compliance/screening/decision-preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = complianceDecisionPreviewSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_compliance_decision_preview_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+          rawSubjectAccepted: false,
+          rawWalletAddressAccepted: false,
+          rawVendorPayloadAccepted: false,
+        },
+        400,
+      );
+    }
+
+    return c.json({
+      mode: "commitment_only_screening_decision_preview",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_case_store_pack",
+      paidProductId: "cyber_expert_case_store_pack",
+      previewPriceUsd: "0.2500",
+      readOnly: true,
+      sideEffects: "none",
+      report: buildComplianceDecisionPreview(parsed.data),
+    });
+  });
+
+  app.get("/v1/hackathon/0g-proof", async (c) =>
+    c.json({
+      mode: "read_only_zero_g_proof_readiness",
+      x402Stream: true,
+      x402ProductId: "zero_g_hackathon_proof_pack",
+      paidProductId: "zero_g_hackathon_proof_pack",
+      previewPriceUsd: "0.1000",
+      readOnly: true,
+      sideEffects: "public_chain_receipt_fetch_only",
+      report: await fetchZeroGProofReadiness(),
+    }),
+  );
 
   app.get("/v1/x402/status", (c) =>
     c.json({
@@ -683,6 +1045,260 @@ export function createApp() {
       readOnly: true,
       sideEffects: "none",
       report,
+    });
+  });
+
+  app.post("/v1/adapters/bankless/podcast/recent", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const parsed = banklessPodcastSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_bankless_podcast_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await fetchBanklessPodcastDigest({ ...parsed.data, timeoutMs: marketFetchTimeoutMs() });
+      return c.json({
+        mode: "read_only_public_podcast_metadata",
+        x402Stream: true,
+        x402ProductId: "crypto_research_thesis_pack",
+        paidProductId: "crypto_research_thesis_pack",
+        readOnly: true,
+        sideEffects: "none",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown Bankless RSS adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/streams/crypto-thesis/preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cryptoThesisSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_crypto_thesis_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    try {
+      const report = await buildCryptoResearchThesisReport({ ...parsed.data, timeoutMs: marketFetchTimeoutMs() });
+      return c.json({
+        mode: "read_only_public_research",
+        x402Stream: true,
+        x402ProductId: "crypto_research_thesis_pack",
+        paidProductId: "crypto_research_thesis_pack",
+        previewPriceUsd: "1.5000",
+        readOnly: true,
+        sideEffects: "none",
+        report,
+      });
+    } catch (error) {
+      return c.json(
+        {
+          error: "source_adapter_failed",
+          message: error instanceof Error ? error.message : "Unknown crypto thesis adapter error",
+        },
+        502,
+      );
+    }
+  });
+
+  app.post("/v1/streams/cyber-expert-harness/blueprint", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const parsed = cyberExpertHarnessSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_expert_harness_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    return c.json({
+      mode: "defensive_agentic_blueprint",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_harness_blueprint",
+      paidProductId: "cyber_expert_harness_blueprint",
+      previewPriceUsd: "0.7500",
+      readOnly: true,
+      sideEffects: "none",
+      report: buildCyberExpertHarnessBlueprint(parsed.data),
+    });
+  });
+
+  app.post("/v1/streams/cyber-expert/case-store", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberExpertCaseStoreSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_expert_case_store_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    return c.json({
+      mode: "read_only_case_store_preview",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_case_store_pack",
+      paidProductId: "cyber_expert_case_store_pack",
+      previewPriceUsd: "0.7500",
+      readOnly: true,
+      sideEffects: "none",
+      report: buildCyberExpertCaseStorePreview(parsed.data),
+    });
+  });
+
+  app.post("/v1/streams/cyber-expert/case-brief", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberExpertCaseBriefSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_expert_case_brief_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    const { includePublicCveRefresh, includeLocalModel, ...caseRequest } = parsed.data;
+    const paidLaneRequested = includePublicCveRefresh !== false || includeLocalModel === true;
+    if (paidLaneRequested) {
+      const paymentRequired = routePreviewPaymentRequiredPayload(CYBER_CASE_BRIEF_ROUTE_QUOTE, c.req.raw.headers);
+      if (paymentRequired) {
+        return c.json(
+          {
+            ...paymentRequired.body,
+            publicFallback: {
+              route: "/v1/streams/cyber-expert/case-brief",
+              method: "POST",
+              body: { includePublicCveRefresh: false, includeLocalModel: false },
+              note: "Deterministic-only case briefs remain public; public source refresh and local model advisory lanes require simulated x402 access.",
+            },
+          },
+          402,
+          paymentRequired.headers,
+        );
+      }
+    }
+    return c.json({
+      mode: "defensive_case_brief",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_model_preview_pack",
+      paidProductId: "cyber_expert_model_preview_pack",
+      previewPriceUsd: "1.2500",
+      readOnly: true,
+      sideEffects: "deterministic_analysis_plus_optional_public_fetch_and_optional_local_inference",
+      report: await buildCyberExpertCaseBrief(caseRequest, {
+        includePublicCveRefresh,
+        includeLocalModel,
+        env: process.env,
+        fetcher: fetch,
+        currentEvalSuiteHash: buildCyberExpertEvalReport().evidenceProof.evalSuiteHash,
+      }),
+    });
+  });
+
+  app.post("/v1/streams/cyber-expert/case-brief/report", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberExpertCaseBriefSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_expert_case_brief_report_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    const { includePublicCveRefresh, includeLocalModel, ...caseRequest } = parsed.data;
+    const paidLaneRequested = includePublicCveRefresh !== false || includeLocalModel === true;
+    if (paidLaneRequested) {
+      const paymentRequired = routePreviewPaymentRequiredPayload(CYBER_CASE_BRIEF_ROUTE_QUOTE, c.req.raw.headers);
+      if (paymentRequired) {
+        return c.json(
+          {
+            ...paymentRequired.body,
+            publicFallback: {
+              route: "/v1/streams/cyber-expert/case-brief/report",
+              method: "POST",
+              body: { includePublicCveRefresh: false, includeLocalModel: false },
+              note: "Deterministic-only case brief reports remain public; public source refresh and local model advisory lanes require simulated x402 access.",
+            },
+          },
+          402,
+          paymentRequired.headers,
+        );
+      }
+    }
+
+    const report = await buildCyberExpertCaseBrief(caseRequest, {
+      includePublicCveRefresh,
+      includeLocalModel,
+      env: process.env,
+      fetcher: fetch,
+      currentEvalSuiteHash: buildCyberExpertEvalReport().evidenceProof.evalSuiteHash,
+    });
+    return c.json({
+      schemaId: "aoe.cyber_expert_case_brief.report.v1",
+      mode: "defensive_case_brief_html_report",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_model_preview_pack",
+      paidProductId: "cyber_expert_model_preview_pack",
+      previewPriceUsd: "1.2500",
+      contentType: "text/html",
+      readOnly: true,
+      sideEffects: "deterministic_analysis_plus_optional_public_fetch_and_optional_local_inference",
+      report,
+      reportHtml: renderCyberExpertCaseBriefHtml(report),
+      outputPolicy: report.safety.outputPolicy,
+    });
+  });
+
+  app.post("/v1/streams/cyber-expert/model-preview", async (c) => {
+    const body = await c.req.json().catch(() => undefined);
+    const parsed = cyberExpertCaseStoreSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json(
+        {
+          error: "invalid_cyber_expert_model_preview_payload",
+          issues: parsed.error.issues.map((issue) => ({ path: issue.path, message: issue.message })),
+        },
+        400,
+      );
+    }
+
+    return c.json({
+      mode: "deterministic_model_contract_preview",
+      x402Stream: true,
+      x402ProductId: "cyber_expert_model_preview_pack",
+      paidProductId: "cyber_expert_model_preview_pack",
+      previewPriceUsd: "1.0000",
+      readOnly: true,
+      sideEffects: "none",
+      report: buildCyberExpertModelPreview(parsed.data),
     });
   });
 
