@@ -24,6 +24,15 @@ PLAYWRIGHT_HTML_OPEN=never npm run browser:smoke
 gcloud builds submit --project sapphire-479610 --config cloudbuild.preview.yaml .
 ```
 
+For local source submissions, pass an explicit image tag from the checked-out
+commit:
+
+```bash
+gcloud builds submit --project sapphire-479610 \
+  --config cloudbuild.preview.yaml \
+  --substitutions=_IMAGE_TAG="$(git rev-parse --short HEAD)" .
+```
+
 After deploy, read the URL from Cloud Run and verify:
 
 ```bash
