@@ -1,19 +1,20 @@
 substitutions:
   _REGION: us-central1
   _SERVICE: aoe-hackathon-preview
+  _IMAGE_TAG: manual
 
 steps:
   - name: gcr.io/cloud-builders/docker
-    args: ["build", "-t", "gcr.io/$PROJECT_ID/aoe-hackathon-preview:$SHORT_SHA", "."]
+    args: ["build", "-t", "gcr.io/$PROJECT_ID/aoe-hackathon-preview:${_IMAGE_TAG}", "."]
   - name: gcr.io/cloud-builders/docker
-    args: ["push", "gcr.io/$PROJECT_ID/aoe-hackathon-preview:$SHORT_SHA"]
+    args: ["push", "gcr.io/$PROJECT_ID/aoe-hackathon-preview:${_IMAGE_TAG}"]
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
     entrypoint: gcloud
     args:
       - run
       - deploy
       - "${_SERVICE}"
-      - "--image=gcr.io/$PROJECT_ID/aoe-hackathon-preview:$SHORT_SHA"
+      - "--image=gcr.io/$PROJECT_ID/aoe-hackathon-preview:${_IMAGE_TAG}"
       - "--region=${_REGION}"
       - "--platform=managed"
       - "--allow-unauthenticated"
@@ -22,7 +23,7 @@ steps:
       - "--quiet"
 
 images:
-  - "gcr.io/$PROJECT_ID/aoe-hackathon-preview:$SHORT_SHA"
+  - "gcr.io/$PROJECT_ID/aoe-hackathon-preview:${_IMAGE_TAG}"
 
 options:
   logging: CLOUD_LOGGING_ONLY
