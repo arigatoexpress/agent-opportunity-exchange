@@ -100,6 +100,7 @@ describe("buyer contract bundle", () => {
     expect(schemas["aoe.discovery.products.v1"]).toBeTruthy();
     expect(schemas["aoe.discovery.routes.v1"]).toBeTruthy();
     expect(schemas["aoe.demo_guide.v1"]).toBeTruthy();
+    expect(schemas["aoe.preview_safety.v1"]).toBeTruthy();
     expect(schemas["aoe.buyer_proof.v1"]).toBeTruthy();
     expect(schemas["aoe.telegram.status.v1"]).toBeTruthy();
     expect(schemas["aoe.telegram.registration.v1"]).toBeTruthy();
@@ -126,6 +127,29 @@ describe("buyer contract bundle", () => {
     );
     expect(liveProof.properties.generatedAt).toEqual({ type: "string" });
     expect(liveProof.properties.durationMs).toEqual({ type: "integer", minimum: 0 });
+  });
+
+  test("preview safety is discoverable in route and OpenAPI contracts", () => {
+    const bundle = buildContractBundle();
+    expect(bundle.schemaCatalog["aoe.preview_safety.v1"]).toBeTruthy();
+    expect(bundle.pathContracts).toContainEqual(
+      expect.objectContaining({
+        routeId: "preview_safety",
+        path: "/v1/preview-safety",
+        method: "GET",
+        schemaId: "aoe.preview_safety.v1",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+      }),
+    );
+    expect(bundle.openapi.paths["/v1/preview-safety"].get["x-aoe"]).toEqual(
+      expect.objectContaining({
+        schemaId: "aoe.preview_safety.v1",
+        access: "public",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+      }),
+    );
   });
 
   test("contract endpoint is public and listed in well-known discovery", async () => {

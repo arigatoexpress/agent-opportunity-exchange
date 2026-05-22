@@ -8,6 +8,7 @@ import type {
   SourceRecord,
   StreamDefinition,
 } from "./types.js";
+import { PREVIEW_SAFETY_SCHEMA_ID } from "./preview-safety.js";
 
 const SEEDED_CATALOG_VERIFIED = "seeded_static_research_2026-05-08";
 
@@ -1922,6 +1923,19 @@ export const productRoutes: RouteDiscovery[] = [
     sourceIds: [],
     value: "Machine-readable demo and developer integration guide for judges, buyers, and agents.",
     caveats: ["Guide commands are public and side-effect free; paid artifact unlock remains simulated or Base Sepolia testnet only."],
+  },
+  {
+    routeId: "preview_safety",
+    route: "/v1/preview-safety",
+    method: "GET",
+    schemaId: PREVIEW_SAFETY_SCHEMA_ID,
+    x402Stream: false,
+    productIds: products.map((product) => product.productId),
+    access: "public",
+    readiness: "live_read_only",
+    sourceIds: [],
+    value: "Lists the verification gates and disabled live-action boundaries required before calling a deployed AOE URL preview-ready.",
+    caveats: ["This endpoint is a readiness checklist, not a replacement for running deployed-url browser smoke."],
   },
   {
     routeId: "telegram_status",
