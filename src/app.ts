@@ -40,6 +40,7 @@ import {
   paymentRequiredPayload,
 } from "./payments.js";
 import { buildProductContract, preflightSchema, runPreflight } from "./policy.js";
+import { buildPreviewSafety, PREVIEW_SAFETY_SCHEMA_ID } from "./preview-safety.js";
 import { buildReadiness } from "./readiness.js";
 import { renderCyberExpertCaseBriefHtml, renderCyberInventoryPriorityHtml } from "./reporting/cyber-html.js";
 import {
@@ -324,6 +325,7 @@ export function createApp() {
         productDiscovery: "aoe.discovery.products.v1",
         routeDiscovery: "aoe.discovery.routes.v1",
         readiness: "aoe.readiness.v1",
+        previewSafety: PREVIEW_SAFETY_SCHEMA_ID,
         preflight: "aoe.access.preflight.v1",
         x402Status: "aoe.x402.status.v1",
         banklessMcpManifest: "aoe.bankless_mcp.manifest.v1",
@@ -353,6 +355,7 @@ export function createApp() {
       productDiscovery: "/v1/products",
       routeDiscovery: "/v1/routes",
       readiness: "/v1/readiness",
+      previewSafety: "/v1/preview-safety",
       x402Status: "/v1/x402/status",
       banklessMcpManifest: "/v1/mcp/bankless/manifest",
       banklessPodcastDigest: "/v1/adapters/bankless/podcast/recent",
@@ -387,6 +390,7 @@ export function createApp() {
         "/v1/mcp/bankless/manifest",
         "/v1/research/defi-report/inventory",
         "/v1/x402/status",
+        "/v1/preview-safety",
         "/v1/artifacts",
         "/v1/artifacts/:id/preview",
         "/v1/artifacts/:id/quote",
@@ -529,6 +533,8 @@ export function createApp() {
   });
 
   app.get("/v1/readiness", (c) => c.json(buildReadiness()));
+
+  app.get("/v1/preview-safety", (c) => c.json(buildPreviewSafety(publicOrigin(c.req.raw))));
 
   app.get("/v1/streams/cyber-expert/evals", (c) =>
     c.json({

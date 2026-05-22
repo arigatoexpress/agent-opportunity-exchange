@@ -85,6 +85,19 @@ test("buyer workbench proves x402 posture before paid access", async ({ page }) 
   expect(telegramStatus.outboundTelegramSendsAllowed).toBe(false);
   expect(telegramStatus.webhookRegistrationAllowed).toBe(false);
 
+  const previewSafetyResponse = await page.request.get("/v1/preview-safety");
+  expect(previewSafetyResponse.ok()).toBe(true);
+  const previewSafety = (await previewSafetyResponse.json()) as {
+    schemaId: string;
+    deployedPreviewVerification: { command: string; startsLocalServer: boolean };
+    safety: { liveSettlementAllowed: boolean; outboundTelegramSendsAllowed: boolean };
+  };
+  expect(previewSafety.schemaId).toBe("aoe.preview_safety.v1");
+  expect(previewSafety.deployedPreviewVerification.command).toContain("AOE_BROWSER_SMOKE_BASE_URL=<preview-url>");
+  expect(previewSafety.deployedPreviewVerification.startsLocalServer).toBe(false);
+  expect(previewSafety.safety.liveSettlementAllowed).toBe(false);
+  expect(previewSafety.safety.outboundTelegramSendsAllowed).toBe(false);
+
   await page.goto("/telegram");
   await expect(page.locator("#contextState")).toContainText("open inside Telegram");
   await expect(page.locator("#register")).toBeDisabled();

@@ -1,4 +1,5 @@
 import { artifacts, productRoutes, products, separateWorkstreams, sources, streams } from "./catalog.js";
+import { PREVIEW_SAFETY_SCHEMA_ID } from "./preview-safety.js";
 import { buildReadiness } from "./readiness.js";
 import { getX402PaymentStatus } from "./x402-config.js";
 
@@ -360,6 +361,31 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
         liveSettlementAllowed: { const: false },
         externalSideEffectsAllowed: { const: false },
       }),
+    }),
+    [PREVIEW_SAFETY_SCHEMA_ID]: objectSchema("Preview safety response", {
+      schemaId: { const: PREVIEW_SAFETY_SCHEMA_ID },
+      generatedAt: { type: "string" },
+      service: { const: "agent-opportunity-exchange" },
+      recommendedBaseUrl: { type: "string" },
+      previewReadyClaim: { type: "string" },
+      safety: objectSchema("Preview safety disabled live-action flags", {
+        liveSettlementAllowed: { const: false },
+        mainnetFundsAccepted: { const: false },
+        externalSideEffectsAllowed: { const: false },
+        liveTradingAllowed: { const: false },
+        outboundTelegramSendsAllowed: { const: false },
+        customerDataRequired: { const: false },
+        secretValuesRequiredInRepo: { const: false },
+      }),
+      localVerification: arrayOf({ type: "string" }),
+      deployedPreviewVerification: objectSchema("Deployed preview smoke contract", {
+        command: { const: "AOE_BROWSER_SMOKE_BASE_URL=<preview-url> npm run browser:smoke" },
+        requiresHttps: { const: true },
+        startsLocalServer: { const: false },
+        proves: arrayOf({ type: "string" }),
+      }),
+      requiredEndpoints: arrayOf({ type: "string" }),
+      blockedClaims: arrayOf({ type: "string" }),
     }),
     "aoe.discovery.sources.v1": objectSchema("Sources response", {
       sources: arrayOf(sourceRecordSchema),

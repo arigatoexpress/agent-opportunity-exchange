@@ -81,6 +81,7 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.schemaIds.buyerProof).toBe("aoe.buyer_proof.v1");
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
     expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
+    expect(body.schemaIds.previewSafety).toBe("aoe.preview_safety.v1");
     expect(body.schemaIds.complianceDecisionPreview).toBe("aoe.compliance_decision_preview.v1");
     expect(body.schemaIds.zeroGProofReadiness).toBe("aoe.zero_g_proof_readiness.v1");
     expect(body.complianceDecisionPreview).toBe("/v1/compliance/screening/decision-preview");
@@ -90,6 +91,7 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.freeEndpoints).toContain("/telegram");
     expect(body.freeEndpoints).toContain("/v1/telegram/status");
     expect(body.freeEndpoints).toContain("/v1/routes");
+    expect(body.freeEndpoints).toContain("/v1/preview-safety");
     expect(body.freeEndpoints).toContain("/v1/compliance/screening/decision-preview");
     expect(body.freeEndpoints).toContain("/v1/hackathon/0g-proof");
     expect(body.freeEndpoints).not.toContain("/v1/streams/cyber-expert/case-brief");
@@ -102,6 +104,38 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.telegramStatus).toBe("/v1/telegram/status");
     expect(body.schemaIds.telegramRegistration).toBe("aoe.telegram.registration.v1");
     expect(body.qualityMetadata).toContain("sourceFreshnessSla");
+  });
+
+  test("preview safety explains deployed smoke gates without enabling live actions", async () => {
+    const res = await app.request("https://preview.aoe.test/v1/preview-safety");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.preview_safety.v1");
+    expect(body.recommendedBaseUrl).toBe("https://preview.aoe.test");
+    expect(body.localVerification).toEqual(
+      expect.arrayContaining(["npm run verify", "npm run build", "npm run browser:smoke", "npm run sellability"]),
+    );
+    expect(body.deployedPreviewVerification).toEqual(
+      expect.objectContaining({
+        command: "AOE_BROWSER_SMOKE_BASE_URL=<preview-url> npm run browser:smoke",
+        requiresHttps: true,
+        startsLocalServer: false,
+      }),
+    );
+    expect(body.requiredEndpoints).toContain("/v1/contracts");
+    expect(body.requiredEndpoints).toContain("/v1/preview-safety");
+    expect(body.blockedClaims).toContain("production live payments");
+    expect(body.safety).toEqual(
+      expect.objectContaining({
+        liveSettlementAllowed: false,
+        mainnetFundsAccepted: false,
+        externalSideEffectsAllowed: false,
+        liveTradingAllowed: false,
+        outboundTelegramSendsAllowed: false,
+        customerDataRequired: false,
+        secretValuesRequiredInRepo: false,
+      }),
+    );
   });
 
   test("demo guide is public, machine-readable, and safety-bounded", async () => {

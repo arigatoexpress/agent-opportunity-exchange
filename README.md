@@ -31,6 +31,8 @@ The API is discoverable before purchase:
   before invoking a proof route.
 - `GET /v1/readiness` reports whether product and route contract coverage is
   buyer-discovery ready.
+- `GET /v1/preview-safety` reports the local and deployed preview verification
+  gates required before calling a URL preview-ready.
 - `GET /v1/telegram/status` reports the Telegram Mini App opt-in posture,
   including required bot-token setup and disabled send/webhook boundaries.
 - `POST /v1/access/preflight` returns the product contract alongside price and
@@ -62,6 +64,7 @@ The default server listens on `http://127.0.0.1:4402`.
 - `GET /v1/separate-workstreams`
 - `GET /v1/artifacts`
 - `GET /v1/readiness`
+- `GET /v1/preview-safety`
 - `GET /v1/x402/status`
 - `GET /v1/telegram/status`
 - `GET /telegram`
@@ -97,6 +100,25 @@ curl -s \
 This is deliberately simulated/testnet-only. No live settlement, trading, Telegram send, production data write, or external scan is enabled.
 
 Simulated paid access appends non-secret receipt records to `data/receipts/receipts.jsonl`, which is ignored by git.
+
+## Preview Safety
+
+Local smoke starts its own server:
+
+```bash
+npm run browser:smoke
+```
+
+Deployed preview smoke points the same Playwright contract at an existing HTTPS
+URL without starting a local server:
+
+```bash
+AOE_BROWSER_SMOKE_BASE_URL=https://<preview-host> npm run browser:smoke
+```
+
+`GET /v1/preview-safety` lists the required verification commands, endpoints,
+blocked claims, and disabled live-action flags. Do not call an AOE URL
+preview-ready until the deployed-url smoke passes.
 
 ## Telegram Mini App Opt-In
 
