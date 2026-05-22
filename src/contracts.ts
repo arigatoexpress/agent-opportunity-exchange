@@ -243,6 +243,30 @@ const quoteSchema = objectSchema(
   ["quoteId", "workOrderId", "artifactId", "productId", "priceUsd", "paymentProtocol", "liveSettlementAllowed", "sourceIds"],
 );
 
+const quoteAccessSchema = objectSchema(
+  "Artifact quote access plan",
+  {
+    preflightEndpoint: { const: "/v1/access/preflight" },
+    paidContentEndpoint: { type: "string" },
+    paymentHeader: { const: "X-AOE-Payment" },
+    simulatedPaymentFormat: { const: "simulated:<workOrderId>" },
+    contentUnlockMode: { const: "simulated_header_or_base_sepolia_testnet" },
+    liveSettlementAllowed: { const: false },
+    externalSideEffectsAllowed: { const: false },
+    mainnetFundsAccepted: { const: false },
+  },
+  [
+    "preflightEndpoint",
+    "paidContentEndpoint",
+    "paymentHeader",
+    "simulatedPaymentFormat",
+    "contentUnlockMode",
+    "liveSettlementAllowed",
+    "externalSideEffectsAllowed",
+    "mainnetFundsAccepted",
+  ],
+);
+
 const previewSchema = objectSchema("Artifact preview", {
   artifactId: { type: "string" },
   title: { type: "string" },
@@ -303,6 +327,7 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       },
       ["schemaId", "bundleVersion", "liveSettlementAllowed", "externalSideEffectsAllowed", "openapi", "schemaCatalog"],
     ),
+    ...routeSchemaIds,
     "aoe.discovery.products.v1": objectSchema("Products response", {
       schemaId: { const: "aoe.discovery.products.v1" },
       products: arrayOf(productSchema),
@@ -351,7 +376,16 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
       ),
     }),
     "aoe.artifact.preview.v1": previewSchema,
-    "aoe.artifact.quote.v1": objectSchema("Artifact quote response", { quote: quoteSchema }, ["quote"]),
+    "aoe.artifact.quote.v1": objectSchema(
+      "Artifact quote response",
+      {
+        schemaId: { const: "aoe.artifact.quote.v1" },
+        quote: quoteSchema,
+        productContract: productSchema,
+        access: quoteAccessSchema,
+      },
+      ["schemaId", "quote", "productContract", "access"],
+    ),
     "aoe.artifact.content.v1": contentSchema,
     "aoe.payment.required.v1": paymentRequiredSchema,
     "aoe.access.preflight.v1": objectSchema("Access preflight response", {
@@ -388,7 +422,6 @@ export function buildSchemaCatalog(): Record<string, JsonSchema> {
     }),
     "aoe.streams.discovery.v1": objectSchema("Streams response", { streams: arrayOf(streamDefinitionSchema) }),
     "aoe.workstreams.discovery.v1": objectSchema("Separate workstreams response", { workstreams: arrayOf(objectSchema("Workstream", {})) }),
-    ...routeSchemaIds,
     ...productSchemaIds,
     "aoe.telegram.status.v1": objectSchema("Telegram Mini App status response", {
       schemaId: { const: "aoe.telegram.status.v1" },

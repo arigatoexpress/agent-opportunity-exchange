@@ -937,9 +937,24 @@ describe("Agent Opportunity Exchange API", () => {
     const res = await app.request(`/v1/artifacts/${artifact!.artifactId}/quote`);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.quote).toEqual(buildQuote(artifact!));
+    expect(body.schemaId).toBe("aoe.artifact.quote.v1");
+    expect(body.quote).toEqual({ ...buildQuote(artifact!), expiresAt: expect.any(String) });
     expect(body.quote.sourceIds).toEqual(artifact!.sourceIds);
     expect(body.quote.liveSettlementAllowed).toBe(false);
+    expect(body.productContract).toEqual(expect.objectContaining({ productId: artifact!.productId, liveSettlementAllowed: false }));
+    expect(body.productContract.priceUsd).toBe(body.quote.priceUsd);
+    expect(body.productContract.quality.sourceFreshnessSla.caveats.length).toBeGreaterThan(0);
+    expect(body.access).toEqual(
+      expect.objectContaining({
+        preflightEndpoint: "/v1/access/preflight",
+        paidContentEndpoint: `/v1/artifacts/${artifact!.artifactId}/content`,
+        paymentHeader: "X-AOE-Payment",
+        simulatedPaymentFormat: "simulated:<workOrderId>",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+        mainnetFundsAccepted: false,
+      }),
+    );
   });
 
   test("full content returns x402-style 402 until payment is presented", async () => {
@@ -1075,11 +1090,15 @@ describe("Agent Opportunity Exchange API", () => {
       expect.objectContaining({
         productId: "cyber_exploited_vuln_priority",
         schemaId: "aoe.product.cyber_exploited_vuln_priority.v1",
-        qualityTier: "sellable_mvp",
+        priceUsd: "0.5000",
+        settlementMode: "simulated_or_testnet",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
       }),
     );
-    expect(body.productContract.buyerValueMetrics[0].metricId).toBe("fix_now_queue");
-    expect(body.productContract.sourceFreshnessSla.caveats).toContain("No active scanning is performed by this product.");
+    expect(body.productContract.quality.qualityTier).toBe("sellable_mvp");
+    expect(body.productContract.quality.buyerValueMetrics[0].metricId).toBe("fix_now_queue");
+    expect(body.productContract.quality.sourceFreshnessSla.caveats).toContain("No active scanning is performed by this product.");
   });
 
   test("preflight blocks disallowed sources", async () => {

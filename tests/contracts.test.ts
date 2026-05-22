@@ -68,6 +68,19 @@ describe("buyer contract bundle", () => {
       }),
     );
 
+    const quoteSchema = bundle.openapi.components.schemas["aoe.artifact.quote.v1"] as {
+      required: string[];
+      properties: { access: { properties: Record<string, unknown> } };
+    };
+    expect(quoteSchema.required).toEqual(expect.arrayContaining(["schemaId", "quote", "productContract", "access"]));
+    expect(quoteSchema.properties.access.properties).toEqual(
+      expect.objectContaining({
+        preflightEndpoint: { const: "/v1/access/preflight" },
+        paymentHeader: { const: "X-AOE-Payment" },
+        mainnetFundsAccepted: { const: false },
+      }),
+    );
+
     const paidContent = bundle.openapi.paths["/v1/artifacts/{id}/content"].get;
     expect(paidContent.operationId).toBe("artifact_paid_content");
     expect(paidContent["x-aoe"]).toEqual(

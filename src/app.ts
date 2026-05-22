@@ -39,7 +39,7 @@ import {
   paymentRequiredHeader,
   paymentRequiredPayload,
 } from "./payments.js";
-import { preflightSchema, runPreflight } from "./policy.js";
+import { buildProductContract, preflightSchema, runPreflight } from "./policy.js";
 import { buildReadiness } from "./readiness.js";
 import { renderCyberExpertCaseBriefHtml, renderCyberInventoryPriorityHtml } from "./reporting/cyber-html.js";
 import {
@@ -264,6 +264,19 @@ function routePreviewPaymentRequiredPayload(input: Parameters<typeof buildRouteP
       "Payment-Required": paymentRequiredHeader(quote),
       "X-AOE-Work-Order": quote.workOrderId,
     },
+  };
+}
+
+function buildArtifactQuoteAccess(artifactId: string) {
+  return {
+    preflightEndpoint: "/v1/access/preflight",
+    paidContentEndpoint: `/v1/artifacts/${artifactId}/content`,
+    paymentHeader: "X-AOE-Payment",
+    simulatedPaymentFormat: "simulated:<workOrderId>",
+    contentUnlockMode: "simulated_header_or_base_sepolia_testnet",
+    liveSettlementAllowed: false,
+    externalSideEffectsAllowed: false,
+    mainnetFundsAccepted: false,
   };
 }
 
@@ -725,7 +738,14 @@ export function createApp() {
   app.get("/v1/artifacts/:id/quote", (c) => {
     const artifact = getArtifact(c.req.param("id"));
     if (!artifact) return c.json({ error: "artifact_not_found" }, 404);
-    return c.json({ quote: buildQuote(artifact) });
+    const product = getProduct(artifact.productId);
+    if (!product) return c.json({ error: "product_not_found" }, 500);
+    return c.json({
+      schemaId: "aoe.artifact.quote.v1",
+      quote: buildQuote(artifact),
+      productContract: buildProductContract(product),
+      access: buildArtifactQuoteAccess(artifact.artifactId),
+    });
   });
 
   app.post("/v1/access/preflight", async (c) => {
