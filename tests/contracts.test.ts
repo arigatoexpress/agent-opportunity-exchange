@@ -57,6 +57,17 @@ describe("buyer contract bundle", () => {
 
   test("exports OpenAPI paths with x402 and source-rights extensions", () => {
     const bundle = buildContractBundle();
+    const artifactQuote = bundle.openapi.paths["/v1/artifacts/{id}/quote"].get;
+    expect(artifactQuote.operationId).toBe("artifact_quote");
+    expect(artifactQuote["x-aoe"]).toEqual(
+      expect.objectContaining({
+        access: "public",
+        schemaId: "aoe.artifact.quote.v1",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+      }),
+    );
+
     const paidContent = bundle.openapi.paths["/v1/artifacts/{id}/content"].get;
     expect(paidContent.operationId).toBe("artifact_paid_content");
     expect(paidContent["x-aoe"]).toEqual(

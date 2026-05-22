@@ -930,6 +930,18 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.content).toBeUndefined();
   });
 
+  test("artifact quote is a public buyer contract before payment", async () => {
+    const artifact = artifacts.find((row) => row.artifactId === "aoe_cyber_kev_epss_priority");
+    expect(artifact).toBeDefined();
+
+    const res = await app.request(`/v1/artifacts/${artifact!.artifactId}/quote`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.quote).toEqual(buildQuote(artifact!));
+    expect(body.quote.sourceIds).toEqual(artifact!.sourceIds);
+    expect(body.quote.liveSettlementAllowed).toBe(false);
+  });
+
   test("full content returns x402-style 402 until payment is presented", async () => {
     const artifact = artifacts.find((row) => row.artifactId === "aoe_cyber_kev_epss_priority");
     expect(artifact).toBeDefined();
