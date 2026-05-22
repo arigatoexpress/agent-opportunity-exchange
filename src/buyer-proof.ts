@@ -50,6 +50,12 @@ export function buildBuyerProof(now = new Date()) {
     },
     featuredProof: [
       {
+        productId: "zero_g_hackathon_proof_pack",
+        label: "0G hackathon proof passport",
+        route: "/v1/hackathon/0g-proof",
+        proofValue: "Reads an existing public 0guard 0G anchor receipt and exposes chain, contract, proof URLs, hashes, and no-signing safety flags.",
+      },
+      {
         productId: "cyber_exploited_vuln_priority",
         label: "Authorized cyber inventory proof packet",
         route: "/v1/adapters/cyber/inventory-priority/report",

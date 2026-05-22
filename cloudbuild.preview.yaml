@@ -1,0 +1,29 @@
+substitutions:
+  _REGION: us-central1
+  _SERVICE: aoe-hackathon-preview
+  _IMAGE_TAG: manual
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/aoe-hackathon-preview:${_IMAGE_TAG}", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/aoe-hackathon-preview:${_IMAGE_TAG}"]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "${_SERVICE}"
+      - "--image=us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/aoe-hackathon-preview:${_IMAGE_TAG}"
+      - "--region=${_REGION}"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--set-env-vars=NODE_ENV=production,AOE_PAYMENT_MODE=simulated"
+      - "--labels=app=agent-opportunity-exchange,preview=hackathon-0g"
+      - "--quiet"
+
+images:
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/aoe-hackathon-preview:${_IMAGE_TAG}"
+
+options:
+  logging: CLOUD_LOGGING_ONLY

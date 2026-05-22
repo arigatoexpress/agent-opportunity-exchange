@@ -39,6 +39,86 @@ artifact content unlocks. The contract surface is intentionally small:
   authorized-inventory evidence with a derived `text/html` proof packet for
   buyer review. The HTML is generated from source-linked metadata and must not
   contain exploit instructions, credentials, scans, or raw source resale.
+- `POST /v1/streams/cyber-expert-harness/blueprint` returns
+  `aoe.cyber_expert_harness.blueprint.v1`, a read-only MDASH-inspired defensive
+  expert-agent architecture contract. It describes harness stages, agent roles,
+  local GPU posture, RAG/fine-tune boundaries, and proof policies without
+  running scans or generating exploit payloads.
+- `POST /v1/streams/cyber-expert/case-store` returns
+  `aoe.cyber_expert_case_store.preview.v1`, a read-only case-store preview that
+  turns authorized inventory, CVEs, crypto incident metadata, proof
+  commitments, and private note hashes into source-linked RAG records. It does
+  not fetch live sources, call TRM/OFAC, echo hostnames, echo raw wallet
+  addresses, expose notes, or include vendor payloads.
+- `POST /v1/streams/cyber-expert/model-preview` returns
+  `aoe.cyber_expert_model_preview.v1`, a deterministic no-provider-call preview
+  of the future local/API model response. It consumes the same input as the
+  case-store route, builds the case-store packet internally, and returns an
+  executive summary, priority queue, source coverage, human-review queue,
+  blocked actions, and explicit `modelCallsMade=0` / `localGpuUsed=false` /
+  `paidApiUsed=false` posture.
+- `POST /v1/streams/cyber-expert/case-brief` returns
+  `aoe.cyber_expert_case_brief.v1`, the preferred operator-facing cyber brief.
+  It composes the deterministic model-preview contract, optional public CVE
+  freshness, optional local Windows/Ollama advisory output, and a human-review
+  decision block. Public refresh receives CVE identifiers only. Local model
+  output is optional, hash-gated, and non-authoritative. Deterministic-only
+  requests can run as a public preview with `includePublicCveRefresh=false` and
+  `includeLocalModel=false`; public source refresh and local-model advisory
+  lanes require the route's simulated x402 access header.
+- `POST /v1/streams/cyber-expert/case-brief/report` returns
+  `aoe.cyber_expert_case_brief.report.v1`, an escaped buyer-safe `text/html`
+  report wrapper around the same case brief. Deterministic-only reports remain
+  public; public CVE refresh and local-model advisory reports require the same
+  simulated x402 route access as the JSON brief.
+- `POST /v1/compliance/screening/decision-preview` returns
+  `aoe.compliance_decision_preview.v1`, a commitment-only public proof preview
+  for private TRM/OFAC-style screening decisions. It accepts commitments,
+  source roots, policy versions, decision posture, and expiry metadata only. It
+  rejects raw wallet addresses, performs no live TRM/OFAC call, posts no
+  on-chain proof, and does not claim sanctions clearance.
+- `GET /v1/hackathon/0g-proof` returns
+  `aoe.zero_g_proof_readiness.v1`, a judge-facing 0G proof passport. It reads
+  only the existing public 0guard 0G anchor transaction receipt, then returns
+  chain id, contract address, anchor transaction, public proof URLs, receipt
+  status, source hashes, and safety flags. It performs no wallet signing,
+  transaction broadcast, 0G node start, proof posting, live settlement, private
+  screening, or sanctions-clearance claim.
+- `GET /v1/streams/cyber-expert/evals` returns
+  `aoe.cyber_expert_eval_report.v1`, a public read-only deterministic eval
+  report for the cyber expert model-preview contract. It runs no model, GPU,
+  paid API, TRM/OFAC, or scan calls.
+- `GET /v1/streams/cyber-expert/provider-status` returns
+  `aoe.cyber_expert_provider_status.v1`, a public read-only provider-gate
+  status. It reports the resolved provider id, requested provider id, blocked
+  status, and gate reasons without echoing environment variable values or
+  calling providers.
+- `GET /v1/streams/cyber-expert/windows-ollama/status` returns
+  `aoe.cyber_windows_ollama_status.v1`, a read-only Windows/Ollama status
+  report. When `AOE_WINDOWS_OLLAMA_URL` is configured it calls `/api/tags`
+  only, hashes the endpoint and model names, and never calls `/api/chat`,
+  `/api/generate`, or embeddings endpoints.
+- `POST /v1/streams/cyber-expert/windows-ollama/preview` returns
+  `aoe.cyber_ollama_model_preview.v1`, a gated local Windows/Ollama preview
+  over the deterministic cyber expert case contract. It fails closed unless
+  `AOE_CYBER_MODEL_PROVIDER=windows_ollama_capped_worker`,
+  `AOE_CYBER_MODEL_PROVIDER_ENABLED=true`,
+  `AOE_CYBER_MODEL_EVAL_SUITE_HASH` matches the current deterministic eval
+  suite hash,
+  `AOE_CYBER_MODEL_CHAT_ALLOWED=true`, `AOE_WINDOWS_OLLAMA_URL`, and
+  `AOE_CYBER_MODEL_NAME` are all set. When enabled, it checks `/api/tags`,
+  calls `/api/chat` once with `stream=false`, `think=false`, `temperature=0`,
+  structured JSON format, and `keep_alive=0` by default, and never echoes raw
+  prompts, raw model output, endpoint URLs, model names, hostnames, wallets,
+  secrets, private notes, or vendor payloads. The route also requires simulated
+  x402 access before evaluating live local-model gates.
+- `POST /v1/streams/cyber-expert/public-cve-refresh` returns
+  `aoe.cyber_public_cve_refresh.v1`, a read-only public CVE refresh report. It
+  queries CISA KEV, FIRST EPSS, NVD, and OSV by CVE identifier only, never
+  sends buyer inventory, hostnames, notes, secrets, wallets, or customer
+  identifiers, reports cache status and per-source duration, caps batches at 50
+  normalized CVEs, and labels partial source failures as degraded instead of
+  inventing missing facts.
 - `POST /v1/adapters/opportunities/public-programs/preview` returns
   `aoe.adapter.opportunity_public_programs.preview.v1` for a no-secret
   opportunity-discovery preview. It searches unauthenticated Grants.gov
@@ -120,6 +200,13 @@ revision-sensitive macro claims requires explicit ALFRED vintages.
 The exported schema should also make freshness and provenance fail closed with
 explicit `generatedAt`, `durationMs`, `sourceEvidence`, and
 `reportSummary.evidenceProof` fields.
+
+For the 0G proof passport specifically, discovery should make the proof/read
+boundary visible before runtime: the route is `GET` only, `sideEffects` is
+`public_chain_receipt_fetch_only`, the current proof source is 0guard's public
+hackathon anchor, and the product must keep `walletSigningAllowed=false`,
+`transactionBroadcastAllowed=false`, `proofPostingAllowed=false`,
+`nodeStartAttempted=false`, and `rawComplianceSubjectPublished=false`.
 
 ## Current Contract Gaps
 

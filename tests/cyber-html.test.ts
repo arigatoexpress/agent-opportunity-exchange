@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
+import { buildCyberExpertCaseBrief } from "../src/adapters/cyber-case-brief.js";
 import type { CyberInventoryPriorityPreview, VulnPriorityReport } from "../src/adapters/cyber.js";
-import { renderCyberInventoryPriorityHtml, renderCyberPriorityHtml } from "../src/reporting/cyber-html.js";
+import { renderCyberExpertCaseBriefHtml, renderCyberInventoryPriorityHtml, renderCyberPriorityHtml } from "../src/reporting/cyber-html.js";
 
 describe("cyber HTML report", () => {
   test("escapes dynamic content and renders core report fields", () => {
@@ -90,5 +91,49 @@ describe("cyber HTML report", () => {
     expect(html).toContain("Patch vpn-&lt;1&gt; first &amp; validate.");
     expect(html).not.toContain("vpn-<1>");
     expect(html).not.toMatch(/payload:|run this exploit|credential dump/i);
+  });
+
+  test("renders cyber expert case brief HTML with escaped private-facing fields", async () => {
+    const brief = await buildCyberExpertCaseBrief(
+      {
+        caseTitle: "Client <Case> 0x1111111111111111111111111111111111111111",
+        cves: ["CVE-2024-0001"],
+        inventory: {
+          assets: [
+            {
+              hostname: "prod-api-01.internal",
+              label: "edge <gateway>",
+              cves: ["CVE-2024-0001"],
+              criticality: "critical",
+              internetFacing: true,
+            },
+          ],
+        },
+        complianceProofs: [
+          {
+            subjectCommitment: "commitment:demo_subject",
+            decision: "review",
+            sourceMerkleRoot: "merkle:demo_root",
+            sourceIds: ["ofac_sanctions_lists", "trm_sanctions_docs"],
+          },
+        ],
+        notes: ["private token note"],
+      },
+      {
+        includePublicCveRefresh: false,
+        includeLocalModel: false,
+      },
+    );
+
+    const html = renderCyberExpertCaseBriefHtml(brief);
+    expect(html).toContain("Cyber Expert Case Brief");
+    expect(html).toContain("Decision posture");
+    expect(html).toContain("Priority Queue");
+    expect(html).toContain("Brief hash");
+    expect(html).toContain("Client &lt;Case&gt; [redacted_wallet]");
+    expect(html).not.toContain("Client <Case>");
+    expect(html).not.toContain("prod-api-01.internal");
+    expect(html).not.toContain("private token note");
+    expect(html).not.toMatch(/run this exploit|credential dump|payload:/i);
   });
 });

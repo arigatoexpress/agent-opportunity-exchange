@@ -1,0 +1,45 @@
+{
+  "schemaId": "aoe.hackathon_0g_static_proof_packet.v1",
+  "generatedAt": "2026-05-17T19:10:00.000Z",
+  "liveRoute": "/v1/hackathon/0g-proof",
+  "productId": "zero_g_hackathon_proof_pack",
+  "publicProof": {
+    "sourceProject": "0guard",
+    "proofPage": "https://arigatoexpress.github.io/0guard/hackathon-0g/",
+    "mainnetProofJson": "https://arigatoexpress.github.io/0guard/hackathon-0g/mainnet-proof.json",
+    "hackquestSubmissionProofJson": "https://arigatoexpress.github.io/0guard/hackathon-0g/hackquest-submission-proof.json",
+    "chainId": 16661,
+    "chainName": "0G mainnet",
+    "contractAddress": "0xBaC59b1571b7c7195915c5B36D8A719Ed7182abc",
+    "anchorTxHash": "0x64ff260ccd02aa69fc18d5727eb4530d8774003bc7df63ec7d5cda036fc438ed",
+    "anchorExplorerUrl": "https://chainscan.0g.ai/tx/0x64ff260ccd02aa69fc18d5727eb4530d8774003bc7df63ec7d5cda036fc438ed",
+    "anchoredReceiptHash": "0x9739dbd4afb6ab21f15ccb634b49dabc9144550ef06d346cb4e7cd363e74afd1"
+  },
+  "aoeRoutes": [
+    "/",
+    "/demo",
+    "/.well-known/agent-opportunity-exchange.json",
+    "/v1/hackathon/0g-proof",
+    "/v1/contracts",
+    "/v1/buyer-proof",
+    "/v1/readiness",
+    "/v1/x402/status"
+  ],
+  "safety": {
+    "walletSigningAllowed": false,
+    "transactionBroadcastAllowed": false,
+    "proofPostingAllowed": false,
+    "nodeStartAttempted": false,
+    "rawWalletSubjectAccepted": false,
+    "rawComplianceSubjectPublished": false,
+    "liveSettlementAllowed": false,
+    "externalSideEffectsAllowed": false,
+    "sanctionsClearanceClaimed": false
+  },
+  "notClaims": [
+    "No new 0G write is performed by this static packet.",
+    "No live settlement, wallet signing, transaction broadcast, or funds movement is enabled.",
+    "No private TRM/KYT payloads or raw wallet subjects are published.",
+    "0guard remains the specialized on-chain proof demo; AOE is the buyer-facing proof router."
+  ]
+}

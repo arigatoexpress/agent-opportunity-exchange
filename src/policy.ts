@@ -125,15 +125,6 @@ export function runPreflight(input: z.infer<typeof preflightSchema>) {
   };
 }
 
-function buildProductContract(product: Product) {
-  return {
-    productId: product.productId,
-    schemaId: product.schemaId,
-    contractVersion: product.contractVersion,
-    qualityTier: product.quality.qualityTier,
-    buyerValue: product.buyerValue,
-    buyerValueMetrics: product.quality.buyerValueMetrics,
-    sourceFreshnessSla: product.quality.sourceFreshnessSla,
-    disclaimers: product.disclaimers,
-  };
+export function buildProductContract(product: Product) {
+  return product;
 }

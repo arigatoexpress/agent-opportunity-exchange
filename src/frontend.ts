@@ -608,6 +608,9 @@ export function renderPublicFrontend(): string {
         <button class="btn" id="refresh">Refresh Evidence</button>
         <button class="btn" id="showContracts">Show Contracts</button>
         <button class="btn" data-action="opportunity">Run Opportunity Preview</button>
+        <button class="btn" data-action="zeroGProof">Run 0G Proof</button>
+        <button class="btn" data-action="cyberExpertBrief">Run Expert Brief</button>
+        <button class="btn" data-action="complianceDecision">Run Compliance Proof</button>
         <button class="btn" data-action="cyber">Run Cyber Preview</button>
         <button class="btn primary" data-action="markets">Run Market Preview</button>
       </div>
@@ -621,6 +624,7 @@ export function renderPublicFrontend(): string {
           <p class="lead">A rights-cleared x402 storefront for paid artifacts, public previews, quotes, readiness, and source proof. Simulated by default; Base Sepolia x402 testnet only when explicitly configured.</p>
           <div class="tagrow">
             <span class="tag">Proof before purchase</span>
+            <span class="tag">0G proof passport</span>
             <span class="tag">No live settlement</span>
             <span class="tag">No external sends</span>
           </div>
@@ -670,8 +674,8 @@ export function renderPublicFrontend(): string {
           </div>
           <div class="proof-cell">
             <span>Value Signal</span>
-            <strong>Preview plus quote</strong>
-            <p class="small">Inspect proof before simulated or testnet access.</p>
+            <strong>Preview, quote, 0G proof</strong>
+            <p class="small">Inspect source proof and 0G anchor readiness before simulated or testnet access.</p>
           </div>
           <div class="proof-cell">
             <span>Payment Posture</span>
@@ -706,6 +710,10 @@ export function renderPublicFrontend(): string {
               <option value="liveMarketProof">Live SEC/FRED Upstream Proof</option>
               <option value="marketContext">SEC + Macro Context</option>
               <option value="opportunity">Opportunity Public Programs</option>
+              <option value="cyberExpertBrief">Cyber Expert Case Brief</option>
+              <option value="cyberExpertReport">Cyber Expert HTML Report</option>
+              <option value="complianceDecision">Compliance Proof Preview</option>
+              <option value="zeroGProof">0G Proof Passport</option>
               <option value="cyberInventory">Cyber Inventory Proof</option>
               <option value="cyber">Cyber CVE List</option>
               <option value="wildfire">Wildfire WFIGS Perimeters</option>
@@ -842,6 +850,10 @@ export function renderPublicFrontend(): string {
     const examples = {
       cyberInventory: 'demo-inventory',
       cyber: 'CVE-2021-44228,CVE-2023-34362,CVE-2024-3094',
+      cyberExpertBrief: 'CVE-2023-34362,CVE-2024-3094',
+      cyberExpertReport: 'CVE-2023-34362,CVE-2024-3094',
+      complianceDecision: 'commitment:demo_subject_screening_2026_05_17',
+      zeroGProof: '0guard-anchor',
       liveMarketProof: 'AAPL',
       marketContext: 'AAPL',
       opportunity: 'wildfire resilience',
@@ -853,6 +865,10 @@ export function renderPublicFrontend(): string {
     const labels = {
       cyberInventory: 'Cyber Inventory Proof',
       cyber: 'Cyber CVE Priority',
+      cyberExpertBrief: 'Cyber Expert Case Brief',
+      cyberExpertReport: 'Cyber Expert HTML Report',
+      complianceDecision: 'Commitment Compliance Proof',
+      zeroGProof: '0G Proof Passport',
       liveMarketProof: 'Live SEC/FRED Upstream Proof',
       marketContext: 'SEC + Macro Context',
       opportunity: 'Opportunity Public Programs',
@@ -864,6 +880,10 @@ export function renderPublicFrontend(): string {
     const routes = {
       cyberInventory: '/v1/adapters/cyber/inventory-priority/preview',
       cyber: '/v1/adapters/cyber/vuln-priority/preview',
+      cyberExpertBrief: '/v1/streams/cyber-expert/case-brief',
+      cyberExpertReport: '/v1/streams/cyber-expert/case-brief/report',
+      complianceDecision: '/v1/compliance/screening/decision-preview',
+      zeroGProof: '/v1/hackathon/0g-proof',
       liveMarketProof: '/v1/streams/market-context/live-proof',
       marketContext: '/v1/streams/market-context/preview',
       opportunity: '/v1/adapters/opportunities/public-programs/preview',
@@ -875,6 +895,10 @@ export function renderPublicFrontend(): string {
     const schemas = {
       cyberInventory: 'sapphirealpha.cyber_inventory_priority.preview.v1',
       cyber: 'sapphirealpha.cyber_priority.v1',
+      cyberExpertBrief: 'aoe.cyber_expert_case_brief.v1',
+      cyberExpertReport: 'aoe.cyber_expert_case_brief.report.v1',
+      complianceDecision: 'aoe.compliance_decision_preview.v1',
+      zeroGProof: 'aoe.zero_g_proof_readiness.v1',
       liveMarketProof: 'aoe.market_live_upstream_proof.v1',
       marketContext: 'sapphirealpha.market_context.v1',
       opportunity: 'aoe.adapter.opportunity_public_programs.preview.v1',
@@ -885,6 +909,9 @@ export function renderPublicFrontend(): string {
     };
     const heroActions = {
       cyber: 'cyberInventory',
+      cyberExpertBrief: 'cyberExpertBrief',
+      complianceDecision: 'complianceDecision',
+      zeroGProof: 'zeroGProof',
       opportunity: 'opportunity',
       wildfire: 'wildfire',
       markets: 'liveMarketProof'
@@ -893,16 +920,24 @@ export function renderPublicFrontend(): string {
       opportunity_intel_pack: 'Grant writers, founders, public-sector consultants',
       cyber_exploited_vuln_priority: 'MSPs, fractional IT, SMB security teams',
       market_regime_evidence_pack: 'Research analysts, operators, market agents',
+      zero_g_hackathon_proof_pack: 'Hackathon judges, buyer agents, proof-conscious builders',
       developer_api_change_radar: 'Agent builders, DevRel, developer tooling teams'
     };
     const productPreviewMap = {
       cyber_exploited_vuln_priority: 'cyberInventory',
+      cyber_expert_case_store_pack: 'cyberExpertBrief',
+      cyber_expert_model_preview_pack: 'cyberExpertBrief',
+      zero_g_hackathon_proof_pack: 'zeroGProof',
       market_regime_evidence_pack: 'liveMarketProof',
       opportunity_intel_pack: 'opportunity'
     };
     const proofNotes = {
       cyberInventory: 'Maps a buyer-provided authorized asset inventory to live KEV, EPSS, and NVD priority evidence; no scans or exploit content.',
       cyber: 'Checks a buyer-provided CVE list against live read-only defensive sources; no scanning or exploit content.',
+      cyberExpertBrief: 'Composes hashed case-store evidence into a defensive operator brief; public workbench uses deterministic-only mode unless simulated x402 access is supplied.',
+      cyberExpertReport: 'Returns an escaped HTML case brief report inside a JSON contract; public workbench uses deterministic-only mode.',
+      complianceDecision: 'Accepts commitment-only TRM/OFAC decision metadata; rejects raw wallet addresses and posts no on-chain proof.',
+      zeroGProof: 'Reads an existing public 0guard 0G anchor receipt with sideEffects=public_chain_receipt_fetch_only and shows contract, chain, proof URLs, hashes, and no-signing boundaries.',
       liveMarketProof: 'Proves current SEC and FRED upstream reachability, freshness, latency, source URLs, hashes, and mockDataUsed=false.',
       marketContext: 'Combines SEC and FRED public-source context for research only; no advice or execution.',
       opportunity: 'Searches official Grants.gov opportunities and Data.gov dataset metadata; SAM.gov is reported as key-required without a secret.',
@@ -916,6 +951,10 @@ export function renderPublicFrontend(): string {
     const valueSignals = {
       cyberInventory: 'An MSP can show which client assets make each CVE urgent before paying for the full remediation proof packet.',
       cyber: 'A buyer can verify fix-today prioritization logic before paying for a full remediation packet.',
+      cyberExpertBrief: 'A security buyer can inspect the expert answer contract, human-review gates, and blocked actions before paying for live refresh or local model advisory lanes.',
+      cyberExpertReport: 'A buyer can see a report-ready HTML artifact generated from the same defensive brief without exposing raw private inputs.',
+      complianceDecision: 'A compliance engineer can test public proof posture with commitments instead of raw wallet addresses or proprietary vendor responses.',
+      zeroGProof: 'Judges and buyer agents can verify the 0G anchor evidence and see that AOE never signs, broadcasts, posts proofs, or publishes private compliance subjects.',
       liveMarketProof: 'A buyer can see that this is real SEC/FRED source data, when it was reached, and what evidence hashes bind the packet.',
       marketContext: 'A buyer can inspect filing/macro evidence shape before paying for the full market evidence pack.',
       opportunity: 'A founder or public-sector consultant can inspect source-linked public-program matches before paying for a bid/no-bid packet.',
@@ -1036,7 +1075,7 @@ export function renderPublicFrontend(): string {
     function updateRouteChrome() {
       const selected = kind.value;
       routeLabel.textContent = routes[selected] || routes.marketContext;
-      methodLabel.textContent = 'POST';
+      methodLabel.textContent = selected === 'zeroGProof' ? 'GET' : 'POST';
       outputTitle.textContent = (labels[selected] || 'Selected') + ' response';
       schemaLabel.textContent = schemas[selected] || 'preview.schema.v1';
     }
@@ -1089,8 +1128,8 @@ export function renderPublicFrontend(): string {
       document.getElementById('sourceQuality').textContent = sources.length ? green + '/' + sources.length + ' green source-rights' : 'Loading source rights';
       document.getElementById('sourceQualityNote').textContent = sources.length ? official + ' official API/download sources; yellow entries stay terms-review gated.' : 'Official owners, access modes, and rights envelopes come from /v1/sources.';
       const featured = sources
-        .filter(source => ['cisa_kev', 'first_epss', 'nvd_cve', 'sec_edgar', 'fred_alfred', 'developer_docs_public', 'telegram_mini_apps_docs'].includes(source.sourceId))
-        .slice(0, 7);
+        .filter(source => ['zero_g_chain_public_rpc', 'zero_guard_hackathon_public_proof', 'cisa_kev', 'first_epss', 'nvd_cve', 'osv', 'github_advisory_database', 'msrc_security_update_guide', 'ofac_sanctions_lists', 'trm_sanctions_docs', 'sec_edgar', 'fred_alfred', 'developer_docs_public', 'telegram_mini_apps_docs'].includes(source.sourceId))
+        .slice(0, 9);
       document.getElementById('sourceRail').innerHTML = featured.map(source => {
         return '<div class="source-row">' +
           '<strong>' + escapeHtml(source.name) + '</strong>' +
@@ -1211,6 +1250,58 @@ export function renderPublicFrontend(): string {
             }
           ]
         };
+      } else if (selected === 'cyberExpertBrief' || selected === 'cyberExpertReport') {
+        path = selected === 'cyberExpertReport'
+          ? '/v1/streams/cyber-expert/case-brief/report'
+          : '/v1/streams/cyber-expert/case-brief';
+        const cves = raw.split(/[,\\s]+/).filter(Boolean);
+        body = {
+          caseTitle: 'Public workbench deterministic cyber expert brief',
+          cves: cves.length ? cves : ['CVE-2023-34362', 'CVE-2024-3094'],
+          inventory: {
+            assets: [
+              {
+                assetId: 'asset-1',
+                label: 'authorized edge file transfer service',
+                criticality: 'critical',
+                internetFacing: true,
+                vulnerabilities: ['CVE-2023-34362']
+              },
+              {
+                assetId: 'asset-2',
+                label: 'authorized build system dependency',
+                criticality: 'high',
+                internetFacing: false,
+                vulnerabilities: ['CVE-2024-3094']
+              }
+            ]
+          },
+          complianceProofs: [
+            {
+              subjectCommitment: 'commitment:demo_subject_screening_2026_05_17',
+              decision: 'review',
+              policyVersion: 'demo-policy-v1',
+              sourceMerkleRoot: 'merkle:demo_ofac_trm_source_root_2026_05_17',
+              sourceIds: ['ofac_sanctions_lists', 'trm_sanctions_docs']
+            }
+          ],
+          includePublicCveRefresh: false,
+          includeLocalModel: false
+        };
+      } else if (selected === 'complianceDecision') {
+        path = '/v1/compliance/screening/decision-preview';
+        body = {
+          subjectCommitment: raw && raw.startsWith('0x') ? 'commitment:demo_subject_screening_2026_05_17' : (raw || 'commitment:demo_subject_screening_2026_05_17'),
+          decision: 'review',
+          policyVersion: 'demo-policy-v1',
+          sourceMerkleRoot: 'merkle:demo_ofac_trm_source_root_2026_05_17',
+          issuedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 86400000).toISOString(),
+          sourceIds: ['ofac_sanctions_lists', 'trm_sanctions_docs']
+        };
+      } else if (selected === 'zeroGProof') {
+        path = '/v1/hackathon/0g-proof';
+        body = null;
       } else if (selected === 'cyber') {
         path = '/v1/adapters/cyber/vuln-priority/preview';
         body = { cves: raw.split(/[,\\s]+/).filter(Boolean) };
@@ -1235,11 +1326,13 @@ export function renderPublicFrontend(): string {
           valueSignal: valueSignals[selected],
           proof: proofNotes[selected]
         };
-        const result = await getJson(path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
+        const result = selected === 'zeroGProof'
+          ? await getJson(path)
+          : await getJson(path, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
         if (requestId === activePreviewRequest) pretty(result, context);
       } catch (error) {
         if (requestId === activePreviewRequest) {

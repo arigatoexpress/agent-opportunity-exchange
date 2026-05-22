@@ -1,5 +1,5 @@
 import { shortHash, sha256 } from "./hash.js";
-import type { Artifact, Quote, Receipt, ReceiptSettlement } from "./types.js";
+import type { Artifact, Quote, Receipt, ReceiptSettlement, RightsEnvelope } from "./types.js";
 import { getProduct } from "./catalog.js";
 import { getX402PaymentStatus, simulatedPayTo } from "./x402-config.js";
 
@@ -45,6 +45,54 @@ export function buildQuote(artifact: Artifact, now = new Date()): Quote {
     ],
     rights: artifact.rights,
     sourceIds: artifact.sourceIds,
+  };
+}
+
+export function buildRoutePreviewQuote(
+  input: {
+    routeId: string;
+    productId: string;
+    priceUsd: string;
+    sourceIds: string[];
+  },
+  now = new Date(),
+): Quote {
+  const quoteDate = now.toISOString().slice(0, 10);
+  const quoteSeed = {
+    routeId: input.routeId,
+    productId: input.productId,
+    priceUsd: input.priceUsd,
+    quoteDate,
+    mode: "simulated_or_testnet",
+  };
+  const quoteId = `quote_${shortHash(quoteSeed, 18)}`;
+  const workOrderId = `wo_${shortHash({ quoteId, routeHash: sha256(quoteSeed) }, 18)}`;
+  const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
+  const paymentStatus = getX402PaymentStatus();
+  const payTo = paymentStatus.ready && paymentStatus.payTo.address ? paymentStatus.payTo.address : simulatedPayTo();
+
+  return {
+    quoteId,
+    workOrderId,
+    artifactId: input.routeId,
+    productId: input.productId,
+    priceUsd: input.priceUsd,
+    currency: "USDC",
+    paymentProtocol: "x402",
+    settlementMode: "simulated_or_testnet",
+    liveSettlementAllowed: false,
+    expiresAt,
+    accepted: [
+      {
+        scheme: "exact",
+        network: paymentStatus.network.id,
+        asset: "USDC",
+        amountUsd: input.priceUsd,
+        payTo,
+      },
+    ],
+    rights: ROUTE_PREVIEW_RIGHTS,
+    sourceIds: input.sourceIds,
   };
 }
 
@@ -113,3 +161,21 @@ export function buildReceipt(artifact: Artifact, quote: Quote, now = new Date(),
     settlement: settlement ?? defaultSettlement,
   };
 }
+
+const ROUTE_PREVIEW_RIGHTS: RightsEnvelope = {
+  licenseId: "aoe-route-preview-access-v1",
+  allowedUses: ["run_defensive_read_only_preview", "store_derived_hashes", "cite_source_ids", "human_review_internal_output"],
+  prohibitedUses: [
+    "live_settlement",
+    "resell_raw_source_payloads",
+    "train_without_license",
+    "unauthorized_scanning",
+    "exploit_payload_generation",
+    "external_side_effects",
+  ],
+  cacheTtlSeconds: 0,
+  maxExtract: "Derived defensive route output only; do not redistribute raw upstream payloads.",
+  attribution: "Preserve source ids, freshness timestamps, caveats, and evidence hashes.",
+  privacyClass: "buyer_private_input_allowed_output_redacted",
+  redistribution: "No raw private inventory, wallet addresses, secrets, notes, hostnames, or vendor payloads.",
+};

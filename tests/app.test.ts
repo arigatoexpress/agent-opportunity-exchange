@@ -81,11 +81,23 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.schemaIds.buyerProof).toBe("aoe.buyer_proof.v1");
     expect(body.schemaIds.routeDiscovery).toBe("aoe.discovery.routes.v1");
     expect(body.schemaIds.x402Status).toBe("aoe.x402.status.v1");
+    expect(body.schemaIds.complianceDecisionPreview).toBe("aoe.compliance_decision_preview.v1");
+    expect(body.schemaIds.zeroGProofReadiness).toBe("aoe.zero_g_proof_readiness.v1");
+    expect(body.complianceDecisionPreview).toBe("/v1/compliance/screening/decision-preview");
+    expect(body.zeroGProofReadiness).toBe("/v1/hackathon/0g-proof");
     expect(body.freeEndpoints).toContain("/v1/demo-guide");
     expect(body.freeEndpoints).toContain("/v1/buyer-proof");
     expect(body.freeEndpoints).toContain("/telegram");
     expect(body.freeEndpoints).toContain("/v1/telegram/status");
     expect(body.freeEndpoints).toContain("/v1/routes");
+    expect(body.freeEndpoints).toContain("/v1/compliance/screening/decision-preview");
+    expect(body.freeEndpoints).toContain("/v1/hackathon/0g-proof");
+    expect(body.freeEndpoints).not.toContain("/v1/streams/cyber-expert/case-brief");
+    expect(body.freeEndpoints).not.toContain("/v1/streams/cyber-expert/case-brief/report");
+    expect(body.freeEndpoints).not.toContain("/v1/streams/cyber-expert/windows-ollama/preview");
+    expect(body.paidEndpoints.join(" ")).toContain("/v1/streams/cyber-expert/case-brief");
+    expect(body.paidEndpoints.join(" ")).toContain("/v1/streams/cyber-expert/case-brief/report");
+    expect(body.paidEndpoints.join(" ")).toContain("/v1/streams/cyber-expert/windows-ollama/preview");
     expect(body.telegramMiniApp).toBe("/telegram");
     expect(body.telegramStatus).toBe("/v1/telegram/status");
     expect(body.schemaIds.telegramRegistration).toBe("aoe.telegram.registration.v1");
@@ -101,7 +113,9 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.videoFlow).toContainEqual(expect.objectContaining({ path: "/v1/streams/market-context/live-proof" }));
     expect(body.curlExamples.join(" ")).toContain("X-AOE-Payment: simulated:<workOrderId>");
     expect(body.say.join(" ")).toContain("mockDataUsed=false");
+    expect(body.say.join(" ")).toContain("0G proof passport");
     expect(body.avoidClaims).toContain("live settlement");
+    expect(body.avoidClaims).toContain("new 0G proof writes, wallet signing, node operation, or sanctions clearance");
     expect(body.safety.liveSettlementAllowed).toBe(false);
     expect(body.safety.externalSideEffectsAllowed).toBe(false);
 
@@ -131,6 +145,7 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.counts.products).toBeGreaterThan(0);
     expect(body.sellability.criticalIssueCount).toBe(0);
     expect(body.featuredProof.map((row: { route: string }) => row.route)).toContain("/v1/adapters/cyber/inventory-priority/report");
+    expect(body.featuredProof.map((row: { route: string }) => row.route)).toContain("/v1/hackathon/0g-proof");
     expect(body.buyerValue.join(" ")).toContain("simulated or testnet payment");
     expect(body.safety).toEqual(
       expect.objectContaining({
@@ -214,6 +229,40 @@ describe("Agent Opportunity Exchange API", () => {
       }),
     );
     expect(cyberInventoryReport.caveats.join(" ")).toContain("HTML is a derived report");
+
+    const cyberCaseBriefReport = body.routes.find((route: { routeId: string }) => route.routeId === "cyber_expert_case_brief_report");
+    expect(cyberCaseBriefReport).toEqual(
+      expect.objectContaining({
+        route: "/v1/streams/cyber-expert/case-brief/report",
+        access: "simulated_x402_payment",
+        readiness: "live_read_only",
+        schemaId: "aoe.cyber_expert_case_brief.report.v1",
+      }),
+    );
+    expect(cyberCaseBriefReport.caveats.join(" ")).toContain("HTML is derived report content");
+
+    const complianceDecision = body.routes.find((route: { routeId: string }) => route.routeId === "compliance_decision_preview");
+    expect(complianceDecision).toEqual(
+      expect.objectContaining({
+        route: "/v1/compliance/screening/decision-preview",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.compliance_decision_preview.v1",
+      }),
+    );
+    expect(complianceDecision.caveats.join(" ")).toContain("Raw wallet addresses");
+
+    const zeroGProof = body.routes.find((route: { routeId: string }) => route.routeId === "zero_g_proof_readiness");
+    expect(zeroGProof).toEqual(
+      expect.objectContaining({
+        route: "/v1/hackathon/0g-proof",
+        method: "GET",
+        access: "public",
+        readiness: "live_read_only",
+        schemaId: "aoe.zero_g_proof_readiness.v1",
+      }),
+    );
+    expect(zeroGProof.caveats.join(" ")).toContain("No wallet signing");
 
     const opportunityPreview = body.routes.find((route: { routeId: string }) => route.routeId === "opportunity_public_programs_preview");
     expect(opportunityPreview).toEqual(
@@ -881,6 +930,33 @@ describe("Agent Opportunity Exchange API", () => {
     expect(body.content).toBeUndefined();
   });
 
+  test("artifact quote is a public buyer contract before payment", async () => {
+    const artifact = artifacts.find((row) => row.artifactId === "aoe_cyber_kev_epss_priority");
+    expect(artifact).toBeDefined();
+
+    const res = await app.request(`/v1/artifacts/${artifact!.artifactId}/quote`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.schemaId).toBe("aoe.artifact.quote.v1");
+    expect(body.quote).toEqual({ ...buildQuote(artifact!), expiresAt: expect.any(String) });
+    expect(body.quote.sourceIds).toEqual(artifact!.sourceIds);
+    expect(body.quote.liveSettlementAllowed).toBe(false);
+    expect(body.productContract).toEqual(expect.objectContaining({ productId: artifact!.productId, liveSettlementAllowed: false }));
+    expect(body.productContract.priceUsd).toBe(body.quote.priceUsd);
+    expect(body.productContract.quality.sourceFreshnessSla.caveats.length).toBeGreaterThan(0);
+    expect(body.access).toEqual(
+      expect.objectContaining({
+        preflightEndpoint: "/v1/access/preflight",
+        paidContentEndpoint: `/v1/artifacts/${artifact!.artifactId}/content`,
+        paymentHeader: "X-AOE-Payment",
+        simulatedPaymentFormat: "simulated:<workOrderId>",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+        mainnetFundsAccepted: false,
+      }),
+    );
+  });
+
   test("full content returns x402-style 402 until payment is presented", async () => {
     const artifact = artifacts.find((row) => row.artifactId === "aoe_cyber_kev_epss_priority");
     expect(artifact).toBeDefined();
@@ -1014,11 +1090,15 @@ describe("Agent Opportunity Exchange API", () => {
       expect.objectContaining({
         productId: "cyber_exploited_vuln_priority",
         schemaId: "aoe.product.cyber_exploited_vuln_priority.v1",
-        qualityTier: "sellable_mvp",
+        priceUsd: "0.5000",
+        settlementMode: "simulated_or_testnet",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
       }),
     );
-    expect(body.productContract.buyerValueMetrics[0].metricId).toBe("fix_now_queue");
-    expect(body.productContract.sourceFreshnessSla.caveats).toContain("No active scanning is performed by this product.");
+    expect(body.productContract.quality.qualityTier).toBe("sellable_mvp");
+    expect(body.productContract.quality.buyerValueMetrics[0].metricId).toBe("fix_now_queue");
+    expect(body.productContract.quality.sourceFreshnessSla.caveats).toContain("No active scanning is performed by this product.");
   });
 
   test("preflight blocks disallowed sources", async () => {

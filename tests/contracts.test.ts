@@ -57,6 +57,30 @@ describe("buyer contract bundle", () => {
 
   test("exports OpenAPI paths with x402 and source-rights extensions", () => {
     const bundle = buildContractBundle();
+    const artifactQuote = bundle.openapi.paths["/v1/artifacts/{id}/quote"].get;
+    expect(artifactQuote.operationId).toBe("artifact_quote");
+    expect(artifactQuote["x-aoe"]).toEqual(
+      expect.objectContaining({
+        access: "public",
+        schemaId: "aoe.artifact.quote.v1",
+        liveSettlementAllowed: false,
+        externalSideEffectsAllowed: false,
+      }),
+    );
+
+    const quoteSchema = bundle.openapi.components.schemas["aoe.artifact.quote.v1"] as {
+      required: string[];
+      properties: { access: { properties: Record<string, unknown> } };
+    };
+    expect(quoteSchema.required).toEqual(expect.arrayContaining(["schemaId", "quote", "productContract", "access"]));
+    expect(quoteSchema.properties.access.properties).toEqual(
+      expect.objectContaining({
+        preflightEndpoint: { const: "/v1/access/preflight" },
+        paymentHeader: { const: "X-AOE-Payment" },
+        mainnetFundsAccepted: { const: false },
+      }),
+    );
+
     const paidContent = bundle.openapi.paths["/v1/artifacts/{id}/content"].get;
     expect(paidContent.operationId).toBe("artifact_paid_content");
     expect(paidContent["x-aoe"]).toEqual(
