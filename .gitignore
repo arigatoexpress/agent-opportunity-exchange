@@ -1,5 +1,6 @@
 node_modules/
 dist/
+build/
 .env
 .env.*
 !.env.example
@@ -9,3 +10,9 @@ test-results/
 .DS_Store
 .playwright-cli/
 data/receipts/*.jsonl
+*.tsbuildinfo
+logs/
+*.log
+.cache/
+.vscode/
+.idea/
